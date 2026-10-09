@@ -32,7 +32,7 @@ async def crear_deck(body: DeckBody, db: AsyncSession = Depends(get_db)):
     db.add(deck)
     await db.flush()
     await db.commit()
-    job_id = await encolar("generar_deck", deck.id, body.documento_id, min(max(body.n, 4), 30))
+    job_id = await encolar("generar_deck", deck.id, body.documento_id, min(max(body.n, 4), 30), urgente=True)
     if not job_id:
         raise HTTPException(503, "Worker no disponible")
     return {"ok": True, "deck_id": deck.id}
@@ -125,7 +125,7 @@ async def crear_quiz(body: QuizBody, db: AsyncSession = Depends(get_db)):
     db.add(quiz)
     await db.flush()
     await db.commit()
-    job_id = await encolar("generar_quiz", quiz.id, min(max(body.n, 3), 25), quiz.tipo)
+    job_id = await encolar("generar_quiz", quiz.id, min(max(body.n, 3), 25), quiz.tipo, urgente=True)
     if not job_id:
         raise HTTPException(503, "Worker no disponible")
     return {"ok": True, "quiz_id": quiz.id}

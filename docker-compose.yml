@@ -57,6 +57,7 @@ services:
       LLM_MODEL: ${LLM_MODEL:-ternary-bonsai-2-27b}
       EMBED_MODEL: ${EMBED_MODEL:-intfloat/multilingual-e5-large}
       EMBED_DIM: ${EMBED_DIM:-1024}
+      GRAFO_LLM: ${GRAFO_LLM:-0}
       TZ: America/Santiago
     ports:
       - "127.0.0.1:${API_PORT:-8600}:8000"
@@ -91,8 +92,31 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "4"
+          cpus: "12"   # embeddings e5-large en CPU escalan con hilos (host: 16 núcleos; Bonsai usa la GPU, no la CPU)
           memory: 6g
+    restart: unless-stopped
+
+  # Worker urgente: cola "urgentes" (tips diarios, decks, quizzes) para que
+  # nunca queden detrás de la ingesta masiva del worker principal.
+  worker-urgente:
+    build: ./backend
+    command: arq estudio.worker.main.WorkerSettingsUrgente
+    environment: *backend_env
+    volumes:
+      - modelos:/data/modelos
+      - cargas:/data/cargas
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 3g
     restart: unless-stopped
 
   frontend:

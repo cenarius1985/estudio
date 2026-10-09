@@ -60,7 +60,7 @@ async def recuperar(
     res_v = await db.execute(
         text(
             f"SELECT c.id FROM chunks c WHERE TRUE {filtro} "
-            "ORDER BY c.embedding <=> :vec::vector LIMIT :kv"
+            "ORDER BY c.embedding <=> CAST(:vec AS vector) LIMIT :kv"
         ),
         params_v,
     )
@@ -143,8 +143,8 @@ async def similitud_maxima(db: AsyncSession, vec: list[float], tabla: str = "tip
     """(máx similitud coseno, id del registro más parecido) contra una tabla con embedding."""
     v = vector_a_pg(vec)
     res = await db.execute(
-        text(f"SELECT id, 1 - (embedding <=> :v::vector) AS sim FROM {tabla} "
-             "ORDER BY embedding <=> :v::vector LIMIT 1"),
+        text(f"SELECT id, 1 - (embedding <=> CAST(:v AS vector)) AS sim FROM {tabla} "
+             "ORDER BY embedding <=> CAST(:v AS vector) LIMIT 1"),
         {"v": v},
     )
     fila = res.fetchone()

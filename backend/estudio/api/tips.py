@@ -85,7 +85,7 @@ class GenerarBody(BaseModel):
 
 @router.post("/generar")
 async def generar(body: GenerarBody):
-    job_id = await encolar("generar_tip_diario", body.forzar)
+    job_id = await encolar("generar_tip_diario", body.forzar, urgente=True)
     if not job_id:
         raise HTTPException(503, "Worker no disponible")
     return {"ok": True, "job": job_id, "forzar": body.forzar}
@@ -95,7 +95,7 @@ async def generar(body: GenerarBody):
 async def reenviar(tip_id: str, db: AsyncSession = Depends(get_db)):
     if not await db.get(Tip, tip_id):
         raise HTTPException(404, "Tip no existe")
-    job_id = await encolar("reenviar_tip", tip_id)
+    job_id = await encolar("reenviar_tip", tip_id, urgente=True)
     if not job_id:
         raise HTTPException(503, "Worker no disponible")
     return {"ok": True, "job": job_id, "mensaje": "Reenvío encolado usando el contenido almacenado (sin reprocesar)"}

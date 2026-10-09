@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Infraestructura
     database_url: str = "postgresql+asyncpg://estudio:dev@db:5432/estudio"
     redis_url: str = "redis://redis:6379/0"
+    # Cola ARQ para jobs interactivos (tips/decks/quizzes) que no deben quedar
+    # detrás de la ingesta masiva; el worker-urgente la atiende.
+    cola_urgentes: str = "urgentes"
     ruta_fuentes: str = "/fuentes"
     modelos_dir: str = "/data/modelos"
 
@@ -49,6 +52,10 @@ class Settings(BaseSettings):
     retrieval_k: int = 8
     retrieval_k_vector: int = 30
     retrieval_k_bm25: int = 30
+
+    # Grafo: tripletas por LLM (lento: 1 llamada a Bonsai por documento).
+    # El grafo por diccionario+co-ocurrencia SIEMPRE se construye.
+    grafo_llm: bool = False
 
     @property
     def exclude_dirs_list(self) -> list[str]:

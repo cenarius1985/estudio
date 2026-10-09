@@ -91,6 +91,8 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
         doc = await db.get(Documento, documento_id)
         if not doc:
             return {"error": f"documento {documento_id} no existe"}
+        if doc.estado == "listo" and not forzar:
+            return {"ok": True, "documento": doc.ruta, "omitido": "ya listo"}
         doc.estado = "procesando"
         await db.commit()
         try:
@@ -156,7 +158,10 @@ async def _grafo_diccionario(db, document_id: str) -> None:
 
 
 async def _grafo_llm(db, doc: Documento, textos: list[str]) -> None:
-    """Tripletas opcionales por documento con Bonsai (fail-soft)."""
+    """Tripletas opcionales por documento con Bonsai (fail-soft, default OFF:
+    una llamada LLM por documento frena la ingesta masiva)."""
+    if not get_settings().grafo_llm:
+        return
     muestra = "\n\n".join(textos[:2])[:3000]
     raw = await chat(
         [{"role": "user", "content": PROMPT_GRAFO.format(texto=muestra)}],

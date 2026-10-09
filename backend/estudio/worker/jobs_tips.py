@@ -46,7 +46,7 @@ async def chequear_tip_diario(ctx: dict) -> dict:
         if ya.scalar_one_or_none():
             return {"estado": "ya_enviado_hoy"}
 
-    await ctx["redis"].enqueue_job("generar_tip_diario", {})
+    await ctx["redis"].enqueue_job("generar_tip_diario", {}, _queue_name=get_settings().cola_urgentes)
     return {"estado": "encolado"}
 
 
