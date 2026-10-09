@@ -1,14 +1,32 @@
-"""Chunker: agrupa bloques consecutivos en chunks de ~max_chars con overlap."""
+"""Chunker: agrupa bloques consecutivos en chunks de ~max_chars con overlap.
+Sanitiza el texto (NUL y controles): Postgres TEXT no admite \\x00 y algunos
+PDFs/LaTeX lo arrastran — sin esto el INSERT del chunk revienta la ingesta."""
 
 from __future__ import annotations
+
+import re
 
 from estudio.ingest.extractores import Bloque
 
 MAX_CHARS = 4000   # ≈ 1000 tokens
 OVERLAY_CHARS = 600  # ≈ 15%
 
+# todo control salvo \n \t (el \r se normaliza)
+_CONTROLES = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
+
+
+def sanitizar(texto: str) -> str:
+    return _CONTROLES.sub("", texto.replace("\r\n", "\n").replace("\r", "\n"))
+
 
 def chunkear(bloques: list[Bloque], max_chars: int = MAX_CHARS, overlap: int = OVERLAY_CHARS) -> list[Bloque]:
+    limpios: list[Bloque] = []
+    for b in bloques:
+        t = sanitizar(b.texto)
+        if t.strip():
+            limpios.append(Bloque(t, sanitizar(b.pagina)))
+    bloques = limpios
+
     chunks: list[Bloque] = []
     actual: list[Bloque] = []
     actual_len = 0

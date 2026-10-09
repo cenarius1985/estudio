@@ -145,6 +145,10 @@ async def ingestar_url(ctx: dict, documento_id: str) -> dict:
             log.info("Indexada URL %s → %d chunks", pagina.url_final, resultado.get("chunks", 0))
             return {"ok": True, "url": pagina.url_final, **resultado}
         except Exception as exc:  # noqa: BLE001
+            try:
+                await db.rollback()
+            except Exception:  # noqa: BLE001
+                pass
             doc.estado = "error"
             doc.error = f"{type(exc).__name__}: {exc}"[:2000]
             await db.commit()
@@ -169,6 +173,13 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
             log.info("Indexado %s → %d chunks", doc.ruta, resultado.get("chunks", 0))
             return {"ok": True, "documento": doc.ruta, **resultado}
         except Exception as exc:  # noqa: BLE001 — el error queda en el documento
+            # Si la sesión quedó en rollback pendiente (p. ej. byte inválido al
+            # insertar), liberarla ANTES de tocar la BD o el job re-explota y
+            # arq lo reintenta 5 veces re-procesando todo.
+            try:
+                await db.rollback()
+            except Exception:  # noqa: BLE001
+                pass
             # Imágenes sin texto (figuras científicas, logos): no es un fallo,
             # se marcan «sin_texto» para no ensuciar la lista de errores.
             if doc.tipo == "imagen" and "sin texto" in str(exc).lower():
