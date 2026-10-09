@@ -13,9 +13,11 @@ import logging
 
 from arq import cron
 from arq.connections import RedisSettings
+from sqlalchemy import select, update
 
 from estudio.config import get_settings
-from estudio.db import crear_esquema, engine
+from estudio.db import SessionLocal, crear_esquema, engine
+from estudio.models import Documento
 from estudio.worker.jobs_estudio import generar_deck, generar_quiz
 from estudio.worker.jobs_ingesta import escanear_fuentes, ingestar_archivo, ingestar_url, reindexar_documento
 from estudio.worker.jobs_tips import chequear_tip_diario, generar_tip_diario, reenviar_tip
@@ -29,6 +31,26 @@ async def al_arrancar(ctx: dict) -> None:
     log.info("Worker listo")
 
 
+async def al_arrancar_ingesta(ctx: dict) -> None:
+    """Arranque del worker de ingesta: además, recupera documentos quedados
+    en «procesando» por un worker muerto a mitad de job (al arrancar no hay
+    jobs en vuelo, así que cualquier «procesando» es un zombi)."""
+    await al_arrancar(ctx)
+    async with SessionLocal() as db:
+        atascados = (await db.execute(
+            select(Documento.id).where(Documento.estado == "procesando")
+        )).fetchall()
+        if not atascados:
+            return
+        await db.execute(
+            update(Documento).where(Documento.estado == "procesando").values(estado="pendiente")
+        )
+        await db.commit()
+    for (did,) in atascados:
+        await ctx["redis"].enqueue_job("ingestar_archivo", did)
+    log.info("Recuperados %d documentos atascados en «procesando»", len(atascados))
+
+
 async def al_apagar(ctx: dict) -> None:
     await engine.dispose()
 
@@ -37,7 +59,7 @@ class WorkerSettings:
     """Worker de ingesta (cola default): pesado, OCR + embeddings."""
 
     functions = [escanear_fuentes, ingestar_archivo, ingestar_url, reindexar_documento]
-    on_startup = al_arrancar
+    on_startup = al_arrancar_ingesta
     on_shutdown = al_apagar
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
     max_jobs = 2  # embeddings (ORT suelta el GIL) y OCR en subproceso → escala

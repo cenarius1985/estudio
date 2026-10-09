@@ -168,6 +168,14 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
             log.info("Indexado %s → %d chunks", doc.ruta, resultado.get("chunks", 0))
             return {"ok": True, "documento": doc.ruta, **resultado}
         except Exception as exc:  # noqa: BLE001 — el error queda en el documento
+            # Imágenes sin texto (figuras científicas, logos): no es un fallo,
+            # se marcan «sin_texto» para no ensuciar la lista de errores.
+            if doc.tipo == "imagen" and "sin texto" in str(exc).lower():
+                doc.estado = "sin_texto"
+                doc.error = ""
+                doc.chunks_n = 0
+                await db.commit()
+                return {"ok": True, "documento": doc.ruta, "sin_texto": True}
             doc.estado = "error"
             doc.error = f"{type(exc).__name__}: {exc}"[:2000]
             await db.commit()
