@@ -1,0 +1,5 @@
+# Shell scripts SIEMPRE LF (el entrypoint de bonsai rompe con CRLF)
+*.sh text eol=lf
+*.py text eol=lf
+*.yml text eol=lf
+Dockerfile text eol=lf
