@@ -51,10 +51,28 @@ EXTENSIONES: dict[str, str] = {
     ".tif": "imagen",
     ".tiff": "imagen",
     ".ipynb": "notebook",
+    # código: el COMITÉ pregunta por la implementación, no solo por la teoría
+    ".py": "codigo",
+    ".jl": "codigo",
+    ".sh": "codigo",
+    ".sql": "codigo",
+    ".r": "codigo",
+    ".m": "codigo",
+    ".yaml": "codigo",
+    ".yml": "codigo",
+    ".dockerfile": "codigo",
 }
+
+# lenguaje por sufijo (para la cabecera del bloque)
+LENGUAJES = {".py": "python", ".jl": "julia", ".sh": "shell", ".sql": "sql",
+             ".r": "r", ".m": "matlab", ".yaml": "yaml", ".yml": "yaml",
+             ".dockerfile": "dockerfile"}
 
 
 def tipo_de(ruta: Path) -> str | None:
+    nombre = ruta.name
+    if nombre == "Dockerfile" or nombre.startswith("Dockerfile."):
+        return "codigo"
     return EXTENSIONES.get(ruta.suffix.lower())
 
 
@@ -270,6 +288,64 @@ def extraer_notebook(ruta: Path) -> list[Bloque]:
     return bloques
 
 
+# ---------------------------------------------------------------- código (.py/.jl/docker…)
+
+
+# definiciones de primer nivel: los cortes respetan funciones/clases para que
+# un chunk no parta una implementación por la mitad
+_CORTES_CODIGO = {
+    "python": re.compile(r"^(def |class |@|async def )"),
+    "julia": re.compile(r"^(function |struct |module |macro |\"\"\")"),
+    "r": re.compile(r"^[a-zA-Z.][\w.]*\s*<-\s*function"),
+    "matlab": re.compile(r"^function "),
+    "shell": re.compile(r"^[a-z_]+\(\)\s*\{"),
+    "sql": re.compile(r"^CREATE (TABLE|VIEW|INDEX|FUNCTION|TYPE)"),
+    "yaml": re.compile(r"^[A-Za-z][\w.-]*:"),
+    "dockerfile": re.compile(r"^(FROM |RUN |COPY |ARG |ENV |ENTRYPOINT |CMD )"),
+}
+MAX_LINEAS_BLOQUE = 90  # subdividir tramos sin definiciones (scripts lineales)
+
+
+def extraer_codigo(ruta: Path) -> list[Bloque]:
+    """Código en bloques por definición (def/class/function/FROM…), con rango
+    de líneas como metadato: las citas dicen «líneas 120-180», clave cuando el
+    comité pregunta CÓMO se implementó algo."""
+    lineas = _leer_texto(ruta).splitlines()
+    lang = LENGUAJES.get(ruta.suffix.lower(), "dockerfile" if "Dockerfile" in ruta.name else "texto")
+    patron = _CORTES_CODIGO.get(lang)
+
+    cortes: list[int] = [0]
+    if patron:
+        for i, linea in enumerate(lineas):
+            if patron.match(linea) and i > 0:
+                cortes.append(i)
+    # subdivisiones para tramos muy largos sin definiciones
+    expandidos: list[int] = []
+    for a, b in zip(cortes, cortes[1:] + [len(lineas)]):
+        expandidos.append(a)
+        while b - a > MAX_LINEAS_BLOQUE * 2:
+            a += MAX_LINEAS_BLOQUE
+            expandidos.append(a)
+    expandidos = sorted(set(expandidos + [len(lineas)]))
+
+    bloques: list[Bloque] = []
+    total_chars = 0
+    for a, b in zip(expandidos, expandidos[1:]):
+        trozo = "\n".join(lineas[a:b]).rstrip()
+        if len(trozo.strip()) < 15:
+            continue
+        cabecera = f"# {ruta.name} · {lang} · líneas {a + 1}-{b}"
+        bloque = cabecera + "\n" + trozo
+        total_chars += len(bloque)
+        if total_chars > MAX_TEXTO_ARCHIVO:
+            bloques.append(Bloque("[Archivo truncado por tamaño]", f"líneas {a + 1}+"))
+            break
+        bloques.append(Bloque(bloque, f"líneas {a + 1}-{b}"))
+    if not bloques:
+        raise IngestaError("Archivo de código vacío o ilegible")
+    return bloques
+
+
 _EXTRACTORES = {
     "pdf": extraer_pdf,
     "latex": extraer_latex,
@@ -279,6 +355,7 @@ _EXTRACTORES = {
     "xlsx": extraer_xlsx,
     "imagen": extraer_imagen,
     "notebook": extraer_notebook,
+    "codigo": extraer_codigo,
 }
 
 

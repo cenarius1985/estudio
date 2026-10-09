@@ -92,7 +92,7 @@ export default function Documentos() {
           🔍 Escanear fuentes
         </button>
         <input ref={inputArchivo} type="file" multiple className="hidden"
-          accept=".pdf,.tex,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.tif,.tiff,.ipynb" onChange={subir} />
+          accept=".pdf,.tex,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.tif,.tiff,.ipynb,.py,.jl,.sh,.sql,.r,.m,.yaml,.yml,Dockerfile" onChange={subir} />
         <button className="boton-neutro" onClick={() => inputArchivo.current?.click()}>⬆️ Subir archivos</button>
         <form onSubmit={agregarUrl} className="flex gap-2 flex-1 min-w-[280px]">
           <input className="entrada" value={url} placeholder="🔗 https://pagina.a.estudiar.com"

@@ -1,11 +1,12 @@
 # 📚 Estudio — tu plataforma de estudio con IA local
 
 **Estudio** indexa TODO tu material de estudio (PDF, LaTeX, Word, Excel, TXT,
-CSV, Markdown, imágenes con OCR, notebooks Jupyter y páginas web), te envía un
-**tip diario por correo**, responde tus **preguntas con respuestas 100%
-respaldadas por tus documentos** (con citas — si no está en tu material, lo
-dice, no inventa) y te deja estudiar con **flashcards con repetición espaciada,
-cuestionarios y simulacros de examen**.
+CSV, Markdown, imágenes con OCR, notebooks Jupyter, páginas web y **código:
+Python, Julia, Dockerfile, YAML, shell, SQL** — con citas por líneas exactas),
+te envía **tips diarios por correo**, responde tus **preguntas con respuestas
+100% respaldadas por tus documentos** (con citas — si no está en tu material,
+lo dice, no inventa) y te deja estudiar con **flashcards con repetición
+espaciada, cuestionarios y simulacros de examen**.
 
 Todo corre **local** con Docker: tus documentos no salen de tu máquina y el LLM
 puede ser 100% propio (Bonsai, Ollama, LM Studio o cualquier API compatible

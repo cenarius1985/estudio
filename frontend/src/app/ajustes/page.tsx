@@ -195,7 +195,8 @@ export default function Ajustes() {
         <div className="tarjeta">
           <h2 className="font-semibold mb-1">📁 Fuentes de documentos</h2>
           <p className="text-xs text-slate-500 mb-3">
-            Carpeta con tu material (pdf, tex, txt, md, csv, docx, xlsx, png/jpg/tif con OCR, ipynb).
+            Carpeta con tu material: pdf, tex, txt, md, csv, docx, xlsx, imágenes con OCR, ipynb y
+            <b> código (.py, .jl, Dockerfile, yaml, sh, sql)</b> — las citas de código indican líneas exactas.
             En Docker debe estar montada: ajusta <code>RUTA_TESIS</code> en el <code>.env</code> y ejecuta <code>docker compose up -d</code>.
           </p>
           <label className="block text-sm">
