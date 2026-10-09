@@ -21,6 +21,8 @@ from PIL import Image
 
 OCR_LANGS = "spa+eng"
 FILAS_POR_BLOQUE = 60
+MAX_PAGINAS_PDF = 400          # PDFs gigantes: se indexan las primeras páginas
+MAX_TEXTO_ARCHIVO = 400_000    # ~100 chunks; archivos-monstruo (logs) se truncan
 
 
 class IngestaError(Exception):
@@ -69,7 +71,12 @@ def _leer_texto(ruta: Path) -> str:
 def extraer_pdf(ruta: Path) -> list[Bloque]:
     bloques: list[Bloque] = []
     with fitz.open(ruta) as doc:
+        total = doc.page_count
         for i, page in enumerate(doc, start=1):
+            if i > MAX_PAGINAS_PDF:
+                bloques.append(Bloque(f"[Documento truncado: se indexaron las primeras "
+                                      f"{MAX_PAGINAS_PDF} de {total} páginas]", f"{i}"))
+                break
             texto = page.get_text("text").strip()
             if len(texto) < 20:  # página escaneada → OCR
                 pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
@@ -124,6 +131,9 @@ def extraer_latex(ruta: Path) -> list[Bloque]:
     bloques = [Bloque(p.strip(), "tex") for p in src.split("\n\n") if len(p.strip()) > 15]
     if not bloques:
         raise IngestaError("LaTeX sin contenido extraíble")
+    if sum(len(b.texto) for b in bloques) > MAX_TEXTO_ARCHIVO:
+        bloques = bloques[: MAX_TEXTO_ARCHIVO // 2000]
+        bloques.append(Bloque("[Archivo truncado por tamaño]", "tex"))
     return bloques
 
 
@@ -142,6 +152,8 @@ def _tabla_markdown(filas: list[list[str]]) -> str:
 
 def extraer_txt(ruta: Path) -> list[Bloque]:
     texto = _leer_texto(ruta)
+    if len(texto) > MAX_TEXTO_ARCHIVO:  # logs/monstruos: solo el inicio aporta
+        texto = texto[:MAX_TEXTO_ARCHIVO] + "\n\n[Archivo truncado por tamaño]"
     partes = [p.strip() for p in re.split(r"\n\s*\n", texto) if len(p.strip()) > 5]
     return [Bloque(p, "") for p in partes] or [Bloque(texto)]
 
