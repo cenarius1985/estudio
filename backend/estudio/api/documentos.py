@@ -26,22 +26,41 @@ UPLOAD_DIR = Path("/data/cargas")
 
 
 @router.get("")
-async def listar(estado: str | None = None, tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
-    q = select(Documento).order_by(desc(Documento.creado_en)).limit(1000)
+async def listar(
+    pagina: int = 1,
+    por_pagina: int = 50,
+    estado: str | None = None,
+    tema_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Paginado: total + página actual + documentos."""
+    por_pagina = max(1, min(200, por_pagina))
+    pagina = max(1, pagina)
+    q = select(Documento).order_by(desc(Documento.creado_en))
+    qc = select(func.count()).select_from(Documento)
     if estado:
         q = q.where(Documento.estado == estado)
+        qc = qc.where(Documento.estado == estado)
     if tema_id:
         q = q.where(Documento.tema_id == tema_id)
-    docs = (await db.execute(q)).scalars().all()
-    return [
-        {
-            "id": d.id, "ruta": d.ruta, "fuente": d.fuente, "tipo": d.tipo, "titulo": d.titulo,
-            "estado": d.estado, "error": d.error, "bytes": d.bytes_n, "chunks": d.chunks_n,
-            "tema_id": d.tema_id,
-            "indexado_en": d.indexado_en.isoformat() if d.indexado_en else None,
-        }
-        for d in docs
-    ]
+        qc = qc.where(Documento.tema_id == tema_id)
+    total = (await db.execute(qc)).scalar() or 0
+    docs = (await db.execute(q.offset((pagina - 1) * por_pagina).limit(por_pagina))).scalars().all()
+    return {
+        "total": total,
+        "pagina": pagina,
+        "por_pagina": por_pagina,
+        "paginas": (total + por_pagina - 1) // por_pagina,
+        "documentos": [
+            {
+                "id": d.id, "ruta": d.ruta, "fuente": d.fuente, "tipo": d.tipo, "titulo": d.titulo,
+                "estado": d.estado, "error": d.error, "bytes": d.bytes_n, "chunks": d.chunks_n,
+                "tema_id": d.tema_id,
+                "indexado_en": d.indexado_en.isoformat() if d.indexado_en else None,
+            }
+            for d in docs
+        ],
+    }
 
 
 @router.post("/escanear")

@@ -2,10 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import ConNav from "@/components/ConNav";
-import { API_URL, api, filtroTema, getTema, getToken } from "@/lib/api";
+import { API_URL, api, getTema, getToken } from "@/lib/api";
 
 export default function Documentos() {
   const [docs, setDocs] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [paginas, setPaginas] = useState(1);
+  const [pagina, setPagina] = useState(1);
+  const porPagina = 50;
   const [temas, setTemas] = useState<any[]>([]);
   const [grafo, setGrafo] = useState<any>(null);
   const [mensaje, setMensaje] = useState("");
@@ -13,9 +17,16 @@ export default function Documentos() {
   const [url, setUrl] = useState("");
   const inputArchivo = useRef<HTMLInputElement>(null);
 
-  async function cargar() {
+  async function cargar(pag: number = pagina) {
     try {
-      setDocs(await api(`/documentos${filtroTema()}`));
+      const sp = new URLSearchParams({ pagina: String(pag), por_pagina: String(porPagina) });
+      const t = getTema();
+      if (t) sp.set("tema_id", t);
+      const r = await api(`/documentos?${sp.toString()}`);
+      setDocs(r.documentos);
+      setTotal(r.total);
+      setPaginas(r.paginas);
+      setPagina(r.pagina);
       setTemas(await api("/temas"));
       setGrafo(await api("/documentos/grafo/resumen"));
     } catch (exc: any) {
@@ -99,9 +110,18 @@ export default function Documentos() {
             onChange={(e) => setUrl(e.target.value)} />
           <button className="boton-neutro" disabled={!url.trim()}>Agregar URL</button>
         </form>
-        <button className="boton-neutro" onClick={cargar}>♻️</button>
+        <button className="boton-neutro" onClick={() => cargar()}>♻️</button>
       </div>
       {mensaje && <div className="tarjeta mb-4 text-sm">{mensaje}</div>}
+
+      <div className="flex items-center gap-2 mb-3 text-sm text-slate-600">
+        <span className="mr-auto">{total} documento(s){getTema() ? " en el tema activo" : ""}</span>
+        <button className="boton-neutro !px-2 !py-1" disabled={pagina <= 1}
+                onClick={() => cargar(pagina - 1)}>◀</button>
+        <span>página {pagina} de {paginas || 1}</span>
+        <button className="boton-neutro !px-2 !py-1" disabled={pagina >= paginas}
+                onClick={() => cargar(pagina + 1)}>▶</button>
+      </div>
 
       <div className="tarjeta overflow-x-auto">
         <table className="w-full text-sm">

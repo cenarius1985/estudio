@@ -8,10 +8,42 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from estudio.api.cola import encolar
+from estudio.config import get_settings
+from estudio.credenciales import ruta_fuentes_efectiva
 from estudio.db import get_db
 from estudio.models import Chunk, Conversacion, Deck, Documento, Quiz, Tema, Tip
 
 router = APIRouter(prefix="/temas", tags=["temas"])
+
+
+@router.get("/carpetas")
+async def listar_carpetas(ruta: str = "", db: AsyncSession = Depends(get_db)):
+    """Explorador de carpetas dentro del montaje de fuentes (para el selector
+    visual del campo «carpetas» de un tema). Solo subcarpetas, sin salirse
+    de la raíz montada ni entrar en directorios excluidos."""
+    from pathlib import Path
+
+    base = Path(await ruta_fuentes_efectiva(db)).resolve()
+    objetivo = base if not ruta.strip() else (base / ruta.strip()).resolve()
+    if not str(objetivo).startswith(str(base)) or not objetivo.is_dir():
+        raise HTTPException(400, "Ruta fuera de la carpeta de fuentes o inexistente")
+
+    excluidos = set(get_settings().exclude_dirs_list)
+    hijos = []
+    for d in sorted(objetivo.iterdir(), key=lambda x: x.name.lower()):
+        if not d.is_dir() or d.name.startswith(".") or d.name in excluidos:
+            continue
+        hijos.append({
+            "nombre": d.name,
+            "ruta": d.relative_to(base).as_posix(),
+            "documentos": (await db.execute(
+                select(func.count()).select_from(Documento).where(
+                    Documento.fuente == "montada",
+                    Documento.ruta.like(d.relative_to(base).as_posix() + "/%"),
+                )
+            )).scalar() or 0,
+        })
+    return {"raiz": str(base), "ruta": ruta.strip(), "carpetas": hijos}
 
 
 @router.get("")

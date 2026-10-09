@@ -4,6 +4,99 @@ import { useEffect, useState } from "react";
 import ConNav from "@/components/ConNav";
 import { api } from "@/lib/api";
 
+/** Selector de carpetas: chips + explorador visual del montaje de fuentes. */
+function SelectorCarpetas({ valor, onChange }: { valor: string; onChange: (v: string) => void }) {
+  const [explorando, setExplorando] = useState(false);
+  const [rutaActual, setRutaActual] = useState("");
+  const [hijos, setHijos] = useState<any[]>([]);
+  const [manual, setManual] = useState("");
+  const chips = valor.split(",").map((c) => c.trim()).filter(Boolean);
+
+  async function abrir(ruta: string) {
+    setRutaActual(ruta);
+    const r = await api(`/temas/carpetas?ruta=${encodeURIComponent(ruta)}`);
+    setHijos(r.carpetas);
+    setExplorando(true);
+  }
+
+  function agregar(carpeta: string) {
+    if (!chips.includes(carpeta)) onChange([...chips, carpeta].join(","));
+  }
+
+  function quitar(carpeta: string) {
+    onChange(chips.filter((c) => c !== carpeta).join(","));
+  }
+
+  return (
+    <div>
+      <div className="flex flex-wrap gap-1.5 mb-2 min-h-8">
+        {chips.map((c) => (
+          <span key={c} className="chip bg-marca-50 text-marca-700 flex items-center gap-1">
+            📁 {c}
+            <button type="button" className="text-marca-600 hover:text-red-600 font-bold"
+                    onClick={() => quitar(c)}>✕</button>
+          </span>
+        ))}
+        {!chips.length && <span className="text-xs text-slate-400">Sin carpetas — todo irá a «General»</span>}
+      </div>
+      <div className="flex gap-2">
+        <button type="button" className="boton-neutro !py-1 text-xs" onClick={() => abrir("")}>
+          📁 Explorar y añadir carpetas
+        </button>
+        <input className="entrada flex-1 !py-1 text-xs" value={manual}
+               placeholder="…o escribe un prefijo y Enter (si está fuera del montaje)"
+               onChange={(e) => setManual(e.target.value)}
+               onKeyDown={(e) => {
+                 if (e.key === "Enter" && manual.trim()) { agregar(manual.trim()); setManual(""); }
+               }} />
+      </div>
+      <p className="text-[11px] text-slate-400 mt-1">
+        El explorador muestra lo montado en <code>RUTA_TESIS</code>; para carpetas de otro punto del disco,
+        amplía esa variable en el <code>.env</code> y haz <code>docker compose up -d</code>.
+      </p>
+
+      {explorando && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6 z-50"
+             onClick={() => setExplorando(false)}>
+          <div className="tarjeta max-w-lg w-full max-h-[75vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="font-semibold text-sm">Explorador de carpetas</h3>
+              <div className="flex gap-2">
+                {rutaActual && (
+                  <button className="boton-primario !px-2 !py-1 text-xs"
+                          onClick={() => agregar(rutaActual)}>✚ Añadir «{rutaActual.split("/").pop()}»</button>
+                )}
+                <button className="boton-neutro !px-2 !py-1 text-xs" onClick={() => setExplorando(false)}>✕</button>
+              </div>
+            </div>
+            <div className="text-xs text-slate-500 mb-2 flex flex-wrap gap-1 items-center">
+              <button className="hover:underline" onClick={() => abrir("")}>fuentes/</button>
+              {rutaActual.split("/").filter(Boolean).map((seg, i, arr) => (
+                <span key={i}>
+                  <button className="hover:underline"
+                          onClick={() => abrir(arr.slice(0, i + 1).join("/"))}>{seg}/</button>
+                </span>
+              ))}
+            </div>
+            {hijos.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">Sin subcarpetas aquí</p>}
+            {hijos.map((h) => (
+              <div key={h.ruta} className="flex items-center gap-2 border-b last:border-0 py-1.5 text-sm">
+                <button className="flex-1 text-left hover:text-marca-600 truncate"
+                        onClick={() => abrir(h.ruta)} title={`Entrar en ${h.ruta}`}>
+                  📂 {h.nombre}
+                  <span className="text-xs text-slate-400 ml-2">{h.documentos} docs</span>
+                </button>
+                <button className="boton-neutro !px-2 !py-0.5 text-xs"
+                        onClick={() => agregar(h.ruta)} title="Añadir como carpeta del tema">✚</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Temas() {
   const [temas, setTemas] = useState<any[]>([]);
   const [mensaje, setMensaje] = useState("");
@@ -109,12 +202,13 @@ export default function Temas() {
               onChange={(e) => setNuevo({ ...nuevo, tips_activo: e.target.checked })} />
             Tips diarios
           </label>
-          <label className="block md:col-span-4">
-            Carpetas para auto-clasificar (prefijos de ruta separados por coma)
-            <input className="entrada mt-1" value={nuevo.carpetas}
-              placeholder="MRI-UTE PROYECTO DE TESIS, RESULTADOS-MRI, paper-mri-us"
-              onChange={(e) => setNuevo({ ...nuevo, carpetas: e.target.value })} />
-          </label>
+          <div className="md:col-span-4">
+            <label className="block text-sm">Carpetas para auto-clasificar (elige del explorador)</label>
+            <div className="mt-1">
+              <SelectorCarpetas valor={nuevo.carpetas}
+                                onChange={(v) => setNuevo({ ...nuevo, carpetas: v })} />
+            </div>
+          </div>
           <label className="block md:col-span-4">
             Enfoque / nivel (se inyecta en tips, preguntas, flashcards y chat)
             <textarea className="entrada mt-1" rows={2} value={nuevo.enfoque}
@@ -136,8 +230,10 @@ export default function Temas() {
                   onChange={(e) => setEditando({ ...editando, descripcion: e.target.value })} />
                 <input type="color" className="entrada h-9" value={editando.color}
                   onChange={(e) => setEditando({ ...editando, color: e.target.value })} />
-                <input className="entrada md:col-span-3" value={editando.carpetas} placeholder="carpetas"
-                  onChange={(e) => setEditando({ ...editando, carpetas: e.target.value })} />
+                <div className="md:col-span-4">
+                  <SelectorCarpetas valor={editando.carpetas || ""}
+                                    onChange={(v) => setEditando({ ...editando, carpetas: v })} />
+                </div>
                 <textarea className="entrada md:col-span-4" rows={2} value={editando.enfoque || ""}
                   placeholder="Enfoque / nivel (tips, preguntas, flashcards y chat)"
                   onChange={(e) => setEditando({ ...editando, enfoque: e.target.value })} />
