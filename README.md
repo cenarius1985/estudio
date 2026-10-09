@@ -76,12 +76,23 @@ git clone <este-repo> && cd estudio
 python coordinador.py
 ```
 
-El coordinador:
-1. Detecta tu GPU NVIDIA (si hay, activa el LLM local con perfil `gpu`).
-2. Crea el `.env` con **credenciales aleatorias** (BD y contraseña del panel).
-3. Construye y levanta todos los contenedores.
-4. Abre el panel en el navegador (la contraseña está en `ADMIN_PASSWORD`
+El coordinador decide la instalación según tu arquitectura:
+
+| Detecta | Instala |
+|---|---|
+| GPU NVIDIA + Docker con runtime NVIDIA + ≥7 GB VRAM | Perfil `gpu`: LLM Bonsai 27B local en tu GPU (si la VRAM está ocupada, avisa y reintenta) |
+| GPU con <7 GB VRAM, o Docker sin runtime NVIDIA | Sin LLM local + guía para habilitarlo (WSL2 / nvidia-container-toolkit) |
+| Sin GPU, con Ollama / LM Studio / llama.cpp corriendo | Los detecta y conecta automáticamente (`LLM_BASE_URL`) |
+| Sin GPU y sin LLM local | Sin LLM: se configura después en el panel (Ajustes → LLM) |
+
+Además:
+1. Crea el `.env` con **credenciales aleatorias** (BD y contraseña del panel).
+2. Construye y levanta todos los contenedores.
+3. Abre el panel en el navegador (la contraseña está en `ADMIN_PASSWORD`
    dentro del `.env`).
+
+Flags: `--sin-gpu` (forzar sin LLM local) · `--gpu-forzado` (usarlo aunque la
+VRAM parezca insuficiente) · `--solo-env` (solo generar el .env) · `--no-abrir`.
 
 ### Instalación manual
 

@@ -1,18 +1,21 @@
 #!/usr/bin/env python3
 """Coordinador de Estudio — instalador todo-en-uno (open source).
 
-1. Verifica Docker.
-2. Detecta GPU NVIDIA → decide el perfil `gpu` (LLM Bonsai local).
-3. Genera el .env con credenciales ALEATORIAS (BD, panel).
-   - El correo Brevo y demás se configuran después desde el panel
-     (Ajustes → Configuración, con tutorial); o copiándolos al .env.
-   - Si existe el .env de reportesDiariosGes (MINSAL) en el PC, ofrece
-     copiar el SMTP silenciosamente (solo en esa máquina).
-4. Verifica el GGUF de Bonsai (si está truncado lo borra → re-descarga).
-5. docker compose up -d --build.
-6. Espera la API y abre el panel en el navegador.
+Decide la instalación según la ARQUITECTURA detectada:
 
-Uso:  python coordinador.py [--sin-gpu] [--solo-env] [--no-abrir]
+  GPU NVIDIA + Docker con runtime nvidia + VRAM ≥ 7 GB
+      → perfil `gpu`: LLM Bonsai 27B local en tu GPU.
+  GPU con VRAM insuficiente, o Docker sin runtime NVIDIA
+      → sin perfil gpu + guía para arreglarlo; usa un LLM externo.
+  Sin GPU
+      → detecta Ollama / LM Studio / llama.cpp local y lo conecta
+        (LLM_BASE_URL=host.docker.internal); si no hay nada, se
+        configura después desde el panel (Ajustes → LLM).
+
+Además: genera el .env con credenciales ALEATORIAS, verifica el GGUF,
+construye y levanta los contenedores y abre el panel.
+
+Uso:  python coordinador.py [--sin-gpu] [--gpu-forzado] [--solo-env] [--no-abrir]
 """
 
 from __future__ import annotations
@@ -33,16 +36,86 @@ ENV_EJEMPLO = RAIZ / ".env.example"
 FUENTES = RAIZ / "fuentes"
 SMTP_ORIGEN = Path("E:/GitHub/Ministerio/reportesDiariosGes/.env")
 
-# El 27B PTQ1_0 completo pesa ~5.7 GB; menos de 3 GB = truncado.
+# El 27B PTQ1_0 completo pesa ~5.7 GB (modelo + contexto ≈ 6.5-7 GB de VRAM).
 GGUF_MIN_BYTES = 3_000_000_000
+VRAM_MIN_MB = 7000        # mínimo para Bonsai 27B completo (-ngl 99)
+VRAM_AVISO_MB = 5500      # por debajo de esto: la GPU está ocupada → aviso
 
 
 def correr(cmd: list[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
-def hay_gpu() -> bool:
-    return shutil.which("nvidia-smi") is not None and correr(["nvidia-smi"]).returncode == 0
+def info_gpu() -> dict | None:
+    """GPU NVIDIA del host: nombre, VRAM total y libre (MiB), o None."""
+    if not shutil.which("nvidia-smi"):
+        return None
+    r = correr(["nvidia-smi", "--query-gpu=name,memory.total,memory.free",
+                "--format=csv,noheader,nounits"])
+    if r.returncode != 0:
+        return None
+    try:
+        nombre, total, libre = [x.strip() for x in r.stdout.splitlines()[0].split(",")]
+        return {"nombre": nombre, "total_mb": int(total), "libre_mb": int(libre)}
+    except (ValueError, IndexError):
+        return None
+
+
+def docker_con_gpu() -> bool:
+    """¿Docker puede usar la GPU? (runtime nvidia; en Windows: backend WSL2)."""
+    r = correr(["docker", "info", "--format", "{{json .Runtimes}}"])
+    if r.returncode == 0 and "nvidia" in r.stdout.lower():
+        return True
+    r2 = correr(["docker", "info"])
+    return r2.returncode == 0 and "nvidia" in (r2.stdout + r2.stderr).lower()
+
+
+LLMS_LOCALES = ((11434, "Ollama"), (1234, "LM Studio"), (8080, "llama.cpp"))
+
+
+def detectar_llm_local() -> tuple[str, int] | None:
+    """Endpoint OpenAI-compatible ya corriendo en el host (para instalar sin GPU)."""
+    for puerto, nombre in LLMS_LOCALES:
+        try:
+            with urllib.request.urlopen(f"http://localhost:{puerto}/v1/models", timeout=2) as resp:
+                if resp.status == 200:
+                    return nombre, puerto
+        except Exception:  # noqa: BLE001
+            continue
+    return None
+
+
+def decidir_arquitectura(sin_gpu: bool, gpu_forzado: bool) -> dict:
+    """Matriz de decisión: {usar_gpu, motivo, gpu, llm_local}."""
+    gpu = info_gpu()
+    resultado = {"usar_gpu": False, "motivo": "", "gpu": gpu, "llm_local": detectar_llm_local()}
+
+    if sin_gpu:
+        resultado["motivo"] = "--sin-gpu"
+        return resultado
+    if gpu is None:
+        resultado["motivo"] = "sin GPU NVIDIA detectada"
+        return resultado
+    if not docker_con_gpu():
+        resultado["motivo"] = (
+            f"GPU {gpu['nombre']} presente pero Docker NO tiene runtime NVIDIA "
+            "(en Windows: Docker Desktop → Settings → General → «Use the WSL 2 based engine», "
+            "actualiza el driver NVIDIA; en Linux: nvidia-container-toolkit)"
+        )
+        return resultado
+    if gpu["total_mb"] < VRAM_MIN_MB and not gpu_forzado:
+        resultado["motivo"] = (
+            f"GPU {gpu['nombre']} con {gpu['total_mb']} MiB de VRAM: insuficiente para el "
+            f"LLM local de 27B (se recomienda ≥ {VRAM_MIN_MB} MiB). Se instalará sin él"
+        )
+        return resultado
+    resultado["usar_gpu"] = True
+    if gpu["libre_mb"] < VRAM_AVISO_MB:
+        resultado["motivo"] = (
+            f"AVISO: la GPU está ocupada ahora ({gpu['libre_mb']} MiB libres de "
+            f"{gpu['total_mb']}). El LLM local reintentará arrancar hasta que se libere"
+        )
+    return resultado
 
 
 def leer_env(ruta: Path) -> dict[str, str]:
@@ -56,7 +129,7 @@ def leer_env(ruta: Path) -> dict[str, str]:
     return vals
 
 
-def generar_env() -> None:
+def generar_env(decision: dict) -> None:
     if ENV.exists():
         print("✓ .env ya existe (no se toca)")
         return
@@ -68,6 +141,16 @@ def generar_env() -> None:
         "POSTGRES_PASSWORD": secrets.token_urlsafe(18),
         "ADMIN_PASSWORD": secrets.token_urlsafe(9),
     }
+
+    # LLM según arquitectura detectada
+    if decision["usar_gpu"]:
+        pass  # default del ejemplo: http://bonsai:8080/v1
+    elif decision["llm_local"]:
+        nombre, puerto = decision["llm_local"]
+        reemplazos["LLM_BASE_URL"] = f"http://host.docker.internal:{puerto}/v1"
+        print(f"✓ LLM local detectado: {nombre} (puerto {puerto}) → LLM_BASE_URL")
+    else:
+        reemplazos["LLM_BASE_URL"] = ""
 
     # Conveniencia en el PC del autor: SMTP Brevo ya verificado de MINSAL.
     origen = leer_env(SMTP_ORIGEN) if SMTP_ORIGEN.exists() else {}
@@ -124,7 +207,10 @@ def verificar_gguf(env: dict[str, str], gpu: bool) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Instalador de Estudio")
-    parser.add_argument("--sin-gpu", action="store_true", help="sin perfil gpu (usa LLM_FALLBACK_URL, p. ej. Ollama)")
+    parser.add_argument("--sin-gpu", action="store_true",
+                        help="forzar instalación sin perfil gpu (LLM externo/detectado)")
+    parser.add_argument("--gpu-forzado", action="store_true",
+                        help="usar perfil gpu aunque la VRAM parezca insuficiente")
     parser.add_argument("--solo-env", action="store_true", help="solo generar el .env y salir")
     parser.add_argument("--no-abrir", action="store_true", help="no abrir el navegador")
     args = parser.parse_args()
@@ -137,19 +223,28 @@ def main() -> int:
             return 1
         print("✓ Docker activo")
 
-    gpu = (not args.sin_gpu) and hay_gpu()
-    if gpu:
-        print("✓ GPU NVIDIA detectada → perfil gpu (LLM Bonsai 27B local en VRAM)")
+    decision = decidir_arquitectura(args.sin_gpu, args.gpu_forzado)
+    gpu = decision["gpu"]
+    if decision["usar_gpu"]:
+        print(f"✓ GPU: {gpu['nombre']} ({gpu['total_mb']} MiB VRAM) + runtime NVIDIA en Docker"
+              f" → perfil gpu (LLM Bonsai 27B local)")
     else:
-        print("· Sin GPU → sin perfil gpu. Configura un LLM en el panel (Ajustes → LLM), "
-              "p. ej. Ollama: http://host.docker.internal:11434/v1")
+        print(f"· Sin perfil gpu — {decision['motivo'] or 'según flags'}")
+        if decision["llm_local"]:
+            nombre, puerto = decision["llm_local"]
+            print(f"  ↳ Se conectará a tu {nombre} local (puerto {puerto})")
+        else:
+            print("  ↳ Configura un LLM en el panel (Ajustes → LLM): Ollama, LM Studio… "
+                  "p. ej. http://host.docker.internal:11434/v1")
+    if decision["usar_gpu"] and decision["motivo"].startswith("AVISO"):
+        print(f"  ⚠ {decision['motivo']}")
 
-    generar_env()
+    generar_env(decision)
     if args.solo_env:
         return 0
 
     preparar_fuentes()
-    verificar_gguf(leer_env(ENV), gpu)
+    verificar_gguf(leer_env(ENV), decision["usar_gpu"])
 
     print("\n→ Construyendo y levantando (la primera vez tarda varios minutos)…")
     perfil = ["--profile", "gpu"] if gpu else []
