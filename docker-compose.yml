@@ -1,0 +1,139 @@
+name: estudio-doctorado
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-estudio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-cambia-me-dev}
+      POSTGRES_DB: ${POSTGRES_DB:-estudio}
+      TZ: America/Santiago
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/10-vector.sql:ro
+    ports:
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-estudio} -d ${POSTGRES_DB:-estudio}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:${REDIS_PORT:-6380}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  api:
+    build: ./backend
+    command: uvicorn estudio.api.main:app --host 0.0.0.0 --port 8000
+    environment: &backend_env
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-estudio}:${POSTGRES_PASSWORD:-cambia-me-dev}@db:5432/${POSTGRES_DB:-estudio}
+      REDIS_URL: redis://redis:6379/0
+      RUTA_FUENTES: ${RUTA_FUENTES:-/fuentes}
+      MODELOS_DIR: /data/modelos
+      EXCLUDE_DIRS: ${EXCLUDE_DIRS:-.git,node_modules,__pycache__,.venv,Tensorflowmri,build}
+      MAX_ARCHIVO_BYTES: ${MAX_ARCHIVO_BYTES:-209715200}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      TIPS_TO: ${TIPS_TO:-}
+      TIPS_HORA: ${TIPS_HORA:-07:30}
+      TIPS_UMBRAL_DEDUPE: ${TIPS_UMBRAL_DEDUPE:-0.90}
+      TIPS_REINTENTOS: ${TIPS_REINTENTOS:-3}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-cambia-me-admin}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8601}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://bonsai:8080/v1}
+      LLM_FALLBACK_URL: ${LLM_FALLBACK_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-ternary-bonsai-2-27b}
+      EMBED_MODEL: ${EMBED_MODEL:-intfloat/multilingual-e5-large}
+      EMBED_DIM: ${EMBED_DIM:-1024}
+      TZ: America/Santiago
+    ports:
+      - "127.0.0.1:${API_PORT:-8600}:8000"
+    volumes:
+      - modelos:/data/modelos
+      - cargas:/data/cargas
+      - ${RUTA_TESIS:-E:/GitHub/MRI/Proyecto-Tesis}:/fuentes:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  worker:
+    build: ./backend
+    command: arq estudio.worker.main.WorkerSettings
+    environment: *backend_env
+    volumes:
+      - modelos:/data/modelos
+      - cargas:/data/cargas
+      - ${RUTA_TESIS:-E:/GitHub/MRI/Proyecto-Tesis}:/fuentes:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 6g
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8600}
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8601}:3000"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+  # LLM local Bonsai (Ternary-Bonsai-2-27B PTQ1_0) con GPU — patrón whispertext rama gpu.
+  # El GGUF (~5.7 GB) se descarga una sola vez al volumen BONSAI_MODELS_DIR
+  # (compartido con whispertext para no duplicar la descarga).
+  # Sin GPU: no activar el perfil y usar LLM_FALLBACK_URL en el .env.
+  bonsai:
+    build: ./bonsai
+    profiles: ["gpu"]
+    environment:
+      BONSAI_GGUF: ${BONSAI_GGUF:-Ternary-Bonsai-2-27B-PTQ1_0.gguf}
+      BONSAI_HF_REPO: ${BONSAI_HF_REPO:-prism-ml/Ternary-Bonsai-2-27B-gguf}
+      BONSAI_ALIAS: ${LLM_MODEL:-ternary-bonsai-2-27b}
+      BONSAI_CTX: ${BONSAI_CTX:-8192}
+      BONSAI_NGL: ${BONSAI_NGL:-99}
+      BONSAI_THINKING: ${BONSAI_THINKING:-0}
+    volumes:
+      - ${BONSAI_MODELS_DIR:-./bonsai/models}:/models
+    ports:
+      - "127.0.0.1:${BONSAI_PORT:-8602}:8080"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  modelos:
+  cargas:

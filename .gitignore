@@ -1,0 +1,27 @@
+# Secretos y entorno
+.env
+*.env.local
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# Modelos pesados (se descargan, no se versionan)
+bonsai/models/
+modelos/
+
+# Datos locales
+data/
+
+# IDE / SO
+.idea/
+.vscode/
+Thumbs.db
+.DS_Store

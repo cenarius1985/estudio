@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-slate-100 text-slate-800;
+}
+
+.tarjeta {
+  @apply bg-white rounded-xl shadow-sm border border-slate-200 p-5;
+}
+
+.boton {
+  @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors;
+}
+
+.boton-primario {
+  @apply boton bg-marca-600 text-white hover:bg-marca-700;
+}
+
+.boton-neutro {
+  @apply boton bg-slate-200 text-slate-700 hover:bg-slate-300;
+}
+
+.boton-peligro {
+  @apply boton bg-red-600 text-white hover:bg-red-700;
+}
+
+.entrada {
+  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-marca-600 focus:outline-none;
+}
+
+.chip {
+  @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}

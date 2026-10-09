@@ -1,0 +1,210 @@
+"""Tips diarios: cron idempotente + generación RAG + dedupe por similitud +
+envío por Brevo con log. Reenvíos usan el contenido almacenado (0 reproceso).
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from datetime import datetime
+
+from sqlalchemy import delete, select
+
+from estudio.config import get_settings
+from estudio.db import SessionLocal
+from estudio.llm import chat, extraer_json
+from estudio.mail.brevo import enviar
+from estudio.mail.plantilla import cuerpo_html_de, cuerpo_texto_de, plantilla_tip
+from estudio.models import Chunk, Tip, TipChunk, TipEnvio
+from estudio.rag.embeddings import embedir_passages
+from estudio.rag.prompts import PROMPT_TIP, construir_contexto
+from estudio.rag.retrieval import Fragmento, chunk_menos_cubierto, recuperar, similitud_maxima
+from estudio.worker.comun import hoy_local, obtener_ajustes_tips
+
+log = logging.getLogger("estudio.tips")
+
+
+async def chequear_tip_diario(ctx: dict) -> dict:
+    """Cron cada 15 min: dispara la generación cuando toca y falta el envío."""
+    s = get_settings()
+    async with SessionLocal() as db:
+        ajustes = await obtener_ajustes_tips(db)
+    if not ajustes["habilitado"]:
+        return {"estado": "deshabilitado"}
+    try:
+        hh, mm = (int(x) for x in ajustes["hora"].split(":")[:2])
+    except ValueError:
+        hh, mm = 7, 30
+    ahora = datetime.now()
+    if (ahora.hour, ahora.minute) < (hh, mm):
+        return {"estado": "aun_no_hora"}
+
+    async with SessionLocal() as db:
+        ya = await db.execute(
+            select(Tip).where(Tip.fecha == hoy_local(), Tip.estado == "enviado")
+        )
+        if ya.scalar_one_or_none():
+            return {"estado": "ya_enviado_hoy"}
+
+    await ctx["redis"].enqueue_job("generar_tip_diario", {})
+    return {"estado": "encolado"}
+
+
+async def generar_tip_diario(ctx: dict, forzar: bool = False) -> dict:
+    """Genera y envía el tip de hoy. Idempotente salvo forzar=True."""
+    s = get_settings()
+    hoy = hoy_local()
+    async with SessionLocal() as db:
+        ajustes = await obtener_ajustes_tips(db)
+
+        existente = (
+            await db.execute(select(Tip).where(Tip.fecha == hoy, Tip.estado == "enviado"))
+        ).scalar_one_or_none()
+        if existente and not forzar:
+            return {"estado": "omitido", "motivo": "hoy ya se envió", "tip_id": existente.id}
+        if forzar:
+            await db.execute(
+                delete(Tip).where(Tip.fecha == hoy, Tip.estado.in_(["generado", "duplicado"]))
+            )
+            await db.commit()
+
+        umbral = ajustes["umbral"]
+        reintentos = max(1, ajustes["reintentos"])
+        tip: Tip | None = None
+        dup_id: str | None = None
+        dup_sim = 0.0
+
+        for _ in range(reintentos):
+            # tema menos cubierto por tips anteriores
+            semillas = await chunk_menos_cubierto(db, n=1)
+            if not semillas:
+                return {"estado": "error", "motivo": "no hay chunks indexados"}
+            seed_row = (
+                await db.execute(select(Chunk).where(Chunk.id == semillas[0]))
+            ).scalar_one()
+            fragmentos = await recuperar(db, seed_row.texto[:800], k=6)
+            if fragmentos:
+                semilla = next((f for f in fragmentos if f.id == seed_row.id), None)
+            else:
+                semilla = None
+
+            titulo, cuerpo, usados = await _generar_contenido(seed_row, fragmentos)
+            if semilla:
+                usados = usados or [semilla]
+            if not usados:
+                usados = [
+                    Fragmento(
+                        id=seed_row.id, texto=seed_row.texto, pagina=seed_row.pagina,
+                        archivo="", tipo="txt", titulo="",
+                    )
+                ]
+
+            emb = embedir_passages([f"{titulo}\n{cuerpo}"])[0]
+            sim, dup_id = await similitud_maxima(db, emb, "tips")
+            if sim >= umbral:
+                dup_sim = sim
+                log.info("Tip duplicado (sim=%.3f ≥ %.2f); reintento con otro tema", sim, umbral)
+                continue
+
+            parrafos = [p.strip() for p in re.split(r"\n+", cuerpo) if p.strip()]
+            citas = _citas_de(usados)
+            tip = Tip(
+                fecha=hoy, titulo=titulo, cuerpo_texto=cuerpo_texto_de(parrafos, citas),
+                cuerpo_html=cuerpo_html_de(parrafos, citas), embedding=emb, estado="generado",
+            )
+            db.add(tip)
+            await db.flush()
+            ids_usados = {f.id for f in usados}
+            for cid in ids_usados:
+                db.add(TipChunk(tip_id=tip.id, chunk_id=cid, es_semilla=(cid == seed_row.id)))
+            await db.commit()
+            break
+
+        if tip is None:
+            # Todos los intentos duplicaron un tip previo → reutilizar el
+            # almacenado SIN reprocesar (requisito: nada de re-generar).
+            original = await db.get(Tip, dup_id) if dup_id else None
+            if not original:
+                return {"estado": "error", "motivo": "duplicados sin original"}
+            log.info("Reutilizando tip del %s (sim=%.3f) sin reprocesar", original.fecha, dup_sim)
+            tip = Tip(
+                fecha=hoy, titulo=original.titulo, cuerpo_texto=original.cuerpo_texto,
+                cuerpo_html=original.cuerpo_html, embedding=original.embedding,
+                estado="duplicado", duplicado_de=original.id,
+            )
+            db.add(tip)
+            await db.flush()
+            vinculados = (
+                await db.execute(select(TipChunk).where(TipChunk.tip_id == original.id))
+            ).fetchall()
+            for v in vinculados:
+                db.add(TipChunk(tip_id=tip.id, chunk_id=v.chunk_id, es_semilla=v.es_semilla))
+            await db.commit()
+
+        resultado = await _enviar_tip(db, tip, ajustes["destinos"], s.frontend_url)
+    return {"estado": resultado.get("estado"), "tip_id": tip.id, **{k: v for k, v in resultado.items() if k != "estado"}}
+
+
+async def _generar_contenido(seed: Chunk, fragmentos: list[Fragmento]) -> tuple[str, str, list[Fragmento]]:
+    """LLM con citas; fallback extractivo determinista si no hay LLM."""
+    contexto = construir_contexto(fragmentos) if fragmentos else seed.texto[:1800]
+    raw = await chat(
+        [{"role": "user", "content": PROMPT_TIP.format(contexto=contexto)}],
+        temperature=0.6, max_tokens=500, json_mode=True,
+    )
+    datos = extraer_json(raw)
+    if datos and datos.get("titulo") and datos.get("cuerpo"):
+        return str(datos["titulo"]).strip(), str(datos["cuerpo"]).strip(), fragmentos
+
+    # Fallback: extractivo (garantiza tip aunque Bonsai esté apagado)
+    oraciones = [o for o in re.split(r"(?<=[.!?])\s+", seed.texto.strip()) if len(o) > 40]
+    cuerpo = " ".join(oraciones[:3]) + " [Fuente 1]"
+    titulo = " ".join(seed.texto.split()[:8]).strip(" ,.;:")
+    return titulo or "Repaso de tesis", cuerpo, []
+
+
+def _citas_de(fragmentos: list[Fragmento]) -> list[dict]:
+    vistos: set[tuple[str, str]] = set()
+    citas = []
+    for f in fragmentos:
+        clave = (f.archivo, f.pagina)
+        if clave in vistos:
+            continue
+        vistos.add(clave)
+        citas.append({"archivo": f.archivo, "pagina": f.pagina})
+    return citas[:5]
+
+
+async def _enviar_tip(db, tip: Tip, destinos: list[str], frontend_url: str) -> dict:
+    link = f"{frontend_url.rstrip('/')}/tips"
+    plant = plantilla_tip(tip.titulo, tip.cuerpo_html, tip.cuerpo_texto, link)
+
+    if not destinos:
+        return {"estado": "sin_destinatarios", "tip_id": tip.id}
+    if not get_settings().smtp_configurado:
+        return {"estado": "sin_smtp", "tip_id": tip.id}
+
+    fallos = 0
+    for email in destinos:
+        try:
+            await enviar(email, plant["asunto"], plant["html"], plant["texto"])
+            db.add(TipEnvio(tip_id=tip.id, email=email, estado="ok"))
+        except Exception as exc:  # noqa: BLE001 — log por destinatario, estilo EnvioLog
+            fallos += 1
+            db.add(TipEnvio(tip_id=tip.id, email=email, estado="error", error=str(exc)[:1000]))
+            log.error("Envío a %s falló: %s", email, exc)
+    tip.estado = "enviado" if fallos < len(destinos) else "error"
+    tip.enviado_en = datetime.utcnow()
+    await db.commit()
+    return {"estado": tip.estado, "enviados": len(destinos) - fallos, "fallos": fallos}
+
+
+async def reenviar_tip(ctx: dict, tip_id: str) -> dict:
+    """Reenvía un tip histórico usando EXACTAMENTE el contenido almacenado."""
+    s = get_settings()
+    async with SessionLocal() as db:
+        tip = await db.get(Tip, tip_id)
+        if not tip:
+            return {"estado": "error", "motivo": "tip no existe"}
+        ajustes = await obtener_ajustes_tips(db)
+        return await _enviar_tip(db, tip, ajustes["destinos"], s.frontend_url)
