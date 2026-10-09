@@ -21,7 +21,7 @@ from estudio.ingest.chunker import chunkear
 from estudio.ingest.escaner import escanear, sha256_archivo
 from estudio.ingest.extractores import Bloque, extraer
 from estudio.llm import chat, extraer_json
-from estudio.models import Arista, Chunk, Documento, Nodo
+from estudio.models import Arista, Chunk, Documento, Nodo, Tema
 from estudio.rag.embeddings import embedir_passages
 from estudio.rag.grafo import entidades_en_texto
 from estudio.rag.prompts import PROMPT_GRAFO
@@ -41,6 +41,24 @@ async def ruta_absoluta(db, doc: Documento) -> Path:
     raise ValueError(f"El documento {doc.fuente}:{doc.ruta} no es un archivo local")
 
 
+async def _temas_carpetas(db) -> list[tuple[str, list[str]]]:
+    """[(tema_id, [prefijos])] de los temas que declaran carpetas."""
+    filas = (await db.execute(select(Tema.id, Tema.carpetas).where(Tema.carpetas != ""))).fetchall()
+    return [
+        (tid, [c.strip().rstrip("/") for c in (carp or "").split(",") if c.strip()])
+        for tid, carp in filas
+    ]
+
+
+def _tema_de_ruta(ruta: str, temas_carpetas: list[tuple[str, list[str]]]) -> str:
+    """Auto-clasificación: primer prefijo que calza; si no, tema General."""
+    for tid, prefijos in temas_carpetas:
+        for pref in prefijos:
+            if ruta.startswith(pref):
+                return tid
+    return "general"
+
+
 async def escanear_fuentes(ctx: dict) -> dict:
     s = get_settings()
     async with SessionLocal() as db:
@@ -50,19 +68,24 @@ async def escanear_fuentes(ctx: dict) -> dict:
                 "(configúrala en Ajustes → Fuentes y móntala en Docker si aplica)"}
 
     archivos = escanear(raiz, s.exclude_dirs_list, s.max_archivo_bytes)
-    nuevos, actualizados, intactos, pendientes = 0, 0, 0, []
+    nuevos, actualizados, intactos, reclasificados, pendientes = 0, 0, 0, 0, []
 
     async with SessionLocal() as db:
+        temas_carpetas = await _temas_carpetas(db)
         for a in archivos:
+            tema_id = _tema_de_ruta(a["ruta"], temas_carpetas)
             res = await db.execute(
                 select(Documento).where(Documento.ruta == a["ruta"], Documento.fuente == "montada")
             )
             doc = res.scalar_one_or_none()
-            if doc and doc.bytes_n == a["bytes"] and doc.estado in ("listo", "procesando"):
-                intactos += 1
-                continue
-            h = sha256_archivo(Path(a["absoluta"]))
             if doc:
+                if doc.tema_id != tema_id:
+                    doc.tema_id = tema_id
+                    reclasificados += 1
+                if doc.bytes_n == a["bytes"] and doc.estado in ("listo", "procesando"):
+                    intactos += 1
+                    continue
+                h = sha256_archivo(Path(a["absoluta"]))
                 if doc.hash == h and doc.estado == "listo":
                     doc.bytes_n = a["bytes"]
                     intactos += 1
@@ -70,9 +93,11 @@ async def escanear_fuentes(ctx: dict) -> dict:
                 doc.hash, doc.bytes_n, doc.tipo, doc.estado = h, a["bytes"], a["tipo"], "pendiente"
                 actualizados += 1
             else:
+                h = sha256_archivo(Path(a["absoluta"]))
                 doc = Documento(
                     ruta=a["ruta"], fuente="montada", tipo=a["tipo"],
-                    titulo=Path(a["ruta"]).stem, hash=h, bytes_n=a["bytes"], estado="pendiente",
+                    titulo=Path(a["ruta"]).stem, hash=h, bytes_n=a["bytes"],
+                    estado="pendiente", tema_id=tema_id,
                 )
                 db.add(doc)
                 await db.flush()
@@ -84,7 +109,8 @@ async def escanear_fuentes(ctx: dict) -> dict:
         await ctx["redis"].enqueue_job("ingestar_archivo", did)
     resumen = {
         "encontrados": len(archivos), "nuevos": nuevos,
-        "actualizados": actualizados, "intactos": intactos, "encolados": len(pendientes),
+        "actualizados": actualizados, "intactos": intactos,
+        "reclasificados": reclasificados, "encolados": len(pendientes),
     }
     log.info("Escaneo %s: %s", raiz, resumen)
     return resumen

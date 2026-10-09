@@ -16,6 +16,24 @@ export function salir() {
   window.location.href = "/login";
 }
 
+// ---- Tema activo global ("" = Todos) ----
+export function getTema(): string {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem("tema") || "";
+}
+
+export function setTema(temaId: string) {
+  localStorage.setItem("tema", temaId);
+  window.location.reload(); // todas las páginas refrescan con el nuevo tema
+}
+
+export function filtroTema(params: Record<string, string> = {}): string {
+  const t = getTema();
+  if (!t) return "";
+  const sp = new URLSearchParams({ ...params, tema_id: t });
+  return `?${sp.toString()}`;
+}
+
 export async function api<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
   const token = getToken();
   const res = await fetch(`${API_URL}${path}`, {
@@ -39,7 +57,7 @@ export async function api<T = any>(path: string, opts: RequestInit = {}): Promis
 
 /** Lee el stream SSE de POST /chat y emite eventos parseados. */
 export async function chatSSE(
-  body: { conversacion_id?: string | null; pregunta: string },
+  body: { conversacion_id?: string | null; pregunta: string; tema_id?: string | null },
   onEvento: (nombre: string, dato: any) => void
 ) {
   const token = getToken();

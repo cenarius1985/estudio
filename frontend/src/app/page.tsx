@@ -108,6 +108,18 @@ export default function Dashboard() {
             Último enviado: {tipsStats?.ultimo_enviado ? `${tipsStats.ultimo_enviado.fecha} — ${tipsStats.ultimo_enviado.titulo}` : "ninguno aún"}
           </p>
         </div>
+        <div className="tarjeta md:col-span-2">
+          <h2 className="font-semibold mb-3">Temas de estudio</h2>
+          <div className="flex flex-wrap gap-2">
+            {(stats?.temas || []).map((t: any) => (
+              <span key={t.id} className="chip text-xs px-3 py-1"
+                    style={{ background: t.color + "22", color: t.color }}>
+                ● {t.nombre}: {t.documentos} docs
+              </span>
+            ))}
+            {!stats?.temas?.length && <span className="text-sm text-slate-400">Sin temas aún (crea uno en Temas)</span>}
+          </div>
+        </div>
         <div className="tarjeta">
           <h2 className="font-semibold mb-2">Grafo de conceptos</h2>
           <p className="text-sm">{stats?.grafo?.nodos ?? "—"} nodos · {stats?.grafo?.aristas ?? "—"} relaciones</p>

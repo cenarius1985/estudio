@@ -15,10 +15,11 @@ router = APIRouter(prefix="/tips", tags=["tips"])
 
 
 @router.get("")
-async def historial(limite: int = 100, db: AsyncSession = Depends(get_db)):
-    tips = (
-        await db.execute(select(Tip).order_by(desc(Tip.fecha), desc(Tip.creado_en)).limit(limite))
-    ).scalars().all()
+async def historial(limite: int = 100, tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
+    q = select(Tip).order_by(desc(Tip.fecha), desc(Tip.creado_en)).limit(limite)
+    if tema_id:
+        q = q.where(Tip.tema_id == tema_id)
+    tips = (await db.execute(q)).scalars().all()
     resultado = []
     for t in tips:
         envios = (
@@ -27,7 +28,7 @@ async def historial(limite: int = 100, db: AsyncSession = Depends(get_db)):
         resultado.append(
             {
                 "id": t.id, "fecha": t.fecha.isoformat(), "titulo": t.titulo,
-                "estado": t.estado, "duplicado_de": t.duplicado_de,
+                "estado": t.estado, "duplicado_de": t.duplicado_de, "tema_id": t.tema_id,
                 "creado_en": t.creado_en.isoformat(), "enviado_en": t.enviado_en.isoformat() if t.enviado_en else None,
                 "envios": [
                     {"email": e.email, "estado": e.estado, "error": e.error} for e in envios

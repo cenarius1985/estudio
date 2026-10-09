@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ConNav from "@/components/ConNav";
-import { api, chatSSE } from "@/lib/api";
+import { api, chatSSE, filtroTema, getTema } from "@/lib/api";
 
 interface Msg {
   rol: string;
@@ -20,7 +20,7 @@ export default function Chat() {
   const finRef = useRef<HTMLDivElement>(null);
 
   async function cargarConversaciones() {
-    setConversaciones(await api("/conversaciones"));
+    setConversaciones(await api(`/conversaciones${filtroTema()}`));
   }
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function Chat() {
 
     try {
       let convId = conversacionId;
-      await chatSSE({ conversacion_id: convId, pregunta: q }, (evento, dato) => {
+      await chatSSE({ conversacion_id: convId, pregunta: q, tema_id: getTema() || null }, (evento, dato) => {
         if (evento === "inicio") {
           convId = dato.conversacion_id;
           setConversacionId(dato.conversacion_id);

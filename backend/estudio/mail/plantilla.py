@@ -38,17 +38,19 @@ def cuerpo_texto_de(parrafos: list[str], citas: list[dict]) -> str:
     return out
 
 
-def plantilla_tip(titulo: str, cuerpo_html: str, cuerpo_texto: str, link: str) -> dict:
-    """→ {asunto, texto, html}."""
+def plantilla_tip(titulo: str, cuerpo_html: str, cuerpo_texto: str, link: str, tema: str | None = None) -> dict:
+    """→ {asunto, texto, html}. tema: nombre del tema de estudio (opcional)."""
+    sub = f"{tema} · tip diario" if tema else "tip diario"
+    asunto = f"{TITULO} · {tema} · {titulo}" if tema else f"{TITULO} · {titulo}"
     return {
-        "asunto": f"{TITULO} · {titulo}",
+        "asunto": asunto,
         "texto": f"{titulo}\n\n{cuerpo_texto}\n\nPlataforma de estudio: {link}\n",
         "html": f"""
 <div style="background:#f4f4f4;padding:24px 0;font-family:'Segoe UI',Tahoma,Arial,sans-serif">
   <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,.08)">
     <div style="background:linear-gradient(135deg,#1a365d,#2c5282);color:#fff;padding:22px 24px;text-align:center">
       <h1 style="margin:0;font-size:20px">Estudio</h1>
-      <div style="opacity:.85;font-size:13px;margin-top:4px">Tu plataforma de estudio · tip diario</div>
+      <div style="opacity:.85;font-size:13px;margin-top:4px">Tu plataforma de estudio · {sub}</div>
     </div>
     <div style="padding:26px 24px;color:#333;line-height:1.6">
       <div style="background:#f8f9fa;border-left:5px solid #2c5282;border-radius:6px;padding:16px 18px;margin:0 0 20px">

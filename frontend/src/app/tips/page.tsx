@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import ConNav from "@/components/ConNav";
-import { api } from "@/lib/api";
+import { api, filtroTema } from "@/lib/api";
 
 export default function Tips() {
   const [tips, setTips] = useState<any[]>([]);
+  const [temas, setTemas] = useState<any[]>([]);
   const [stats, setStats] = useState<any>(null);
   const [mensaje, setMensaje] = useState("");
   const [detalle, setDetalle] = useState<any>(null);
@@ -13,7 +14,8 @@ export default function Tips() {
 
   async function cargar() {
     try {
-      setTips(await api("/tips"));
+      setTips(await api(`/tips${filtroTema()}`));
+      setTemas(await api("/temas"));
       setStats(await api("/tips/stats"));
     } catch (exc: any) {
       setMensaje(exc.message);
@@ -75,6 +77,14 @@ export default function Tips() {
                 <td className="py-2 whitespace-nowrap">{t.fecha}</td>
                 <td>
                   <button className="text-marca-600 hover:underline" onClick={() => abrir(t.id)}>{t.titulo}</button>
+                  {(() => {
+                    const tema = temas.find((x: any) => x.id === t.tema_id);
+                    return tema ? (
+                      <span className="chip ml-2" style={{ background: tema.color + "22", color: tema.color }}>
+                        {tema.nombre}
+                      </span>
+                    ) : null;
+                  })()}
                   {t.duplicado_de && <span className="chip bg-amber-100 text-amber-700 ml-2" title={`Reutiliza el tip del ${t.duplicado_de}`}>duplicado reutilizado</span>}
                 </td>
                 <td>

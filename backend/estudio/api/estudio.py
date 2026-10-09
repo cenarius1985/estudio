@@ -21,13 +21,15 @@ router = APIRouter(prefix="/estudio", tags=["estudio"])
 
 class DeckBody(BaseModel):
     documento_id: str | None = None
+    tema_id: str | None = None
     n: int = 12
 
 
 @router.post("/decks")
 async def crear_deck(body: DeckBody, db: AsyncSession = Depends(get_db)):
     deck = Deck(
-        titulo="Generando…", documento_id=body.documento_id, estado="pendiente"
+        titulo="Generando…", documento_id=body.documento_id,
+        tema_id=body.tema_id or "general", estado="pendiente",
     )
     db.add(deck)
     await db.flush()
@@ -39,8 +41,11 @@ async def crear_deck(body: DeckBody, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/decks")
-async def listar_decks(db: AsyncSession = Depends(get_db)):
-    decks = (await db.execute(select(Deck).order_by(Deck.creado_en.desc()).limit(100))).scalars().all()
+async def listar_decks(tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
+    q = select(Deck).order_by(Deck.creado_en.desc()).limit(100)
+    if tema_id:
+        q = q.where(Deck.tema_id == tema_id)
+    decks = (await db.execute(q)).scalars().all()
     salida = []
     for d in decks:
         n = (await db.execute(select(func.count()).select_from(Flashcard).where(Flashcard.deck_id == d.id))).scalar() or 0
@@ -114,13 +119,14 @@ class QuizBody(BaseModel):
     n: int = 10
     tipo: str = "quiz"  # quiz | simulacro
     duracion_min: int = 0
+    tema_id: str | None = None
 
 
 @router.post("/quizzes")
 async def crear_quiz(body: QuizBody, db: AsyncSession = Depends(get_db)):
     quiz = Quiz(
         titulo="Generando…", tipo=body.tipo if body.tipo in ("quiz", "simulacro") else "quiz",
-        estado="pendiente", duracion_min=body.duracion_min,
+        tema_id=body.tema_id or "general", estado="pendiente", duracion_min=body.duracion_min,
     )
     db.add(quiz)
     await db.flush()
@@ -132,8 +138,11 @@ async def crear_quiz(body: QuizBody, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/quizzes")
-async def listar_quizzes(db: AsyncSession = Depends(get_db)):
-    quizzes = (await db.execute(select(Quiz).order_by(Quiz.creado_en.desc()).limit(100))).scalars().all()
+async def listar_quizzes(tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
+    q = select(Quiz).order_by(Quiz.creado_en.desc()).limit(100)
+    if tema_id:
+        q = q.where(Quiz.tema_id == tema_id)
+    quizzes = (await db.execute(q)).scalars().all()
     salida = []
     for q in quizzes:
         n = (await db.execute(select(func.count()).select_from(Pregunta).where(Pregunta.quiz_id == q.id))).scalar() or 0

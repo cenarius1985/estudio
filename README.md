@@ -150,6 +150,21 @@ Puedes mantener Bonsai/Ollama como **respaldo** para no quedarte sin LLM.
 > documentos se envían al proveedor para generar cada respuesta. Los
 > embeddings y la base de datos siempre quedan en tu máquina.
 
+## Temas de estudio (varios temas en una instalación)
+
+En **Temas** creas cuantos temas quieras (p. ej. «Tesis MRI», «Oposiciones»,
+«Inglés»). Cada tema tiene:
+
+- **Sus documentos**, con **auto-clasificación por carpetas**: el tema declara
+  prefijos de ruta (p. ej. `MRI-UTE PROYECTO DE TESIS, RESULTADOS-MRI`) y el
+  escaneo asigna cada archivo automáticamente; lo que no calza va a «General».
+  También puedes mover documentos a mano desde la página Documentos.
+- **Su tip diario** (si el tema tiene tips activos): un correo por tema, con
+  el nombre del tema en el asunto; dedupe y cobertura por tema.
+- **Su chat** (el selector de tema del panel filtra documentos, tips, chat y
+  estudio; «Todos» permite búsqueda cruzada entre temas).
+- **Sus decks y quizzes**.
+
 ## Uso diario
 
 1. **Documentos** → «Escanear fuentes» (ingesta incremental: solo reindexa lo

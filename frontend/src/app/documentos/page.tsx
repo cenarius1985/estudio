@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import ConNav from "@/components/ConNav";
-import { API_URL, api, getToken } from "@/lib/api";
+import { API_URL, api, filtroTema, getTema, getToken } from "@/lib/api";
 
 export default function Documentos() {
   const [docs, setDocs] = useState<any[]>([]);
+  const [temas, setTemas] = useState<any[]>([]);
   const [grafo, setGrafo] = useState<any>(null);
   const [mensaje, setMensaje] = useState("");
   const [detalle, setDetalle] = useState<{ ruta: string; chunks: any[] } | null>(null);
@@ -14,7 +15,8 @@ export default function Documentos() {
 
   async function cargar() {
     try {
-      setDocs(await api("/documentos"));
+      setDocs(await api(`/documentos${filtroTema()}`));
+      setTemas(await api("/temas"));
       setGrafo(await api("/documentos/grafo/resumen"));
     } catch (exc: any) {
       setMensaje(exc.message);
@@ -25,12 +27,22 @@ export default function Documentos() {
     cargar();
   }, []);
 
+  async function moverTema(doc: any, temaId: string) {
+    try {
+      await api(`/documentos/${doc.id}/tema`, { method: "POST", body: JSON.stringify({ tema_id: temaId }) });
+      cargar();
+    } catch (e: any) {
+      setMensaje(e.message);
+    }
+  }
+
   async function subir(e: React.ChangeEvent<HTMLInputElement>) {
     const archivos = e.target.files;
     if (!archivos?.length) return;
     setMensaje("Subiendo…");
     const form = new FormData();
     for (const f of Array.from(archivos)) form.append("archivos", f);
+    form.append("tema_id", getTema() || "general");
     const res = await fetch(`${API_URL}/documentos/upload`, {
       method: "POST",
       headers: { "x-token": getToken() || "" },
@@ -61,7 +73,10 @@ export default function Documentos() {
     if (!url.trim()) return;
     setMensaje("Agregando URL…");
     try {
-      const r = await api("/documentos/url", { method: "POST", body: JSON.stringify({ url: url.trim() }) });
+      const r = await api("/documentos/url", {
+        method: "POST",
+        body: JSON.stringify({ url: url.trim(), tema_id: getTema() || "general" }),
+      });
       setMensaje(`🔗 URL ${r.mensaje || "agregada"}`);
       setUrl("");
       setTimeout(cargar, 4000);
@@ -92,7 +107,7 @@ export default function Documentos() {
         <table className="w-full text-sm">
           <thead className="text-left text-slate-500 border-b">
             <tr>
-              <th className="py-2">Ruta</th><th>Tipo</th><th>Fuente</th><th>Chunks</th><th>Estado</th><th></th>
+              <th className="py-2">Ruta</th><th>Tema</th><th>Tipo</th><th>Fuente</th><th>Chunks</th><th>Estado</th><th></th>
             </tr>
           </thead>
           <tbody>
@@ -100,6 +115,19 @@ export default function Documentos() {
               <tr key={d.id} className="border-b last:border-0 hover:bg-slate-50">
                 <td className="py-2 max-w-md truncate" title={d.ruta}>
                   <button className="text-marca-600 hover:underline" onClick={() => verChunks(d)}>{d.ruta}</button>
+                </td>
+                <td>
+                  <select
+                    className="text-xs rounded border border-slate-200 px-1 py-0.5"
+                    value={d.tema_id || ""}
+                    onChange={(e) => moverTema(d, e.target.value)}
+                    title="Mover a tema"
+                  >
+                    <option value="">— sin tema —</option>
+                    {temas.map((t) => (
+                      <option key={t.id} value={t.id}>{t.nombre}</option>
+                    ))}
+                  </select>
                 </td>
                 <td>{d.tipo}</td>
                 <td>{d.fuente}</td>

@@ -6,7 +6,7 @@ import hashlib
 import uuid
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,15 +26,18 @@ UPLOAD_DIR = Path("/data/cargas")
 
 
 @router.get("")
-async def listar(estado: str | None = None, db: AsyncSession = Depends(get_db)):
+async def listar(estado: str | None = None, tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
     q = select(Documento).order_by(desc(Documento.creado_en)).limit(1000)
     if estado:
         q = q.where(Documento.estado == estado)
+    if tema_id:
+        q = q.where(Documento.tema_id == tema_id)
     docs = (await db.execute(q)).scalars().all()
     return [
         {
             "id": d.id, "ruta": d.ruta, "fuente": d.fuente, "tipo": d.tipo, "titulo": d.titulo,
             "estado": d.estado, "error": d.error, "bytes": d.bytes_n, "chunks": d.chunks_n,
+            "tema_id": d.tema_id,
             "indexado_en": d.indexado_en.isoformat() if d.indexado_en else None,
         }
         for d in docs
@@ -51,6 +54,7 @@ async def escanear():
 
 class UrlBody(BaseModel):
     url: str
+    tema_id: str | None = None
 
 
 @router.post("/url")
@@ -69,8 +73,11 @@ async def agregar_url(body: UrlBody, db: AsyncSession = Depends(get_db)):
     ).scalar_one_or_none()
     if existente:
         doc = existente
+        if body.tema_id:
+            doc.tema_id = body.tema_id
     else:
-        doc = Documento(ruta=url, fuente="url", tipo="txt", titulo=dominio, hash=h, estado="pendiente")
+        doc = Documento(ruta=url, fuente="url", tipo="txt", titulo=dominio, hash=h,
+                        estado="pendiente", tema_id=body.tema_id or "general")
         db.add(doc)
         await db.flush()
     await db.commit()
@@ -81,8 +88,22 @@ async def agregar_url(body: UrlBody, db: AsyncSession = Depends(get_db)):
             "mensaje": "ya registrada; se reindexará" if existente else "URL agregada e indexando"}
 
 
+class MoverTemaBody(BaseModel):
+    tema_id: str | None = None  # None/vacío → sin tema
+
+
+@router.post("/{documento_id}/tema")
+async def mover_tema(documento_id: str, body: MoverTemaBody, db: AsyncSession = Depends(get_db)):
+    doc = await db.get(Documento, documento_id)
+    if not doc:
+        raise HTTPException(404, "Documento no existe")
+    doc.tema_id = body.tema_id or None
+    await db.commit()
+    return {"ok": True, "tema_id": doc.tema_id}
+
+
 @router.post("/upload")
-async def upload(archivos: list[UploadFile]):
+async def upload(archivos: list[UploadFile], tema_id: str = Form(None)):
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     creados = []
     for archivo in archivos:
@@ -97,7 +118,8 @@ async def upload(archivos: list[UploadFile]):
         async with SessionLocal() as db:
             doc = Documento(
                 ruta=nombre, fuente="upload", tipo=EXTENSIONES[sufijo],
-                titulo=Path(archivo.filename).stem, hash=h, bytes_n=len(contenido), estado="pendiente",
+                titulo=Path(archivo.filename).stem, hash=h, bytes_n=len(contenido),
+                estado="pendiente", tema_id=tema_id or "general",
             )
             db.add(doc)
             await db.flush()

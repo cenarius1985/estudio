@@ -20,9 +20,10 @@ from estudio.rag.retrieval import Fragmento
 log = logging.getLogger("estudio.estudio")
 
 
-async def _fragmentos_aleatorios(db, documento_id: str | None, n: int) -> list[Fragmento]:
+async def _fragmentos_aleatorios(db, documento_id: str | None, n: int, tema_id: str | None = None) -> list[Fragmento]:
     """Muestrea chunks con texto real: prioriza documentos que NO son imágenes
-    (el OCR de figuras da tarjetas pobres) y chunks con contenido suficiente."""
+    (el OCR de figuras da tarjetas pobres) y chunks con contenido suficiente.
+    Filtra por tema cuando se indica."""
     base = select(Chunk.id, Chunk.texto, Chunk.pagina, Documento.ruta, Documento.tipo).join(
         Documento, Documento.id == Chunk.document_id
     )
@@ -30,6 +31,8 @@ async def _fragmentos_aleatorios(db, documento_id: str | None, n: int) -> list[F
         q = base.where(Chunk.document_id == documento_id)
     else:
         q = base.where(Documento.tipo != "imagen", func.length(Chunk.texto) > 300)
+        if tema_id:
+            q = q.where(Documento.tema_id == tema_id)
     filas = (await db.execute(q)).fetchall()
     if not filas and not documento_id:  # solo hay imágenes indexadas → usarlas
         filas = (await db.execute(base)).fetchall()
@@ -48,9 +51,9 @@ async def generar_deck(ctx: dict, deck_id: str, documento_id: str | None = None,
         if not deck:
             return {"error": "deck no existe"}
         try:
-            fragmentos = await _fragmentos_aleatorios(db, documento_id, max(n * 2, 8))
+            fragmentos = await _fragmentos_aleatorios(db, documento_id, max(n * 2, 8), tema_id=deck.tema_id)
             if not fragmentos:
-                raise ValueError("no hay chunks indexados")
+                raise ValueError("no hay chunks indexados en el tema" if deck.tema_id else "no hay chunks indexados")
 
             tarjetas: list[dict] = []
             from estudio.rag.prompts import construir_contexto
@@ -121,9 +124,9 @@ async def generar_quiz(ctx: dict, quiz_id: str, n: int = 10, tipo: str = "quiz")
         if not quiz:
             return {"error": "quiz no existe"}
         try:
-            fragmentos = await _fragmentos_aleatorios(db, None, max(n + 4, 8))
+            fragmentos = await _fragmentos_aleatorios(db, None, max(n + 4, 8), tema_id=quiz.tema_id)
             if not fragmentos:
-                raise ValueError("no hay chunks indexados")
+                raise ValueError("no hay chunks indexados en el tema" if quiz.tema_id else "no hay chunks indexados")
             from estudio.rag.prompts import construir_contexto
 
             contexto = construir_contexto(fragmentos[:8], max_frag=900)

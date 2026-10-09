@@ -14,6 +14,7 @@ from estudio.api.auth import router as auth_router, verificar_admin
 from estudio.api.chat import router as chat_router
 from estudio.api.documentos import router as documentos_router
 from estudio.api.estudio import router as estudio_router
+from estudio.api.temas import router as temas_router
 from estudio.api.tips import router as tips_router
 from estudio.config import get_settings
 from estudio.db import crear_esquema, engine
@@ -42,7 +43,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
-for r in (documentos_router, tips_router, chat_router, estudio_router, ajustes_router):
+for r in (temas_router, documentos_router, tips_router, chat_router, estudio_router, ajustes_router):
     app.include_router(r, dependencies=[Depends(verificar_admin)])
 
 
@@ -64,7 +65,7 @@ async def stats():
     from sqlalchemy import func, select
 
     from estudio.db import SessionLocal
-    from estudio.models import Arista, Chunk, Documento, Flashcard, Nodo, Tip, TipEnvio
+    from estudio.models import Arista, Chunk, Documento, Flashcard, Nodo, Tema, Tip, TipEnvio
 
     async with SessionLocal() as db:
         docs_por_estado = dict(
@@ -73,6 +74,13 @@ async def stats():
         docs_por_tipo = dict(
             (await db.execute(select(Documento.tipo, func.count()).group_by(Documento.tipo))).fetchall()
         )
+        docs_por_tema = (
+            await db.execute(
+                select(Tema.id, Tema.nombre, Tema.color, func.count(Documento.id))
+                .outerjoin(Documento, Documento.tema_id == Tema.id)
+                .group_by(Tema.id).order_by(func.count(Documento.id).desc())
+            )
+        ).fetchall()
         total_chunks = (await db.execute(select(func.count()).select_from(Chunk))).scalar() or 0
         total_tips = (await db.execute(select(func.count()).select_from(Tip))).scalar() or 0
         envios_ok = (
@@ -83,6 +91,9 @@ async def stats():
         flashcards = (await db.execute(select(func.count()).select_from(Flashcard))).scalar() or 0
     return {
         "documentos": {"por_estado": docs_por_estado, "por_tipo": docs_por_tipo},
+        "temas": [
+            {"id": t[0], "nombre": t[1], "color": t[2], "documentos": t[3]} for t in docs_por_tema
+        ],
         "chunks": total_chunks,
         "tips": total_tips,
         "envios_ok": envios_ok,

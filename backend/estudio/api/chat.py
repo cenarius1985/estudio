@@ -34,6 +34,7 @@ def _evento(nombre: str, dato) -> str:
 class PreguntaBody(BaseModel):
     conversacion_id: str | None = None
     pregunta: str
+    tema_id: str | None = None  # None ⇒ todos los temas (búsqueda cruzada)
 
 
 @router.post("/chat")
@@ -46,7 +47,7 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
 
     conversacion_id = body.conversacion_id
     if not conversacion_id:
-        conv = Conversacion(titulo=body.pregunta[:80])
+        conv = Conversacion(titulo=body.pregunta[:80], tema_id=body.tema_id or None)
         db.add(conv)
         await db.flush()
         conversacion_id = conv.id
@@ -61,7 +62,7 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
         )
     ).fetchall()[::-1]
 
-    fragmentos = await recuperar(db, body.pregunta)
+    fragmentos = await recuperar(db, body.pregunta, tema_id=body.tema_id or None)
     cfg_llm = await config_llm(db)
 
     async def flujo():
@@ -137,13 +138,13 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/conversaciones")
-async def conversaciones(db: AsyncSession = Depends(get_db)):
-    filas = (
-        await db.execute(
-            select(Conversacion).order_by(desc(Conversacion.creado_en)).limit(100)
-        )
-    ).scalars().all()
-    return [{"id": c.id, "titulo": c.titulo, "creado_en": c.creado_en.isoformat()} for c in filas]
+async def conversaciones(tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
+    q = select(Conversacion).order_by(desc(Conversacion.creado_en)).limit(100)
+    if tema_id:
+        q = q.where(Conversacion.tema_id == tema_id)
+    filas = (await db.execute(q)).scalars().all()
+    return [{"id": c.id, "titulo": c.titulo, "tema_id": c.tema_id,
+             "creado_en": c.creado_en.isoformat()} for c in filas]
 
 
 @router.get("/conversaciones/{conversacion_id}/mensajes")

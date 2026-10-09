@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ConNav from "@/components/ConNav";
-import { api } from "@/lib/api";
+import { api, filtroTema, getTema } from "@/lib/api";
 
 const CALIDADES = [
   { q: 1, label: "Otra vez", clase: "bg-red-500 hover:bg-red-600" },
@@ -19,8 +19,8 @@ export default function Estudio() {
   const [quiz, setQuiz] = useState<{ quiz: any; respuestas: Record<number, number>; resultado: any } | null>(null);
 
   async function cargar() {
-    setDecks(await api("/estudio/decks"));
-    setQuizzes(await api("/estudio/quizzes"));
+    setDecks(await api(`/estudio/decks${filtroTema()}`));
+    setQuizzes(await api(`/estudio/quizzes${filtroTema()}`));
   }
 
   useEffect(() => {
@@ -30,7 +30,10 @@ export default function Estudio() {
   async function crearDeck() {
     setMensaje("Generando deck…");
     try {
-      const r = await api("/estudio/decks", { method: "POST", body: JSON.stringify({ n: 12 }) });
+      const r = await api("/estudio/decks", {
+        method: "POST",
+        body: JSON.stringify({ n: 12, tema_id: getTema() || "general" }),
+      });
       setMensaje(`Deck ${r.deck_id} en generación`);
       setTimeout(cargar, 4000);
     } catch (e: any) {
@@ -69,7 +72,11 @@ export default function Estudio() {
     try {
       const r = await api("/estudio/quizzes", {
         method: "POST",
-        body: JSON.stringify({ n: tipo === "simulacro" ? 20 : 10, tipo, duracion_min: tipo === "simulacro" ? 30 : 0 }),
+        body: JSON.stringify({
+          n: tipo === "simulacro" ? 20 : 10, tipo,
+          duracion_min: tipo === "simulacro" ? 30 : 0,
+          tema_id: getTema() || "general",
+        }),
       });
       setMensaje(`${tipo} ${r.quiz_id} en generación`);
       setTimeout(cargar, 5000);

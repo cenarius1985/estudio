@@ -25,6 +25,24 @@ def _uuid() -> str:
     return uuid.uuid4().hex
 
 
+# ---------------------------------------------------------------- temas
+
+
+class Tema(Base):
+    """Tema/materia de estudio: agrupa documentos, tips, chat y estudio."""
+
+    __tablename__ = "temas"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
+    nombre: Mapped[str] = mapped_column(String(120), unique=True)
+    descripcion: Mapped[str] = mapped_column(Text, default="")
+    color: Mapped[str] = mapped_column(String(9), default="#2c5282")
+    # Prefijos de carpeta (coma-separados) para auto-clasificar el escaneo
+    carpetas: Mapped[str] = mapped_column(Text, default="")
+    tips_activo: Mapped[bool] = mapped_column(default=True)
+    creado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 # ---------------------------------------------------------------- documentos
 
 
@@ -33,7 +51,7 @@ class Documento(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     ruta: Mapped[str] = mapped_column(Text)  # relativa a la fuente o nombre del upload
-    fuente: Mapped[str] = mapped_column(String(16), default="montada")  # montada|upload
+    fuente: Mapped[str] = mapped_column(String(16), default="montada")  # montada|upload|url
     tipo: Mapped[str] = mapped_column(String(16), default="txt")
     titulo: Mapped[str] = mapped_column(Text, default="")
     hash: Mapped[str] = mapped_column(String(64), index=True)
@@ -41,6 +59,9 @@ class Documento(Base):
     error: Mapped[str] = mapped_column(Text, default="")
     bytes_n: Mapped[int] = mapped_column(Integer, default=0)
     chunks_n: Mapped[int] = mapped_column(Integer, default=0)
+    tema_id: Mapped[str | None] = mapped_column(
+        ForeignKey("temas.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     indexado_en: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     creado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
@@ -95,6 +116,9 @@ class Tip(Base):
     cuerpo_texto: Mapped[str] = mapped_column(Text, default="")
     cuerpo_html: Mapped[str] = mapped_column(Text, default="")
     embedding = mapped_column(Vector(1024))
+    tema_id: Mapped[str | None] = mapped_column(
+        ForeignKey("temas.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     estado: Mapped[str] = mapped_column(String(16), default="generado")
     # generado | enviado | duplicado | error
     duplicado_de: Mapped[str | None] = mapped_column(
@@ -136,6 +160,9 @@ class Deck(Base):
     documento_id: Mapped[str | None] = mapped_column(
         ForeignKey("documents.id", ondelete="CASCADE"), nullable=True
     )
+    tema_id: Mapped[str | None] = mapped_column(
+        ForeignKey("temas.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     estado: Mapped[str] = mapped_column(String(16), default="pendiente")  # pendiente|listo|error
     error: Mapped[str] = mapped_column(Text, default="")
     creado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -163,6 +190,9 @@ class Quiz(Base):
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     titulo: Mapped[str] = mapped_column(Text, default="")
     tipo: Mapped[str] = mapped_column(String(16), default="quiz")  # quiz | simulacro
+    tema_id: Mapped[str | None] = mapped_column(
+        ForeignKey("temas.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     estado: Mapped[str] = mapped_column(String(16), default="pendiente")
     duracion_min: Mapped[int] = mapped_column(Integer, default=0)
     error: Mapped[str] = mapped_column(Text, default="")
@@ -200,6 +230,9 @@ class Conversacion(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     titulo: Mapped[str] = mapped_column(Text, default="")
+    tema_id: Mapped[str | None] = mapped_column(
+        ForeignKey("temas.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     creado_en: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 
