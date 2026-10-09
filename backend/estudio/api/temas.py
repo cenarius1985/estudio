@@ -28,7 +28,7 @@ async def listar(db: AsyncSession = Depends(get_db)):
         )).scalar() or 0
         salida.append({
             "id": t.id, "nombre": t.nombre, "descripcion": t.descripcion, "color": t.color,
-            "carpetas": t.carpetas, "tips_activo": t.tips_activo,
+            "carpetas": t.carpetas, "enfoque": t.enfoque, "tips_activo": t.tips_activo,
             "documentos": docs, "chunks": chunks,
             "creado_en": t.creado_en.isoformat(),
         })
@@ -40,6 +40,7 @@ class TemaBody(BaseModel):
     descripcion: str = ""
     color: str = "#2c5282"
     carpetas: str = ""
+    enfoque: str = ""
     tips_activo: bool = True
 
 
@@ -55,6 +56,7 @@ async def crear(body: TemaBody, db: AsyncSession = Depends(get_db)):
         nombre=nombre, descripcion=body.descripcion.strip(),
         color=body.color if body.color.startswith("#") else "#2c5282",
         carpetas=",".join(c.strip().rstrip("/") for c in body.carpetas.split(",") if c.strip()),
+        enfoque=body.enfoque.strip(),
         tips_activo=body.tips_activo,
     )
     db.add(tema)
@@ -68,6 +70,7 @@ class TemaUpdate(BaseModel):
     descripcion: str | None = None
     color: str | None = None
     carpetas: str | None = None
+    enfoque: str | None = None
     tips_activo: bool | None = None
 
 
@@ -84,6 +87,8 @@ async def editar(tema_id: str, body: TemaUpdate, db: AsyncSession = Depends(get_
         tema.color = body.color
     if body.carpetas is not None:
         tema.carpetas = ",".join(c.strip().rstrip("/") for c in body.carpetas.split(",") if c.strip())
+    if body.enfoque is not None:
+        tema.enfoque = body.enfoque.strip()
     if body.tips_activo is not None:
         tema.tips_activo = body.tips_activo
     await db.commit()

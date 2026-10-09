@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 export default function Temas() {
   const [temas, setTemas] = useState<any[]>([]);
   const [mensaje, setMensaje] = useState("");
-  const [nuevo, setNuevo] = useState({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", tips_activo: true });
+  const [nuevo, setNuevo] = useState({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", enfoque: "", tips_activo: true });
   const [editando, setEditando] = useState<any>(null);
 
   async function cargar() {
@@ -27,7 +27,7 @@ export default function Temas() {
     try {
       const r = await api("/temas", { method: "POST", body: JSON.stringify(nuevo) });
       setMensaje(`✅ Tema creado${r.nota ? " — " + r.nota : ""}`);
-      setNuevo({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", tips_activo: true });
+      setNuevo({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", enfoque: "", tips_activo: true });
       cargar();
     } catch (e: any) {
       setMensaje(`❌ ${e.message}`);
@@ -41,7 +41,8 @@ export default function Temas() {
         method: "PUT",
         body: JSON.stringify({
           nombre: editando.nombre, descripcion: editando.descripcion,
-          color: editando.color, carpetas: editando.carpetas, tips_activo: editando.tips_activo,
+          color: editando.color, carpetas: editando.carpetas,
+          enfoque: editando.enfoque, tips_activo: editando.tips_activo,
         }),
       });
       setEditando(null);
@@ -114,6 +115,12 @@ export default function Temas() {
               placeholder="MRI-UTE PROYECTO DE TESIS, RESULTADOS-MRI, paper-mri-us"
               onChange={(e) => setNuevo({ ...nuevo, carpetas: e.target.value })} />
           </label>
+          <label className="block md:col-span-4">
+            Enfoque / nivel (se inyecta en tips, preguntas, flashcards y chat)
+            <textarea className="entrada mt-1" rows={2} value={nuevo.enfoque}
+              placeholder="Nivel doctoral. Enfoque: física de RM, secuencias UTE (half pulse, ramp sampling, VERSE), relaxometría bi/tri-componente, compressed sensing…"
+              onChange={(e) => setNuevo({ ...nuevo, enfoque: e.target.value })} />
+          </label>
         </div>
         <button className="boton-primario mt-3">➕ Crear tema</button>
       </form>
@@ -131,6 +138,9 @@ export default function Temas() {
                   onChange={(e) => setEditando({ ...editando, color: e.target.value })} />
                 <input className="entrada md:col-span-3" value={editando.carpetas} placeholder="carpetas"
                   onChange={(e) => setEditando({ ...editando, carpetas: e.target.value })} />
+                <textarea className="entrada md:col-span-4" rows={2} value={editando.enfoque || ""}
+                  placeholder="Enfoque / nivel (tips, preguntas, flashcards y chat)"
+                  onChange={(e) => setEditando({ ...editando, enfoque: e.target.value })} />
                 <label className="flex items-center gap-2">
                   <input type="checkbox" checked={editando.tips_activo}
                     onChange={(e) => setEditando({ ...editando, tips_activo: e.target.checked })} />

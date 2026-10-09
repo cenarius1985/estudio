@@ -51,6 +51,13 @@ async def generar_deck(ctx: dict, deck_id: str, documento_id: str | None = None,
         if not deck:
             return {"error": "deck no existe"}
         try:
+            from estudio.models import Tema
+            from estudio.rag.prompts import perfil_enfoque
+
+            enfoque = ""
+            if deck.tema_id:
+                tema = await db.get(Tema, deck.tema_id)
+                enfoque = tema.enfoque if tema else ""
             fragmentos = await _fragmentos_aleatorios(db, documento_id, max(n * 2, 8), tema_id=deck.tema_id)
             if not fragmentos:
                 raise ValueError("no hay chunks indexados en el tema" if deck.tema_id else "no hay chunks indexados")
@@ -61,9 +68,12 @@ async def generar_deck(ctx: dict, deck_id: str, documento_id: str | None = None,
             # contexto compacto: llama-server (BONSAI_CTX 8192) desconecta si el
             # prompt desborda la ventana
             contexto = construir_contexto(fragmentos[:6], max_frag=900)
+            from estudio.credenciales import config_llm
             raw = await chat(
-                [{"role": "user", "content": PROMPT_DECK.format(n=n, contexto=contexto)}],
+                [{"role": "user", "content": PROMPT_DECK.format(
+                    n=n, enfoque=perfil_enfoque(enfoque), contexto=contexto)}],
                 temperature=0.4, max_tokens=1600, json_mode=True,
+                cfg=await config_llm(db),
             )
             datos = extraer_json(raw)
             if datos and isinstance(datos.get("tarjetas"), list) and datos["tarjetas"]:
@@ -124,15 +134,24 @@ async def generar_quiz(ctx: dict, quiz_id: str, n: int = 10, tipo: str = "quiz")
         if not quiz:
             return {"error": "quiz no existe"}
         try:
+            from estudio.models import Tema
+            from estudio.rag.prompts import construir_contexto, perfil_enfoque
+
+            enfoque = ""
+            if quiz.tema_id:
+                tema = await db.get(Tema, quiz.tema_id)
+                enfoque = tema.enfoque if tema else ""
             fragmentos = await _fragmentos_aleatorios(db, None, max(n + 4, 8), tema_id=quiz.tema_id)
             if not fragmentos:
                 raise ValueError("no hay chunks indexados en el tema" if quiz.tema_id else "no hay chunks indexados")
-            from estudio.rag.prompts import construir_contexto
 
             contexto = construir_contexto(fragmentos[:8], max_frag=900)
+            from estudio.credenciales import config_llm
             raw = await chat(
-                [{"role": "user", "content": PROMPT_QUIZ.format(n=n, contexto=contexto)}],
+                [{"role": "user", "content": PROMPT_QUIZ.format(
+                    n=n, enfoque=perfil_enfoque(enfoque), contexto=contexto)}],
                 temperature=0.5, max_tokens=3000, json_mode=True,
+                cfg=await config_llm(db),
             )
             datos = extraer_json(raw)
             if not (datos and isinstance(datos.get("preguntas"), list) and datos["preguntas"]):

@@ -38,6 +38,7 @@ _DDL = [
     "INSERT INTO temas (id, nombre, descripcion, color, carpetas, tips_activo, creado_en) VALUES"
     " ('general', 'General', 'Documentos sin tema asignado', '#64748b', '', true, NOW())"
     " ON CONFLICT (id) DO NOTHING",
+    "ALTER TABLE temas ADD COLUMN IF NOT EXISTS enfoque TEXT",
 ]
 
 # tema_id en las tablas existentes (ALTER + backfill a «general» + índice)

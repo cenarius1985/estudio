@@ -118,7 +118,7 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
         else:
             semilla = None
 
-        titulo, cuerpo, usados = await _generar_contenido(seed_row, fragmentos, cfg_llm)
+        titulo, cuerpo, usados = await _generar_contenido(seed_row, fragmentos, cfg_llm, tema.enfoque)
         if semilla:
             usados = usados or [semilla]
         if not usados:
@@ -176,12 +176,17 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
             **{k: v for k, v in resultado.items() if k != "estado"}}
 
 
-async def _generar_contenido(seed: Chunk, fragmentos: list[Fragmento], cfg_llm: dict) -> tuple[str, str, list[Fragmento]]:
-    """LLM con citas; fallback extractivo determinista si no hay LLM."""
+async def _generar_contenido(
+    seed: Chunk, fragmentos: list[Fragmento], cfg_llm: dict, enfoque: str = ""
+) -> tuple[str, str, list[Fragmento]]:
+    """LLM con citas y el nivel/enfoque del tema; fallback extractivo sin LLM."""
+    from estudio.rag.prompts import perfil_enfoque
+
     contexto = construir_contexto(fragmentos) if fragmentos else seed.texto[:1800]
     raw = await chat(
-        [{"role": "user", "content": PROMPT_TIP.format(contexto=contexto)}],
-        temperature=0.6, max_tokens=500, json_mode=True, cfg=cfg_llm,
+        [{"role": "user", "content": PROMPT_TIP.format(
+            enfoque=perfil_enfoque(enfoque), contexto=contexto)}],
+        temperature=0.6, max_tokens=600, json_mode=True, cfg=cfg_llm,
     )
     datos = extraer_json(raw)
     if datos and datos.get("titulo") and datos.get("cuerpo"):

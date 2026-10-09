@@ -65,6 +65,16 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
     fragmentos = await recuperar(db, body.pregunta, tema_id=body.tema_id or None)
     cfg_llm = await config_llm(db)
 
+    # Nivel/enfoque del tema en el system prompt (doctoral, técnico, etc.)
+    sistema = SISTEMA_CHAT
+    if body.tema_id:
+        from estudio.models import Tema
+        from estudio.rag.prompts import perfil_enfoque
+
+        tema = await db.get(Tema, body.tema_id)
+        if tema and tema.enfoque:
+            sistema += f"\nNIVEL Y ENFOQUE DEL TEMA: {perfil_enfoque(tema.enfoque)}"
+
     async def flujo():
         yield _evento("inicio", {"conversacion_id": conversacion_id})
         if not fragmentos:
@@ -87,7 +97,7 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
             ],
         )
 
-        mensajes = [{"role": "system", "content": SISTEMA_CHAT}]
+        mensajes = [{"role": "system", "content": sistema}]
         for rol, contenido in historial[:-1]:
             mensajes.append({"role": "user" if rol == "user" else "assistant", "content": contenido[:1500]})
         mensajes.append(
