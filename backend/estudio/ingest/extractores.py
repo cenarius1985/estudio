@@ -9,6 +9,7 @@ from __future__ import annotations
 import csv
 import io
 import re
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +24,7 @@ OCR_LANGS = "spa+eng"
 FILAS_POR_BLOQUE = 60
 MAX_PAGINAS_PDF = 400          # PDFs gigantes: se indexan las primeras páginas
 MAX_TEXTO_ARCHIVO = 400_000    # ~100 chunks; archivos-monstruo (logs) se truncan
+OCR_HILOS = 6                  # tesseract es subproceso: paraleliza por página
 
 
 class IngestaError(Exception):
@@ -69,21 +71,38 @@ def _leer_texto(ruta: Path) -> str:
 
 
 def extraer_pdf(ruta: Path) -> list[Bloque]:
-    bloques: list[Bloque] = []
+    """Texto por página; las páginas escaneadas se rasterizan (rápido, hilo
+    principal) y su OCR corre en un pool de hilos (tesseract es un subproceso
+    → escala de verdad; antes, un PDF escaneado de 400 páginas tomaba ~1 h)."""
+    textos: dict[int, str] = {}
+    paginas_ocr: list[tuple[int, Image.Image]] = []
+
     with fitz.open(ruta) as doc:
         total = doc.page_count
-        for i, page in enumerate(doc, start=1):
-            if i > MAX_PAGINAS_PDF:
-                bloques.append(Bloque(f"[Documento truncado: se indexaron las primeras "
-                                      f"{MAX_PAGINAS_PDF} de {total} páginas]", f"{i}"))
-                break
+        limite = min(total, MAX_PAGINAS_PDF)
+        for i in range(limite):
+            page = doc.load_page(i)
             texto = page.get_text("text").strip()
-            if len(texto) < 20:  # página escaneada → OCR
+            if len(texto) >= 20:
+                textos[i] = texto
+            else:  # escaneada → rasterizar ahora, OCR después en paralelo
                 pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
-                img = Image.open(io.BytesIO(pix.tobytes("png")))
-                texto = pytesseract.image_to_string(img, lang=OCR_LANGS).strip()
-            if texto:
-                bloques.append(Bloque(texto, str(i)))
+                paginas_ocr.append((i, Image.open(io.BytesIO(pix.tobytes("png")))))
+        if total > MAX_PAGINAS_PDF:
+            textos[limite] = (f"[Documento truncado: se indexaron las primeras "
+                              f"{MAX_PAGINAS_PDF} de {total} páginas]")
+
+    def _ocr(par):
+        n, img = par
+        return n, pytesseract.image_to_string(img, lang=OCR_LANGS).strip()
+
+    if paginas_ocr:
+        with ThreadPoolExecutor(max_workers=OCR_HILOS) as pool:
+            for n, texto in pool.map(_ocr, paginas_ocr):
+                if texto:
+                    textos[n] = texto
+
+    bloques = [Bloque(textos[n], str(n + 1)) for n in sorted(textos) if textos[n].strip()]
     if not bloques:
         raise IngestaError("PDF sin texto extraíble (ni con OCR)")
     return bloques

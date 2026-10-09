@@ -26,7 +26,11 @@ log = logging.getLogger("estudio.tips")
 
 
 async def chequear_tip_diario(ctx: dict) -> dict:
-    """Cron cada 15 min: dispara la generación cuando toca y falta algún envío."""
+    """Cron cada 15 min: dispara la generación cuando toca y falta algún envío.
+    Además aprovecha para liberar el modelo de embeddings si está ocioso."""
+    from estudio.rag.embeddings import descargar_si_inactivo
+    descargar_si_inactivo()
+
     async with SessionLocal() as db:
         ajustes = await obtener_ajustes_tips(db)
     if not ajustes["habilitado"]:

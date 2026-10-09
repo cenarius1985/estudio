@@ -63,7 +63,11 @@ class WorkerSettings:
     on_startup = al_arrancar_ingesta
     on_shutdown = al_apagar
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
-    max_jobs = 2  # embeddings (ORT suelta el GIL) y OCR en subproceso → escala
+    # UN job a la vez: con 2 tareas ARQ concurrentes + tramos síncronos largos
+    # (OCR/embeddings) el segundo job moría con MissingGreenlet al conectar
+    # (pares simultáneos, siempre). El paralelismo real lo aporta el pool de
+    # OCR_HILOS dentro de cada job; la BD queda estrictamente secuencial.
+    max_jobs = 1
     job_timeout = 3600
     keep_result = 3600
 
