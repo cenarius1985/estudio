@@ -12,7 +12,7 @@ export default function Ajustes() {
   // Correo Brevo
   const [smtp, setSmtp] = useState({ smtp_host: "", smtp_puerto: 587, smtp_user: "", smtp_pass: "", smtp_from: "" });
   // Tips
-  const [tips, setTips] = useState({ tips_hora: "", tips_to: "", tips_umbral_dedupe: 0.9, tips_reintentos: 3, tips_habilitado: true });
+  const [tips, setTips] = useState({ tips_hora: "", tips_to: "", tips_por_dia: 1, tips_umbral_dedupe: 0.9, tips_reintentos: 3, tips_habilitado: true });
   // Fuentes
   const [ruta, setRuta] = useState("");
   const [url, setUrl] = useState("");
@@ -33,6 +33,7 @@ export default function Ajustes() {
     });
     setTips({
       tips_hora: d.tips.hora, tips_to: d.tips.destinos?.join(", ") || "",
+      tips_por_dia: d.tips.por_dia || 1,
       tips_umbral_dedupe: d.tips.umbral, tips_reintentos: d.tips.reintentos,
       tips_habilitado: d.tips.habilitado,
     });
@@ -158,11 +159,16 @@ export default function Ajustes() {
           <h2 className="font-semibold mb-3">✉️ Tips diarios</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <label className="block">
-              Hora de envío (HH:MM)
+              Hora del primer envío (HH:MM)
               <input className="entrada mt-1" value={tips.tips_hora} placeholder="07:30"
                 onChange={(e) => setTips({ ...tips, tips_hora: e.target.value })} />
             </label>
             <label className="block">
+              Tips por día {tips.tips_por_dia > 1 ? "(repartidos hasta las 22:00)" : ""}
+              <input type="number" min={1} max={10} className="entrada mt-1" value={tips.tips_por_dia}
+                onChange={(e) => setTips({ ...tips, tips_por_dia: Number(e.target.value) })} />
+            </label>
+            <label className="block col-span-2">
               Destinatarios (separados por coma)
               <input className="entrada mt-1" value={tips.tips_to} placeholder="tu@correo.com"
                 onChange={(e) => setTips({ ...tips, tips_to: e.target.value })} />

@@ -75,6 +75,7 @@ class AjustesBody(BaseModel):
     # Tips
     tips_hora: str | None = None
     tips_to: str | None = None
+    tips_por_dia: int | None = None
     tips_umbral_dedupe: float | None = None
     tips_reintentos: int | None = None
     tips_habilitado: bool | None = None
@@ -128,6 +129,9 @@ async def guardar(body: AjustesBody, db: AsyncSession = Depends(get_db)):
             await guardar_setting(db, clave, valor.strip())
             cambios.append(clave)
 
+    if body.tips_por_dia is not None and 1 <= body.tips_por_dia <= 10:
+        await guardar_setting(db, "tips_por_dia", str(body.tips_por_dia))
+        cambios.append("tips_por_dia")
     if body.tips_umbral_dedupe is not None and 0.5 <= body.tips_umbral_dedupe <= 1.0:
         await guardar_setting(db, "tips_umbral_dedupe", str(body.tips_umbral_dedupe))
         cambios.append("tips_umbral_dedupe")

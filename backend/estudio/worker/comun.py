@@ -30,11 +30,13 @@ async def obtener_ajustes_tips(db: AsyncSession) -> dict:
     s = get_settings()
     hora = await obtener_ajuste(db, "tips_hora", s.tips_hora)
     destinos = await obtener_ajuste(db, "tips_to", s.tips_to)
+    por_dia = int(await obtener_ajuste(db, "tips_por_dia", str(s.tips_por_dia)))
     umbral = float(await obtener_ajuste(db, "tips_umbral_dedupe", str(s.tips_umbral_dedupe)))
     reintentos = int(await obtener_ajuste(db, "tips_reintentos", str(s.tips_reintentos)))
     habilitado = (await obtener_ajuste(db, "tips_habilitado", "1")) == "1"
     return {
         "hora": hora,
+        "por_dia": max(1, min(10, por_dia)),
         "destinos": [e.strip() for e in destinos.split(",") if e.strip() and "@" in e],
         "umbral": umbral,
         "reintentos": reintentos,

@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     # Tips diarios
     tips_to: str = ""           # correos separados por coma
     tips_hora: str = "07:30"    # HH:MM local (America/Santiago)
+    tips_por_dia: int = 1       # N tips/día por tema activo, repartidos hasta las 22:00
     tips_umbral_dedupe: float = 0.90
     tips_reintentos: int = 3
 

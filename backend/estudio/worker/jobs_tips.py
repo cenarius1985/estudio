@@ -8,7 +8,7 @@ import logging
 import re
 from datetime import datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 
 from estudio.config import get_settings
 from estudio.credenciales import config_llm, config_smtp
@@ -25,9 +25,21 @@ from estudio.worker.comun import hoy_local, obtener_ajustes_tips
 log = logging.getLogger("estudio.tips")
 
 
+FIN_DIA_MIN = 22 * 60  # los N tips del día se reparten entre tips_hora y las 22:00
+
+
+def _minutos_hora(texto: str) -> int:
+    try:
+        hh, mm = (int(x) for x in texto.split(":")[:2])
+        return hh * 60 + mm
+    except ValueError:
+        return 7 * 60 + 30
+
+
 async def chequear_tip_diario(ctx: dict) -> dict:
-    """Cron cada 15 min: dispara la generación cuando toca y falta algún envío.
-    Además aprovecha para liberar el modelo de embeddings si está ocioso."""
+    """Cron cada 15 min: dispara la generación del siguiente tip cuando toca.
+    Con N tips/día, el j-ésimo sale a tips_hora + j·paso (paso reparte la
+    ventana hasta las 22:00). Además libera el modelo si está ocioso."""
     from estudio.rag.embeddings import descargar_si_inactivo
     descargar_si_inactivo()
 
@@ -35,13 +47,15 @@ async def chequear_tip_diario(ctx: dict) -> dict:
         ajustes = await obtener_ajustes_tips(db)
     if not ajustes["habilitado"]:
         return {"estado": "deshabilitado"}
-    try:
-        hh, mm = (int(x) for x in ajustes["hora"].split(":")[:2])
-    except ValueError:
-        hh, mm = 7, 30
+
+    inicio = _minutos_hora(ajustes["hora"])
     ahora = datetime.now()
-    if (ahora.hour, ahora.minute) < (hh, mm):
+    ahora_min = ahora.hour * 60 + ahora.minute
+    if ahora_min < inicio:
         return {"estado": "aun_no_hora"}
+
+    por_dia = ajustes["por_dia"]
+    paso = (FIN_DIA_MIN - inicio) // (por_dia - 1) if por_dia > 1 else 0
 
     async with SessionLocal() as db:
         hoy = hoy_local()
@@ -50,15 +64,18 @@ async def chequear_tip_diario(ctx: dict) -> dict:
         ).fetchall()
         pendientes = 0
         for (tema_id,) in temas_activos:
-            ya = await db.execute(
-                select(Tip).where(
+            enviados = (await db.execute(
+                select(func.count()).select_from(Tip).where(
                     Tip.fecha == hoy, Tip.estado == "enviado", Tip.tema_id == tema_id
                 )
-            )
-            if ya.scalar_one_or_none() is None:
+            )).scalar() or 0
+            if enviados >= por_dia:
+                continue
+            objetivo = inicio + enviados * paso  # hora del siguiente tip
+            if ahora_min >= objetivo:
                 pendientes += 1
         if not pendientes:
-            return {"estado": "ya_enviado_hoy"}
+            return {"estado": "al_dia"}
 
     await ctx["redis"].enqueue_job("generar_tip_diario", {}, _queue_name=get_settings().cola_urgentes)
     return {"estado": "encolado", "temas_pendientes": pendientes}
@@ -83,13 +100,15 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
     s = get_settings()
     hoy = hoy_local()
 
-    existente = (
-        await db.execute(
-            select(Tip).where(Tip.fecha == hoy, Tip.estado == "enviado", Tip.tema_id == tema.id)
+    # Idempotencia por CUOTA: uno (o N) tips ya enviados hoy para este tema
+    enviados_hoy = (await db.execute(
+        select(func.count()).select_from(Tip).where(
+            Tip.fecha == hoy, Tip.estado == "enviado", Tip.tema_id == tema.id
         )
-    ).scalar_one_or_none()
-    if existente and not forzar:
-        return {"estado": "omitido", "motivo": "hoy ya se envió", "tip_id": existente.id}
+    )).scalar() or 0
+    if enviados_hoy >= ajustes["por_dia"] and not forzar:
+        return {"estado": "omitido", "motivo": f"ya se enviaron los {ajustes['por_dia']} de hoy",
+                "tip_id": None}
     if forzar:
         await db.execute(
             delete(Tip).where(
