@@ -20,7 +20,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY estudio ./estudio
 
 RUN useradd --create-home --shell /bin/bash estudio \
- && chown -R estudio:estudio /app
+ && chown -R estudio:estudio /app \
+ # Los volúmenes modelos/cargas heredan ownership de estos directorios al
+ # crearse por primera vez (comportamiento de Docker); sin esto quedan de
+ # root y fastembed no puede descargar el modelo (Errno 13).
+ && mkdir -p /data/modelos /data/cargas \
+ && chown estudio:estudio /data/modelos /data/cargas
 USER estudio
 
 EXPOSE 8000

@@ -32,11 +32,23 @@ _DDL = [
 
 
 async def crear_esquema() -> None:
-    """create_all + DDL adicional. Idempotente; la llaman api y worker al arrancar."""
+    """create_all + DDL adicional. Idempotente; con reintentos porque api y
+    worker pueden crear el esquema a la vez en el primer arranque."""
+    import asyncio
+
     from estudio.models import Base
 
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        for ddl in _DDL:
-            await conn.execute(text(ddl))
-    log.info("Esquema verificado (tablas + tsvector + índices vectoriales)")
+    ultimo: Exception | None = None
+    for intento in range(5):
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                for ddl in _DDL:
+                    await conn.execute(text(ddl))
+            log.info("Esquema verificado (tablas + tsvector + índices vectoriales)")
+            return
+        except Exception as exc:  # noqa: BLE001 — carrera api/worker en el primer boot
+            ultimo = exc
+            log.warning("crear_esquema intento %d falló (%s); reintento", intento + 1, exc)
+            await asyncio.sleep(3)
+    raise ultimo  # type: ignore[misc]

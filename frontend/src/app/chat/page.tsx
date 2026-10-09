@@ -112,9 +112,9 @@ export default function Chat() {
                 >
                   {m.contenido || (ocupado ? "…" : "")}
                 </div>
-                {m.fuentes?.length > 0 && (
+                {(m.fuentes?.length ?? 0) > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1 justify-end">
-                    {m.fuentes.map((f: any, j: number) => (
+                    {(m.fuentes || []).map((f: any, j: number) => (
                       <span key={j} className="chip bg-marca-50 text-marca-700 text-[10px]" title={f.origen === "grafo" ? "vía grafo de conceptos" : "recuperación híbrida"}>
                         📄 {f.archivo}{f.pagina ? ` · ${f.pagina}` : ""}
                       </span>

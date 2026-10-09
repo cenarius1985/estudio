@@ -85,7 +85,7 @@ export default function Tips() {
                     : "chip bg-slate-100 text-slate-600"
                   }>{t.estado}</span>
                 </td>
-                <td>{t.envios?.filter((e: any) => e.estado === "ok").length}/{t.envios?.length || 0}</td>
+                <td>{t.envios?.filter((e: any) => e.estado === "ok").length ?? 0}/{t.envios?.length ?? 0}</td>
                 <td className="whitespace-nowrap">
                   <button className="boton-neutro !px-2 !py-1" onClick={() => reenviar(t.id)} title="Reenviar sin reprocesar">✉️ Reenviar</button>
                 </td>

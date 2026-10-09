@@ -104,7 +104,7 @@ export default function Documentos() {
         </table>
       </div>
 
-      {grafo?.nodos?.length > 0 && (
+      {(grafo?.nodos?.length ?? 0) > 0 && (
         <div className="tarjeta mt-4">
           <h2 className="font-semibold mb-2">Grafo de conceptos (top por conexiones)</h2>
           <div className="flex flex-wrap gap-2">
