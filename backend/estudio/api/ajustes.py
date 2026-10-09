@@ -44,6 +44,7 @@ async def obtener(db: AsyncSession = Depends(get_db)):
     ajustes_tips = await obtener_ajustes_tips(db)
     smtp = await config_smtp(db)
     llm = await config_llm(db)
+    api_key_seteada = bool(llm.pop("api_key", ""))  # la clave nunca sale de la API
     ruta = await ruta_fuentes_efectiva(db)
     pass_personalizada = bool(await obtener_setting(db, "admin_password_hash"))
     return {
@@ -58,7 +59,7 @@ async def obtener(db: AsyncSession = Depends(get_db)):
         "ruta_fuentes": ruta,
         "ruta_fuentes_existe": Path(ruta).is_dir(),
         "ruta_fuentes_env": s.ruta_fuentes,
-        "llm": llm,
+        "llm": {**llm, "api_key_seteada": api_key_seteada},
         "password_panel": "personalizada" if pass_personalizada else "del .env",
         "brevo_url": "https://www.brevo.com/",
     }
@@ -82,6 +83,7 @@ class AjustesBody(BaseModel):
     llm_base_url: str | None = None
     llm_fallback_url: str | None = None
     llm_model: str | None = None
+    llm_api_key: str | None = None  # write-only; "" = borrar (vuelve al .env)
     # Seguridad (write-only). restablecer_password=True vuelve a la del .env.
     admin_password_nueva: str | None = None
     admin_password_restablecer: bool = False
@@ -96,6 +98,7 @@ _ESCRITURA_SIMPLE = {
     "llm_base_url": "llm_base_url",
     "llm_fallback_url": "llm_fallback_url",
     "llm_model": "llm_model",
+    "llm_api_key": "llm_api_key",
     "tips_to": "tips_to",
 }
 
@@ -146,6 +149,14 @@ async def guardar(body: AjustesBody, db: AsyncSession = Depends(get_db)):
 
     await db.commit()
     return {"ok": True, "cambios": cambios}
+
+
+@router.get("/llm/proveedores")
+async def proveedores_llm():
+    """Catálogo de presets (local, de pago con API key, personalizado)."""
+    from estudio.llm.proveedores import PROVEEDORES
+
+    return PROVEEDORES
 
 
 @router.post("/probar-smtp")

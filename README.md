@@ -125,6 +125,31 @@ un valor, se toma de la BD. No necesitas editar archivos:
 6. Pega ambos en **Ajustes → Correo Brevo** (host `smtp-relay.brevo.com`,
    puerto `587`) y pulsa «Probar autenticación» (verifica sin enviar nada).
 
+### Usar un LLM de pago (más avanzado que Bonsai)
+
+En **Ajustes → LLM** eliges el proveedor y pegas tu API key (se guarda en tu
+base de datos, nunca se muestra de nuevo y puedes borrarla dejando el campo
+vacío). Todos usan el mismo cliente OpenAI-compatible, así que funcionan sin
+código extra:
+
+| Proveedor | Dónde conseguir la API key |
+|---|---|
+| OpenAI | platform.openai.com/api-keys |
+| DeepSeek | platform.deepseek.com/api_keys |
+| Moonshot · Kimi | platform.moonshot.ai/console/api-keys |
+| Google Gemini | aistudio.google.com/app/apikey |
+| Anthropic Claude | console.anthropic.com/settings/keys |
+| Groq | console.groq.com/keys |
+| OpenRouter (miles de modelos) | openrouter.ai/settings/keys |
+| Personalizado | cualquier endpoint OpenAI-compatible |
+
+El botón **Estado** valida el endpoint Y la key (401 ⇒ «API key rechazada»).
+Puedes mantener Bonsai/Ollama como **respaldo** para no quedarte sin LLM.
+
+> Privacidad: con un LLM en la nube, los fragmentos recuperados de tus
+> documentos se envían al proveedor para generar cada respuesta. Los
+> embeddings y la base de datos siempre quedan en tu máquina.
+
 ## Uso diario
 
 1. **Documentos** → «Escanear fuentes» (ingesta incremental: solo reindexa lo

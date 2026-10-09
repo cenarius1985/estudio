@@ -62,3 +62,19 @@ prueba inmediata de los TRES orígenes (montada/upload/url).
   (`python scripts/sincronizar_vault.py`).
 - Publicar el repo (GitHub privado→público tras purga de secretos; el .env
   real NO está versionado).
+
+## Añadido el mismo día: LLMs de pago con API key (patrón api_llm)
+
+Replicando el patrón de `PROYECTO-INFORMATICO-MRI-US-DOCKERIZADO/core/api_llm`
+(catálogo de proveedores + cliente OpenAI-compatible con Bearer + verificación):
+
+- `estudio/llm/proveedores.py`: presets (local Bonsai, Ollama, OpenAI,
+  DeepSeek, Moonshot/Kimi, Gemini, Claude, Groq, OpenRouter, personalizado)
+  con modelo sugerido y link para conseguir cada API key.
+- `llm_api_key` (panel → BD → .env, write-only, nunca se devuelve en claro);
+  el cliente la envía como `Authorization: Bearer` solo si existe.
+- El botón Estado valida endpoint + key (401/403 ⇒ «API key rechazada»).
+  Verificado con una key falsa contra DeepSeek (401 real) y volviendo a
+  Bonsai local. README documenta proveedores y nota de privacidad (los
+  fragmentos recuperados viajan al proveedor en la nube; embeddings y BD
+  siempre locales).

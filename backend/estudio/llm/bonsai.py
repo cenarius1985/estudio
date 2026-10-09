@@ -39,6 +39,15 @@ def _endpoints(cfg: dict | None) -> list[str]:
     return [e for e in eps if e]
 
 
+def _headers(cfg: dict | None) -> dict[str, str]:
+    """Bearer solo si hay API key (proveedores de pago); local va sin auth."""
+    cfg = cfg or _cfg_por_defecto()
+    h = {"Content-Type": "application/json"}
+    if cfg.get("api_key"):
+        h["Authorization"] = f"Bearer {cfg['api_key']}"
+    return h
+
+
 def _payload_base(cfg: dict | None, temperature: float, max_tokens: int, json_mode: bool) -> dict[str, Any]:
     modelo = (cfg or _cfg_por_defecto()).get("model") or get_settings().llm_model
     p: dict[str, Any] = {"model": modelo, "temperature": temperature, "max_tokens": max_tokens}
@@ -61,6 +70,7 @@ async def chat(
             async with httpx.AsyncClient(timeout=s.llm_timeout_s) as cliente:
                 resp = await cliente.post(
                     f"{ep}/chat/completions",
+                    headers=_headers(cfg),
                     json={"messages": mensajes, **_payload_base(cfg, temperature, max_tokens, json_mode)},
                 )
                 resp.raise_for_status()
@@ -85,6 +95,7 @@ async def chat_stream(
             async with cliente.stream(
                 "POST",
                 f"{ep}/chat/completions",
+                headers=_headers(cfg),
                 json={
                     "messages": mensajes,
                     **_payload_base(cfg, temperature, max_tokens, False),
@@ -117,13 +128,19 @@ async def chat_stream(
 
 
 async def ping(cfg: dict | None = None) -> dict:
-    """Estado de cada endpoint (para el panel)."""
+    """Estado de cada endpoint (para el panel). Con API key también valida
+    la autenticación (401/403 ⇒ clave rechazada, no solo «no disponible»)."""
     estado = {}
     for ep in _endpoints(cfg):
         try:
-            async with httpx.AsyncClient(timeout=5) as cliente:
-                r = await cliente.get(f"{ep}/models")
-                estado[ep] = "ok" if r.status_code == 200 else f"http {r.status_code}"
+            async with httpx.AsyncClient(timeout=10) as cliente:
+                r = await cliente.get(f"{ep}/models", headers=_headers(cfg))
+                if r.status_code in (401, 403):
+                    estado[ep] = "API key rechazada"
+                elif r.status_code == 200:
+                    estado[ep] = "ok"
+                else:
+                    estado[ep] = f"http {r.status_code}"
         except Exception as exc:  # noqa: BLE001
             estado[ep] = f"no disponible ({type(exc).__name__})"
     estado["modelo"] = (cfg or _cfg_por_defecto()).get("model") or "?"

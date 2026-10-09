@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     llm_base_url: str = "http://bonsai:8080/v1"
     llm_fallback_url: str = ""
     llm_model: str = "ternary-bonsai-2-27b"
+    llm_api_key: str = ""  # para proveedores de pago (Bearer)
     llm_timeout_s: float = 240.0
 
     # Embeddings (e5-large ⇒ 1024 dimensiones; el esquema fija Vector(1024))

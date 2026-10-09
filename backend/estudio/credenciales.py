@@ -70,6 +70,7 @@ async def config_llm(db: AsyncSession) -> dict:
         "base_url": await resolver(db, "llm_base_url", s.llm_base_url),
         "fallback_url": await resolver(db, "llm_fallback_url", s.llm_fallback_url),
         "model": await resolver(db, "llm_model", s.llm_model),
+        "api_key": await resolver(db, "llm_api_key", s.llm_api_key),
     }
 
 

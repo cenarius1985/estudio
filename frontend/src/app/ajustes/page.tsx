@@ -18,6 +18,9 @@ export default function Ajustes() {
   const [url, setUrl] = useState("");
   // LLM
   const [llm, setLlm] = useState({ llm_base_url: "", llm_fallback_url: "", llm_model: "" });
+  const [llmApiKey, setLlmApiKey] = useState("");
+  const [proveedores, setProveedores] = useState<any[]>([]);
+  const [proveedor, setProveedor] = useState("local");
   // Seguridad
   const [passNueva, setPassNueva] = useState("");
 
@@ -35,6 +38,20 @@ export default function Ajustes() {
     });
     setRuta(d.ruta_fuentes);
     setLlm({ llm_base_url: d.llm.base_url, llm_fallback_url: d.llm.fallback_url, llm_model: d.llm.model });
+    try {
+      const provs = await api("/ajustes/llm/proveedores");
+      setProveedores(provs);
+      const match = provs.find((p: any) => p.base_url === d.llm.base_url);
+      if (match) setProveedor(match.id);
+    } catch { /* catálogo opcional */ }
+  }
+
+  function elegirProveedor(id: string) {
+    setProveedor(id);
+    const p = proveedores.find((x: any) => x.id === id);
+    if (!p) return;
+    if (p.base_url) setLlm((prev) => ({ ...prev, llm_base_url: p.base_url }));
+    if (p.model) setLlm((prev) => ({ ...prev, llm_model: p.model }));
   }
 
   useEffect(() => {
@@ -201,15 +218,47 @@ export default function Ajustes() {
 
         {/* ---------------- LLM ---------------- */}
         <div className="tarjeta">
-          <h2 className="font-semibold mb-1">🤖 LLM y embeddings</h2>
+          <h2 className="font-semibold mb-1">🤖 LLM</h2>
           <p className="text-xs text-slate-500 mb-3">
-            Cualquier endpoint compatible con la API de OpenAI (llama-server/Bonsai, Ollama, LM Studio…).
+            Local (Bonsai/Ollama, gratis y privado) o <b>de pago</b> con tu propia API key —
+            más avanzado que Bonsai si lo necesitas.
           </p>
           <div className="space-y-3 text-sm">
+            <label className="block">
+              Proveedor
+              <select className="entrada mt-1" value={proveedor} onChange={(e) => elegirProveedor(e.target.value)}>
+                {proveedores.map((p: any) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {(() => {
+              const p = proveedores.find((x: any) => x.id === proveedor);
+              if (!p?.requiere_api_key || !p.url_key) return null;
+              return (
+                <p className="text-xs bg-amber-50 border border-amber-200 rounded-lg p-2">
+                  🔑 Consigue tu API key en{" "}
+                  <a className="text-marca-600 underline font-semibold" href={p.url_key} target="_blank" rel="noreferrer">
+                    {p.url_key.replace(/^https?:\/\//, "")}
+                  </a>
+                  <br />
+                  <span className="text-slate-500">
+                    Ojo: con un LLM en la nube, los fragmentos recuperados de tus documentos se envían a ese proveedor para responder.
+                  </span>
+                </p>
+              );
+            })()}
             <label className="block">
               Endpoint primario
               <input className="entrada mt-1" value={llm.llm_base_url} placeholder="http://bonsai:8080/v1"
                 onChange={(e) => setLlm({ ...llm, llm_base_url: e.target.value })} />
+            </label>
+            <label className="block">
+              API key {datos?.llm?.api_key_seteada ? "(✔ ya configurada — vacío = no cambiar)" : "(solo proveedores de pago)"}
+              <input type="password" className="entrada mt-1" value={llmApiKey} placeholder="sk-…"
+                onChange={(e) => setLlmApiKey(e.target.value)} />
             </label>
             <label className="block">
               Endpoint de respaldo (opcional, p. ej. Ollama)
@@ -223,14 +272,16 @@ export default function Ajustes() {
             </label>
           </div>
           <div className="flex gap-2 mt-3">
-            <button className="boton-primario" onClick={() => guardarSeccion(llm, "LLM")}>Guardar LLM</button>
+            <button className="boton-primario" onClick={() => guardarSeccion(
+              llmApiKey ? { ...llm, llm_api_key: llmApiKey } : llm, "LLM"
+            ).then(() => setLlmApiKey(""))}>Guardar LLM</button>
             <button className="boton-neutro" onClick={async () => {
-              setMensaje("Consultando…");
+              setMensaje("Consultando (valida también la API key)…");
               const e = await api("/ajustes/estado");
               setMensaje("LLM: " + Object.entries(e.llm).map(([k, v]) => `${k} → ${v}`).join(" · "));
             }}>🩺 Estado</button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">Embeddings: {datos?.smtp ? "multilingual-e5-large (local, CPU)" : ""}</p>
+          <p className="text-[11px] text-slate-400 mt-2">Embeddings: multilingual-e5-large (local, CPU — siempre privado)</p>
         </div>
 
         {/* ---------------- Seguridad ---------------- */}
