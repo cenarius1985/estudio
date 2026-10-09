@@ -8,7 +8,7 @@ El tip guarda su cuerpo HTML/texto en BD; reenviar usa exactamente eso
 
 from __future__ import annotations
 
-TITULO = "📚 Tip de estudio · Tesis MRI-UTE"
+TITULO = "📚 Tip de estudio"
 
 
 def cuerpo_html_de(parrafos: list[str], citas: list[dict]) -> str:
@@ -23,7 +23,7 @@ def cuerpo_html_de(parrafos: list[str], citas: list[dict]) -> str:
         )
         out += (
             '<div style="margin-top:14px;font-size:13px;color:#556">'
-            "<b style='color:#2c3e50'>Fuentes (tu tesis):</b>"
+            "<b style='color:#2c3e50'>Fuentes (tus documentos):</b>"
             f"<ul style='margin:6px 0 0 18px;padding:0'>{items}</ul></div>"
         )
     return out
@@ -47,8 +47,8 @@ def plantilla_tip(titulo: str, cuerpo_html: str, cuerpo_texto: str, link: str) -
 <div style="background:#f4f4f4;padding:24px 0;font-family:'Segoe UI',Tahoma,Arial,sans-serif">
   <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 10px rgba(0,0,0,.08)">
     <div style="background:linear-gradient(135deg,#1a365d,#2c5282);color:#fff;padding:22px 24px;text-align:center">
-      <h1 style="margin:0;font-size:20px">Estudio Doctorado</h1>
-      <div style="opacity:.85;font-size:13px;margin-top:4px">Tesis MRI-UTE · tip diario</div>
+      <h1 style="margin:0;font-size:20px">Estudio</h1>
+      <div style="opacity:.85;font-size:13px;margin-top:4px">Tu plataforma de estudio · tip diario</div>
     </div>
     <div style="padding:26px 24px;color:#333;line-height:1.6">
       <div style="background:#f8f9fa;border-left:5px solid #2c5282;border-radius:6px;padding:16px 18px;margin:0 0 20px">

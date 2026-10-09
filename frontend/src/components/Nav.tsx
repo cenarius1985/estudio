@@ -18,8 +18,8 @@ export default function Nav() {
   return (
     <aside className="w-56 shrink-0 bg-marca-700 text-white flex flex-col">
       <div className="px-5 py-5 border-b border-white/10">
-        <div className="font-bold text-lg leading-tight">Estudio Doctorado</div>
-        <div className="text-xs text-white/60 mt-1">Tesis MRI-UTE</div>
+        <div className="font-bold text-lg leading-tight">Estudio</div>
+        <div className="text-xs text-white/60 mt-1">Tu plataforma de estudio</div>
       </div>
       <nav className="flex-1 py-3">
         {ITEMS.map((item) => {

@@ -34,8 +34,8 @@ export default function Login() {
   return (
     <main className="min-h-screen flex items-center justify-center bg-marca-700">
       <form onSubmit={entrar} className="tarjeta w-96">
-        <h1 className="text-xl font-bold text-marca-700">Estudio Doctorado</h1>
-        <p className="text-sm text-slate-500 mt-1 mb-5">Tesis MRI-UTE · panel de estudio</p>
+        <h1 className="text-xl font-bold text-marca-700">Estudio</h1>
+        <p className="text-sm text-slate-500 mt-1 mb-5">Tu plataforma de estudio</p>
         <input
           type="password"
           className="entrada"

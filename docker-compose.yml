@@ -64,7 +64,7 @@ services:
     volumes:
       - modelos:/data/modelos
       - cargas:/data/cargas
-      - ${RUTA_TESIS:-E:/GitHub/MRI/Proyecto-Tesis}:/fuentes:ro
+      - ${RUTA_TESIS:-./fuentes}:/fuentes:ro
     depends_on:
       db:
         condition: service_healthy
@@ -81,7 +81,7 @@ services:
     volumes:
       - modelos:/data/modelos
       - cargas:/data/cargas
-      - ${RUTA_TESIS:-E:/GitHub/MRI/Proyecto-Tesis}:/fuentes:ro
+      - ${RUTA_TESIS:-./fuentes}:/fuentes:ro
     depends_on:
       db:
         condition: service_healthy

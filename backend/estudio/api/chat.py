@@ -15,6 +15,7 @@ from pydantic import BaseModel
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from estudio.credenciales import config_llm
 from estudio.db import SessionLocal, get_db
 from estudio.llm import LLMNoDisponible, chat_stream
 from estudio.models import Conversacion, Mensaje
@@ -61,6 +62,7 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
     ).fetchall()[::-1]
 
     fragmentos = await recuperar(db, body.pregunta)
+    cfg_llm = await config_llm(db)
 
     async def flujo():
         yield _evento("inicio", {"conversacion_id": conversacion_id})
@@ -97,7 +99,7 @@ async def chat(body: PreguntaBody, db: AsyncSession = Depends(get_db)):
 
         acumulado: list[str] = []
         try:
-            async for delta in chat_stream(mensajes, temperature=0.2, max_tokens=900):
+            async for delta in chat_stream(mensajes, temperature=0.2, max_tokens=900, cfg=cfg_llm):
                 acumulado.append(delta)
                 yield _evento("delta", {"t": delta})
         except LLMNoDisponible as exc:

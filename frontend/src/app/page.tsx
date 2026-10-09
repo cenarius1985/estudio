@@ -45,7 +45,7 @@ export default function Dashboard() {
   return (
     <ConNav titulo="Panel de estudio">
       <div className="flex gap-3 mb-6">
-        <button className="boton-primario" onClick={escanear}>🔍 Escanear fuentes de la tesis</button>
+        <button className="boton-primario" onClick={escanear}>🔍 Escanear fuentes</button>
         <button className="boton-neutro" onClick={cargar}>♻️ Actualizar</button>
       </div>
       {mensaje && <div className="tarjeta mb-6 text-sm">{mensaje}</div>}
@@ -111,7 +111,7 @@ export default function Dashboard() {
         <div className="tarjeta">
           <h2 className="font-semibold mb-2">Grafo de conceptos</h2>
           <p className="text-sm">{stats?.grafo?.nodos ?? "—"} nodos · {stats?.grafo?.aristas ?? "—"} relaciones</p>
-          <p className="text-xs text-slate-500 mt-1">UTE, T2*, fat-water, SNR… conectan fragmentos entre documentos (ver Documentos → grafo).</p>
+          <p className="text-xs text-slate-500 mt-1">Los conceptos de tus documentos conectan fragmentos entre fuentes (ver Documentos → grafo).</p>
         </div>
       </div>
     </ConNav>

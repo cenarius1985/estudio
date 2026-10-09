@@ -11,6 +11,8 @@ from pydantic import BaseModel
 from sqlalchemy import delete, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+import hashlib
+
 from estudio.api.cola import encolar
 from estudio.config import get_settings
 from estudio.db import SessionLocal, get_db
@@ -45,6 +47,38 @@ async def escanear():
     if not job_id:
         raise HTTPException(503, "Worker no disponible")
     return {"ok": True, "job": job_id, "mensaje": "Escaneo encolado; los nuevos se indexarán en segundo plano"}
+
+
+class UrlBody(BaseModel):
+    url: str
+
+
+@router.post("/url")
+async def agregar_url(body: UrlBody, db: AsyncSession = Depends(get_db)):
+    """Agrega una página web como fuente: se descarga, se indexa y queda
+    citable en el chat/tips con su URL."""
+    url = body.url.strip()
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(400, "La URL debe empezar con http:// o https://")
+    from urllib.parse import urlparse
+
+    dominio = urlparse(url).netloc or url[:60]
+    h = hashlib.sha256(url.lower().encode()).hexdigest()
+    existente = (
+        await db.execute(select(Documento).where(Documento.fuente == "url", Documento.ruta == url))
+    ).scalar_one_or_none()
+    if existente:
+        doc = existente
+    else:
+        doc = Documento(ruta=url, fuente="url", tipo="txt", titulo=dominio, hash=h, estado="pendiente")
+        db.add(doc)
+        await db.flush()
+    await db.commit()
+    job_id = await encolar("ingestar_url", doc.id, urgente=True)
+    if not job_id:
+        raise HTTPException(503, "Worker no disponible")
+    return {"ok": True, "documento": doc.id, "job": job_id,
+            "mensaje": "ya registrada; se reindexará" if existente else "URL agregada e indexando"}
 
 
 @router.post("/upload")

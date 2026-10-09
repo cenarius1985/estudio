@@ -83,7 +83,7 @@ export default function Chat() {
   }
 
   return (
-    <ConNav titulo="Pregunta a tu tesis">
+    <ConNav titulo="Pregunta a tus documentos">
       <div className="flex gap-6 h-[calc(100vh-12rem)]">
         <div className="w-56 shrink-0">
           <button className="boton-primario w-full justify-center mb-3" onClick={() => abrir(null)}>➕ Nueva</button>

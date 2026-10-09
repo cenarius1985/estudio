@@ -17,7 +17,7 @@ from arq.connections import RedisSettings
 from estudio.config import get_settings
 from estudio.db import crear_esquema, engine
 from estudio.worker.jobs_estudio import generar_deck, generar_quiz
-from estudio.worker.jobs_ingesta import escanear_fuentes, ingestar_archivo, reindexar_documento
+from estudio.worker.jobs_ingesta import escanear_fuentes, ingestar_archivo, ingestar_url, reindexar_documento
 from estudio.worker.jobs_tips import chequear_tip_diario, generar_tip_diario, reenviar_tip
 
 log = logging.getLogger("estudio.worker")
@@ -36,7 +36,7 @@ async def al_apagar(ctx: dict) -> None:
 class WorkerSettings:
     """Worker de ingesta (cola default): pesado, OCR + embeddings."""
 
-    functions = [escanear_fuentes, ingestar_archivo, reindexar_documento]
+    functions = [escanear_fuentes, ingestar_archivo, ingestar_url, reindexar_documento]
     on_startup = al_arrancar
     on_shutdown = al_apagar
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)
@@ -46,9 +46,10 @@ class WorkerSettings:
 
 
 class WorkerSettingsUrgente:
-    """Worker urgente (cola "urgentes"): tips diarios, decks, quizzes."""
+    """Worker urgente (cola "urgentes"): tips diarios, decks, quizzes y URLs
+    (lo que el usuario acaba de pedir y espera pronto)."""
 
-    functions = [generar_tip_diario, reenviar_tip, generar_deck, generar_quiz]
+    functions = [generar_tip_diario, reenviar_tip, generar_deck, generar_quiz, ingestar_url]
     cron_jobs = [
         # Chequeo cada 15 min: dispara la generación cuando llega TIPS_HORA y
         # aún no hay tip enviado hoy (idempotente; respeta cambios del panel).

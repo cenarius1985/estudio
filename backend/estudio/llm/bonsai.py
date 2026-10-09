@@ -1,8 +1,8 @@
-"""Cliente del LLM local Bonsai (Ternary-Bonsai-2-27B vía llama-server,
-API OpenAI-compatible — patrón whispertext rama gpu) con fallback opcional.
+"""Cliente del LLM (Bonsai u otro endpoint OpenAI-compatible) — fail-soft.
 
-Todo es fail-soft: chat() devuelve None si ningún endpoint responde;
-chat_stream() lanza LLMNoDisponible para que el llamante decida.
+Los endpoints/modelo llegan como cfg dict (resuelto desde BD panel → .env en
+estudio.credenciales.config_llm) o, si no, del .env. chat() devuelve None si
+ningún endpoint responde; chat_stream() lanza LLMNoDisponible.
 """
 
 from __future__ import annotations
@@ -26,21 +26,22 @@ class LLMNoDisponible(Exception):
     pass
 
 
-def _endpoints() -> list[str]:
+def _cfg_por_defecto() -> dict:
     s = get_settings()
-    eps = [s.llm_base_url.rstrip("/")]
-    if s.llm_fallback_url:
-        eps.append(s.llm_fallback_url.rstrip("/"))
-    return eps
+    return {"base_url": s.llm_base_url, "fallback_url": s.llm_fallback_url, "model": s.llm_model}
 
 
-def _payload_base(temperature: float, max_tokens: int, json_mode: bool) -> dict[str, Any]:
-    s = get_settings()
-    p: dict[str, Any] = {
-        "model": s.llm_model,
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
+def _endpoints(cfg: dict | None) -> list[str]:
+    cfg = cfg or _cfg_por_defecto()
+    eps = [cfg.get("base_url", "").rstrip("/")]
+    if cfg.get("fallback_url"):
+        eps.append(cfg["fallback_url"].rstrip("/"))
+    return [e for e in eps if e]
+
+
+def _payload_base(cfg: dict | None, temperature: float, max_tokens: int, json_mode: bool) -> dict[str, Any]:
+    modelo = (cfg or _cfg_por_defecto()).get("model") or get_settings().llm_model
+    p: dict[str, Any] = {"model": modelo, "temperature": temperature, "max_tokens": max_tokens}
     if json_mode:
         p["response_format"] = {"type": "json_object"}
     return p
@@ -51,15 +52,16 @@ async def chat(
     temperature: float = 0.3,
     max_tokens: int = 900,
     json_mode: bool = False,
+    cfg: dict | None = None,
 ) -> str | None:
     """Respuesta completa (str) o None si ningún endpoint responde."""
     s = get_settings()
-    for ep in _endpoints():
+    for ep in _endpoints(cfg):
         try:
             async with httpx.AsyncClient(timeout=s.llm_timeout_s) as cliente:
                 resp = await cliente.post(
                     f"{ep}/chat/completions",
-                    json={"messages": mensajes, **_payload_base(temperature, max_tokens, json_mode)},
+                    json={"messages": mensajes, **_payload_base(cfg, temperature, max_tokens, json_mode)},
                 )
                 resp.raise_for_status()
                 return resp.json()["choices"][0]["message"]["content"].strip() or None
@@ -72,19 +74,20 @@ async def chat_stream(
     mensajes: list[dict],
     temperature: float = 0.3,
     max_tokens: int = 900,
+    cfg: dict | None = None,
 ) -> AsyncIterator[str]:
     """Stream de deltas de texto. Si todos los endpoints fallan → LLMNoDisponible."""
     s = get_settings()
     errores: list[str] = []
-    for ep in _endpoints():
+    for ep in _endpoints(cfg):
+        cliente = httpx.AsyncClient(timeout=s.llm_timeout_s)
         try:
-            cliente = httpx.AsyncClient(timeout=s.llm_timeout_s)
             async with cliente.stream(
                 "POST",
                 f"{ep}/chat/completions",
                 json={
                     "messages": mensajes,
-                    **_payload_base(temperature, max_tokens, False),
+                    **_payload_base(cfg, temperature, max_tokens, False),
                     "stream": True,
                 },
             ) as resp:
@@ -113,18 +116,17 @@ async def chat_stream(
     raise LLMNoDisponible("Sin LLM disponible → " + " | ".join(errores))
 
 
-async def ping() -> dict:
+async def ping(cfg: dict | None = None) -> dict:
     """Estado de cada endpoint (para el panel)."""
-    s = get_settings()
     estado = {}
-    for ep in _endpoints():
+    for ep in _endpoints(cfg):
         try:
             async with httpx.AsyncClient(timeout=5) as cliente:
                 r = await cliente.get(f"{ep}/models")
                 estado[ep] = "ok" if r.status_code == 200 else f"http {r.status_code}"
         except Exception as exc:  # noqa: BLE001
             estado[ep] = f"no disponible ({type(exc).__name__})"
-    estado["modelo"] = s.llm_model
+    estado["modelo"] = (cfg or _cfg_por_defecto()).get("model") or "?"
     return estado
 
 

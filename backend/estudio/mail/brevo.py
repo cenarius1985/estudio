@@ -1,62 +1,58 @@
-"""Relay SMTP Brevo — mismos valores que reportesDiariosGes (.env SMTP_*).
-
-Patrón equivalente al transporte() de nodemailer: STARTTLS en 587,
-falla temprano si falta configuración.
-"""
+"""Relay SMTP Brevo. La configuración se RESUELVE (BD panel → .env) fuera de
+aquí y se pasa como dict — ver estudio.credenciales.config_smtp."""
 
 from __future__ import annotations
 
 import logging
 import ssl
-
-import aiosmtplib
 from email.message import EmailMessage
 
-from estudio.config import get_settings
+import aiosmtplib
 
 log = logging.getLogger("estudio.mail")
 
 
-def _transporte_config() -> dict:
-    s = get_settings()
-    if not (s.smtp_host and s.smtp_user and s.smtp_pass):
-        raise RuntimeError("Falta configurar el SMTP (SMTP_HOST, SMTP_USER, SMTP_PASS)")
-    puerto = int(s.smtp_port or 587)
-    return {
-        "hostname": s.smtp_host,
-        "port": puerto,
-        "start_tls": puerto != 465,
-        "use_tls": puerto == 465,
-        "username": s.smtp_user,
-        "password": s.smtp_pass,
-        "timeout": 30,
-        "tls_context": ssl.create_default_context(),
-    }
+def smtp_configurado(cfg: dict) -> bool:
+    return bool(cfg.get("host") and cfg.get("user") and cfg.get("pass"))
 
 
-async def enviar(to: str, asunto: str, html: str, texto: str) -> None:
-    s = get_settings()
+async def enviar(to: str, asunto: str, html: str, texto: str, cfg: dict) -> None:
+    if not smtp_configurado(cfg):
+        raise RuntimeError("SMTP sin configurar (Ajustes → Correo Brevo, o SMTP_* en .env)")
     msg = EmailMessage()
-    msg["From"] = f"Estudio Doctorado <{s.smtp_from or s.smtp_user}>"
+    msg["From"] = f"Estudio <{cfg['from'] or cfg['user']}>"
     msg["To"] = to
     msg["Subject"] = asunto
     msg.set_content(texto)
     msg.add_alternative(html, subtype="html")
-    await aiosmtplib.send(msg, **_transporte_config())
+    puerto = int(cfg.get("puerto") or 587)
+    await aiosmtplib.send(
+        msg,
+        hostname=cfg["host"],
+        port=puerto,
+        start_tls=puerto != 465,
+        use_tls=puerto == 465,
+        username=cfg["user"],
+        password=cfg["pass"],
+        timeout=30,
+        tls_context=ssl.create_default_context(),
+    )
     log.info("Correo enviado a %s: %s", to, asunto)
 
 
-async def probar() -> tuple[bool, str]:
-    """Verifica autenticación SMTP SIN enviar correo (patrón probar_correo.py)."""
+async def probar(cfg: dict) -> tuple[bool, str]:
+    """Verifica autenticación SMTP SIN enviar correo."""
+    if not smtp_configurado(cfg):
+        return False, "SMTP incompleto: falta host, usuario o contraseña"
+    puerto = int(cfg.get("puerto") or 587)
     try:
-        cfg = _transporte_config()
-    except RuntimeError as exc:
-        return False, str(exc)
-    try:
-        cliente = aiosmtplib.SMTP(**cfg)
+        cliente = aiosmtplib.SMTP(
+            hostname=cfg["host"], port=puerto, start_tls=puerto != 465,
+            use_tls=puerto == 465, username=cfg["user"], password=cfg["pass"],
+            timeout=20, tls_context=ssl.create_default_context(),
+        )
         await cliente.connect()
-        await cliente.login(cfg["username"], cfg["password"])
         await cliente.quit()
-        return True, f"Autenticación OK contra {cfg['hostname']}:{cfg['port']}"
+        return True, f"Autenticación OK contra {cfg['host']}:{puerto}"
     except Exception as exc:  # noqa: BLE001
         return False, f"Falló la autenticación SMTP: {exc}"

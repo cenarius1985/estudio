@@ -1,80 +1,160 @@
-"""Ajustes del panel (tabla settings) + pruebas de SMTP y estado del sistema."""
+"""Ajustes del panel: TODAS las credenciales se gestionan aquí (tabla settings,
+que pisa al .env cuando está seteada). Lectura siempre enmascarada; escritura
+de secretos write-only. Incluye prueba de SMTP y estado del LLM."""
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+import re
+from pathlib import Path
+
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from estudio.config import get_settings
-from estudio.db import SessionLocal
+from estudio.credenciales import (
+    cambiar_password,
+    config_llm,
+    config_smtp,
+    eliminar_setting,
+    guardar_setting,
+    obtener_setting,
+    resolver,
+    ruta_fuentes_efectiva,
+)
+from estudio.db import SessionLocal, get_db
 from estudio.llm import ping as llm_ping
 from estudio.mail.brevo import probar as probar_smtp
-from estudio.models import Setting
+from estudio.worker.comun import obtener_ajustes_tips
 
 router = APIRouter(prefix="/ajustes", tags=["ajustes"])
 
-CLAVES = ["tips_hora", "tips_to", "tips_umbral_dedupe", "tips_reintentos", "tips_habilitado"]
+
+def _mascaras(texto: str, visibles: int = 3) -> str:
+    if not texto:
+        return ""
+    if len(texto) <= visibles:
+        return "*" * len(texto)
+    return texto[:visibles] + "*" * (len(texto) - visibles)
 
 
 @router.get("")
-async def obtener():
+async def obtener(db: AsyncSession = Depends(get_db)):
     s = get_settings()
-    async with SessionLocal() as db:
-        filas = (await db.execute(select(Setting).where(Setting.k.in_(CLAVES)))).scalars().all()
-    guardados = {f.k: f.v for f in filas}
+    ajustes_tips = await obtener_ajustes_tips(db)
+    smtp = await config_smtp(db)
+    llm = await config_llm(db)
+    ruta = await ruta_fuentes_efectiva(db)
+    pass_personalizada = bool(await obtener_setting(db, "admin_password_hash"))
     return {
-        "tips_hora": guardados.get("tips_hora", s.tips_hora),
-        "tips_to": guardados.get("tips_to", s.tips_to),
-        "tips_umbral_dedupe": float(guardados.get("tips_umbral_dedupe", s.tips_umbral_dedupe)),
-        "tips_reintentos": int(guardados.get("tips_reintentos", s.tips_reintentos)),
-        "tips_habilitado": guardados.get("tips_habilitado", "1") == "1",
         "smtp": {
-            "host": s.smtp_host, "puerto": s.smtp_port,
-            "usuario": s.smtp_user[:3] + "***" if s.smtp_user else "",
-            "from": s.smtp_from, "configurado": s.smtp_configurado,
+            "host": smtp["host"], "puerto": smtp["puerto"],
+            "usuario": smtp["user"], "usuario_marcado": _mascaras(smtp["user"]),
+            "password_seteada": bool(smtp["pass"]),
+            "from": smtp["from"],
+            "configurado": smtp["configurado"],
         },
-        "llm": {"base_url": s.llm_base_url, "fallback_url": s.llm_fallback_url, "modelo": s.llm_model},
-        "embed_model": s.embed_model,
+        "tips": ajustes_tips,
+        "ruta_fuentes": ruta,
+        "ruta_fuentes_existe": Path(ruta).is_dir(),
+        "ruta_fuentes_env": s.ruta_fuentes,
+        "llm": llm,
+        "password_panel": "personalizada" if pass_personalizada else "del .env",
+        "brevo_url": "https://www.brevo.com/",
     }
 
 
 class AjustesBody(BaseModel):
+    # Correo Brevo (None = no tocar; "" = volver al valor del .env)
+    smtp_host: str | None = None
+    smtp_puerto: int | None = None
+    smtp_user: str | None = None
+    smtp_pass: str | None = None  # write-only
+    smtp_from: str | None = None
+    # Tips
     tips_hora: str | None = None
     tips_to: str | None = None
     tips_umbral_dedupe: float | None = None
     tips_reintentos: int | None = None
     tips_habilitado: bool | None = None
+    # Fuentes / LLM
+    ruta_fuentes: str | None = None
+    llm_base_url: str | None = None
+    llm_fallback_url: str | None = None
+    llm_model: str | None = None
+    # Seguridad (write-only). restablecer_password=True vuelve a la del .env.
+    admin_password_nueva: str | None = None
+    admin_password_restablecer: bool = False
+
+
+_ESCRITURA_SIMPLE = {
+    "smtp_host": "smtp_host",
+    "smtp_user": "smtp_user",
+    "smtp_pass": "smtp_pass",
+    "smtp_from": "smtp_from",
+    "ruta_fuentes": "ruta_fuentes",
+    "llm_base_url": "llm_base_url",
+    "llm_fallback_url": "llm_fallback_url",
+    "llm_model": "llm_model",
+    "tips_to": "tips_to",
+}
 
 
 @router.put("")
-async def guardar(body: AjustesBody):
-    cambios = {
-        "tips_hora": body.tips_hora,
-        "tips_to": body.tips_to,
-        "tips_umbral_dedupe": str(body.tips_umbral_dedupe) if body.tips_umbral_dedupe is not None else None,
-        "tips_reintentos": str(body.tips_reintentos) if body.tips_reintentos is not None else None,
-        "tips_habilitado": ("1" if body.tips_habilitado else "0") if body.tips_habilitado is not None else None,
-    }
-    async with SessionLocal() as db:
-        for k, v in cambios.items():
-            if v is None:
-                continue
-            fila = await db.get(Setting, k)
-            if fila:
-                fila.v = v
-            else:
-                db.add(Setting(k=k, v=v))
-        await db.commit()
-    return {"ok": True}
+async def guardar(body: AjustesBody, db: AsyncSession = Depends(get_db)):
+    cambios: list[str] = []
+
+    for campo_body, clave in _ESCRITURA_SIMPLE.items():
+        valor = getattr(body, campo_body)
+        if valor is None:
+            continue
+        if valor == "":
+            await eliminar_setting(db, clave)  # "" → vuelve al .env
+            cambios.append(f"{clave} → usa .env")
+        else:
+            await guardar_setting(db, clave, valor.strip())
+            cambios.append(clave)
+
+    if body.smtp_puerto is not None:
+        await guardar_setting(db, "smtp_port", str(body.smtp_puerto))
+        cambios.append("smtp_port")
+
+    for campo, clave in (("tips_hora", "tips_hora"),):
+        valor = getattr(body, campo)
+        if valor is not None and re.fullmatch(r"\d{1,2}:\d{2}", valor.strip()):
+            await guardar_setting(db, clave, valor.strip())
+            cambios.append(clave)
+
+    if body.tips_umbral_dedupe is not None and 0.5 <= body.tips_umbral_dedupe <= 1.0:
+        await guardar_setting(db, "tips_umbral_dedupe", str(body.tips_umbral_dedupe))
+        cambios.append("tips_umbral_dedupe")
+    if body.tips_reintentos is not None and 1 <= body.tips_reintentos <= 10:
+        await guardar_setting(db, "tips_reintentos", str(body.tips_reintentos))
+        cambios.append("tips_reintentos")
+    if body.tips_habilitado is not None:
+        await guardar_setting(db, "tips_habilitado", "1" if body.tips_habilitado else "0")
+        cambios.append("tips_habilitado")
+
+    if body.admin_password_restablecer:
+        await eliminar_setting(db, "admin_password_hash")
+        cambios.append("password → vuelve a la del .env")
+    elif body.admin_password_nueva:
+        if len(body.admin_password_nueva) < 8:
+            raise HTTPException(400, "La contraseña debe tener al menos 8 caracteres")
+        await cambiar_password(db, body.admin_password_nueva)
+        cambios.append("password actualizada (vuelve a iniciar sesión)")
+
+    await db.commit()
+    return {"ok": True, "cambios": cambios}
 
 
 @router.post("/probar-smtp")
-async def test_smtp():
-    ok, mensaje = await probar_smtp()
+async def test_smtp(db: AsyncSession = Depends(get_db)):
+    cfg = await config_smtp(db)
+    ok, mensaje = await probar_smtp(cfg)
     return {"ok": ok, "mensaje": mensaje}
 
 
 @router.get("/estado")
-async def estado():
-    return {"llm": await llm_ping()}
+async def estado(db: AsyncSession = Depends(get_db)):
+    return {"llm": await llm_ping(await config_llm(db))}

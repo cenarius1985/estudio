@@ -1,11 +1,13 @@
-"""Jobs de ingesta: escaneo incremental de fuentes e indexado por documento.
+"""Jobs de ingesta: escaneo incremental de la carpeta configurada, indexado
+por documento (archivo o URL) y grafo de conceptos.
 
 Flujo: escanear_fuentes (hash SHA256 → solo lo nuevo/cambiado) →
-ingestar_archivo (extraer → chunkear → embeddings → chunks + grafo).
+ingestar_archivo / ingestar_url (extraer → chunkear → embeddings → chunks + grafo).
 """
 
 from __future__ import annotations
 
+import hashlib
 import logging
 from datetime import datetime
 from pathlib import Path
@@ -13,10 +15,11 @@ from pathlib import Path
 from sqlalchemy import delete, select
 
 from estudio.config import get_settings
+from estudio.credenciales import config_llm, ruta_fuentes_efectiva
 from estudio.db import SessionLocal
 from estudio.ingest.chunker import chunkear
 from estudio.ingest.escaner import escanear, sha256_archivo
-from estudio.ingest.extractores import extraer
+from estudio.ingest.extractores import Bloque, extraer
 from estudio.llm import chat, extraer_json
 from estudio.models import Arista, Chunk, Documento, Nodo
 from estudio.rag.embeddings import embedir_passages
@@ -25,18 +28,28 @@ from estudio.rag.prompts import PROMPT_GRAFO
 
 log = logging.getLogger("estudio.ingesta")
 
-UPLOAD_DIR = "/data/cargas"  # volumen compartido api↔worker para uploads
+UPLOAD_DIR = Path("/data/cargas")
 MAX_ENTS_POR_CHUNK = 6  # límite de pares por chunk (control de volumen del grafo)
 
 
-def ruta_absoluta(doc: Documento) -> Path:
-    base = Path(get_settings().ruta_fuentes) if doc.fuente == "montada" else Path(UPLOAD_DIR)
-    return base / doc.ruta
+async def ruta_absoluta(db, doc: Documento) -> Path:
+    if doc.fuente == "montada":
+        base = Path(await ruta_fuentes_efectiva(db))
+        return base / doc.ruta
+    if doc.fuente == "upload":
+        return UPLOAD_DIR / doc.ruta
+    raise ValueError(f"El documento {doc.fuente}:{doc.ruta} no es un archivo local")
 
 
 async def escanear_fuentes(ctx: dict) -> dict:
     s = get_settings()
-    archivos = escanear(Path(s.ruta_fuentes), s.exclude_dirs_list, s.max_archivo_bytes)
+    async with SessionLocal() as db:
+        raiz = Path(await ruta_fuentes_efectiva(db))
+    if not raiz.is_dir():
+        return {"error": f"La carpeta de fuentes no existe en el contenedor: {raiz} "
+                "(configúrala en Ajustes → Fuentes y móntala en Docker si aplica)"}
+
+    archivos = escanear(raiz, s.exclude_dirs_list, s.max_archivo_bytes)
     nuevos, actualizados, intactos, pendientes = 0, 0, 0, []
 
     async with SessionLocal() as db:
@@ -73,7 +86,7 @@ async def escanear_fuentes(ctx: dict) -> dict:
         "encontrados": len(archivos), "nuevos": nuevos,
         "actualizados": actualizados, "intactos": intactos, "encolados": len(pendientes),
     }
-    log.info("Escaneo: %s", resumen)
+    log.info("Escaneo %s: %s", raiz, resumen)
     return resumen
 
 
@@ -86,6 +99,32 @@ async def reindexar_documento(ctx: dict, documento_id: str) -> dict:
     return await _indexar(documento_id, forzar=True)
 
 
+async def ingestar_url(ctx: dict, documento_id: str) -> dict:
+    """Descarga e indexa una URL registrada como documento (fuente='url')."""
+    from estudio.ingest.web import descargar_pagina
+
+    async with SessionLocal() as db:
+        doc = await db.get(Documento, documento_id)
+        if not doc:
+            return {"error": f"documento {documento_id} no existe"}
+        if doc.estado == "listo" and doc.chunks_n > 0:
+            return {"ok": True, "documento": doc.ruta, "omitido": "ya listo"}
+        doc.estado = "procesando"
+        await db.commit()
+        try:
+            pagina = await descargar_pagina(doc.ruta)
+            doc.titulo = pagina.titulo
+            resultado = await _procesar_bloques(db, doc, pagina.bloques)
+            log.info("Indexada URL %s → %d chunks", pagina.url_final, resultado.get("chunks", 0))
+            return {"ok": True, "url": pagina.url_final, **resultado}
+        except Exception as exc:  # noqa: BLE001
+            doc.estado = "error"
+            doc.error = f"{type(exc).__name__}: {exc}"[:2000]
+            await db.commit()
+            log.error("Error indexando URL %s: %s", doc.ruta, exc)
+            return {"error": doc.error, "url": doc.ruta}
+
+
 async def _indexar(documento_id: str, forzar: bool = False) -> dict:
     async with SessionLocal() as db:
         doc = await db.get(Documento, documento_id)
@@ -93,34 +132,16 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
             return {"error": f"documento {documento_id} no existe"}
         if doc.estado == "listo" and not forzar:
             return {"ok": True, "documento": doc.ruta, "omitido": "ya listo"}
+        if doc.fuente == "url":
+            return {"error": "los documentos tipo url se indexan con ingestar_url"}
         doc.estado = "procesando"
         await db.commit()
         try:
-            bloques = extraer(ruta_absoluta(doc), doc.tipo)
-            chunks = chunkear(bloques)
-            if not chunks:
-                raise ValueError("sin chunks")
-
-            await db.execute(delete(Chunk).where(Chunk.document_id == doc.id))
-            textos = [c.texto for c in chunks]
-            embs: list[list[float]] = []
-            for i in range(0, len(textos), 32):  # lotes de 32
-                embs.extend(embedir_passages(textos[i : i + 32]))
-            for n, (c, e) in enumerate(zip(chunks, embs)):
-                db.add(Chunk(document_id=doc.id, n=n, pagina=c.pagina, texto=c.texto, embedding=e))
-            await db.flush()
-
-            await _grafo_diccionario(db, doc.id)
-            doc.chunks_n = len(chunks)
-            doc.estado = "listo"
-            doc.error = ""
-            doc.indexado_en = datetime.utcnow()
-            await db.commit()
-
-            await _grafo_llm(db, doc, textos)  # fail-soft, tras el commit
-            log.info("Indexado %s → %d chunks", doc.ruta, len(chunks))
-            return {"ok": True, "documento": doc.ruta, "chunks": len(chunks), "forzado": forzar}
-        except Exception as exc:  # noqa: BLE001 — el error queda registrado en el documento
+            bloques = extraer(await ruta_absoluta(db, doc), doc.tipo)
+            resultado = await _procesar_bloques(db, doc, bloques)
+            log.info("Indexado %s → %d chunks", doc.ruta, resultado.get("chunks", 0))
+            return {"ok": True, "documento": doc.ruta, **resultado}
+        except Exception as exc:  # noqa: BLE001 — el error queda en el documento
             doc.estado = "error"
             doc.error = f"{type(exc).__name__}: {exc}"[:2000]
             await db.commit()
@@ -128,8 +149,35 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
             return {"error": doc.error, "documento": doc.ruta}
 
 
+async def _procesar_bloques(db, doc: Documento, bloques: list[Bloque]) -> dict:
+    """Chunks → embeddings → inserción + grafo diccionario → commit."""
+    chunks = chunkear(bloques)
+    if not chunks:
+        raise ValueError("sin chunks")
+
+    await db.execute(delete(Chunk).where(Chunk.document_id == doc.id))
+    textos = [c.texto for c in chunks]
+    embs: list[list[float]] = []
+    for i in range(0, len(textos), 32):
+        embs.extend(embedir_passages(textos[i : i + 32]))
+    for n, (c, e) in enumerate(zip(chunks, embs)):
+        db.add(Chunk(document_id=doc.id, n=n, pagina=c.pagina, texto=c.texto, embedding=e))
+    await db.flush()
+
+    await _grafo_diccionario(db, doc.id)
+    doc.chunks_n = len(chunks)
+    doc.estado = "listo"
+    doc.error = ""
+    doc.indexado_en = datetime.utcnow()
+    await db.commit()
+
+    if get_settings().grafo_llm:
+        await _grafo_llm(db, doc, textos)
+    return {"chunks": len(chunks)}
+
+
 async def _grafo_diccionario(db, document_id: str) -> None:
-    """Aristas de co-ocurrencia por chunk con el vocabulario MRI."""
+    """Aristas de co-ocurrencia por chunk con el vocabulario del dominio."""
     res = await db.execute(
         select(Chunk.id, Chunk.texto).where(Chunk.document_id == document_id)
     )
@@ -158,14 +206,12 @@ async def _grafo_diccionario(db, document_id: str) -> None:
 
 
 async def _grafo_llm(db, doc: Documento, textos: list[str]) -> None:
-    """Tripletas opcionales por documento con Bonsai (fail-soft, default OFF:
-    una llamada LLM por documento frena la ingesta masiva)."""
-    if not get_settings().grafo_llm:
-        return
+    """Tripletas opcionales por documento con el LLM (fail-soft, default OFF)."""
     muestra = "\n\n".join(textos[:2])[:3000]
+    cfg = await config_llm(db)
     raw = await chat(
         [{"role": "user", "content": PROMPT_GRAFO.format(texto=muestra)}],
-        temperature=0.1, max_tokens=600, json_mode=True,
+        temperature=0.1, max_tokens=600, json_mode=True, cfg=cfg,
     )
     datos = extraer_json(raw)
     if not datos or not isinstance(datos.get("tripletas"), list):
@@ -183,3 +229,7 @@ async def _grafo_llm(db, doc: Documento, textos: list[str]) -> None:
                 existentes[nomb] = nodo.id
         db.add(Arista(nodo_a=existentes[a], nodo_b=existentes[b], relacion=rel[:90] or "relacionado con"))
     await db.commit()
+
+
+def hash_url(url: str) -> str:
+    return hashlib.sha256(url.strip().lower().encode()).hexdigest()

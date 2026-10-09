@@ -9,6 +9,7 @@ export default function Documentos() {
   const [grafo, setGrafo] = useState<any>(null);
   const [mensaje, setMensaje] = useState("");
   const [detalle, setDetalle] = useState<{ ruta: string; chunks: any[] } | null>(null);
+  const [url, setUrl] = useState("");
   const inputArchivo = useRef<HTMLInputElement>(null);
 
   async function cargar() {
@@ -55,15 +56,34 @@ export default function Documentos() {
     setDetalle({ ruta: d.ruta, chunks });
   }
 
+  async function agregarUrl(e: React.FormEvent) {
+    e.preventDefault();
+    if (!url.trim()) return;
+    setMensaje("Agregando URL…");
+    try {
+      const r = await api("/documentos/url", { method: "POST", body: JSON.stringify({ url: url.trim() }) });
+      setMensaje(`🔗 URL ${r.mensaje || "agregada"}`);
+      setUrl("");
+      setTimeout(cargar, 4000);
+    } catch (exc: any) {
+      setMensaje(exc.message);
+    }
+  }
+
   return (
-    <ConNav titulo="Documentos de la tesis">
-      <div className="flex gap-3 mb-4">
+    <ConNav titulo="Documentos">
+      <div className="flex flex-wrap gap-3 mb-4 items-center">
         <button className="boton-primario" onClick={() => api("/documentos/escanear", { method: "POST" }).then((r) => setMensaje(`Escaneo encolado (${r.job})`))}>
           🔍 Escanear fuentes
         </button>
         <input ref={inputArchivo} type="file" multiple className="hidden"
           accept=".pdf,.tex,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.tif,.tiff,.ipynb" onChange={subir} />
         <button className="boton-neutro" onClick={() => inputArchivo.current?.click()}>⬆️ Subir archivos</button>
+        <form onSubmit={agregarUrl} className="flex gap-2 flex-1 min-w-[280px]">
+          <input className="entrada" value={url} placeholder="🔗 https://pagina.a.estudiar.com"
+            onChange={(e) => setUrl(e.target.value)} />
+          <button className="boton-neutro" disabled={!url.trim()}>Agregar URL</button>
+        </form>
         <button className="boton-neutro" onClick={cargar}>♻️</button>
       </div>
       {mensaje && <div className="tarjeta mb-4 text-sm">{mensaje}</div>}

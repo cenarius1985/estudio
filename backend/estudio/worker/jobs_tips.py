@@ -11,9 +11,10 @@ from datetime import datetime
 from sqlalchemy import delete, select
 
 from estudio.config import get_settings
+from estudio.credenciales import config_llm, config_smtp
 from estudio.db import SessionLocal
 from estudio.llm import chat, extraer_json
-from estudio.mail.brevo import enviar
+from estudio.mail.brevo import enviar, smtp_configurado
 from estudio.mail.plantilla import cuerpo_html_de, cuerpo_texto_de, plantilla_tip
 from estudio.models import Chunk, Tip, TipChunk, TipEnvio
 from estudio.rag.embeddings import embedir_passages
@@ -70,6 +71,7 @@ async def generar_tip_diario(ctx: dict, forzar: bool = False) -> dict:
 
         umbral = ajustes["umbral"]
         reintentos = max(1, ajustes["reintentos"])
+        cfg_llm = await config_llm(db)
         tip: Tip | None = None
         dup_id: str | None = None
         dup_sim = 0.0
@@ -88,7 +90,7 @@ async def generar_tip_diario(ctx: dict, forzar: bool = False) -> dict:
             else:
                 semilla = None
 
-            titulo, cuerpo, usados = await _generar_contenido(seed_row, fragmentos)
+            titulo, cuerpo, usados = await _generar_contenido(seed_row, fragmentos, cfg_llm)
             if semilla:
                 usados = usados or [semilla]
             if not usados:
@@ -145,12 +147,12 @@ async def generar_tip_diario(ctx: dict, forzar: bool = False) -> dict:
     return {"estado": resultado.get("estado"), "tip_id": tip.id, **{k: v for k, v in resultado.items() if k != "estado"}}
 
 
-async def _generar_contenido(seed: Chunk, fragmentos: list[Fragmento]) -> tuple[str, str, list[Fragmento]]:
+async def _generar_contenido(seed: Chunk, fragmentos: list[Fragmento], cfg_llm: dict) -> tuple[str, str, list[Fragmento]]:
     """LLM con citas; fallback extractivo determinista si no hay LLM."""
     contexto = construir_contexto(fragmentos) if fragmentos else seed.texto[:1800]
     raw = await chat(
         [{"role": "user", "content": PROMPT_TIP.format(contexto=contexto)}],
-        temperature=0.6, max_tokens=500, json_mode=True,
+        temperature=0.6, max_tokens=500, json_mode=True, cfg=cfg_llm,
     )
     datos = extraer_json(raw)
     if datos and datos.get("titulo") and datos.get("cuerpo"):
@@ -178,16 +180,18 @@ def _citas_de(fragmentos: list[Fragmento]) -> list[dict]:
 async def _enviar_tip(db, tip: Tip, destinos: list[str], frontend_url: str) -> dict:
     link = f"{frontend_url.rstrip('/')}/tips"
     plant = plantilla_tip(tip.titulo, tip.cuerpo_html, tip.cuerpo_texto, link)
+    cfg_smtp = await config_smtp(db)
 
     if not destinos:
         return {"estado": "sin_destinatarios", "tip_id": tip.id}
-    if not get_settings().smtp_configurado:
-        return {"estado": "sin_smtp", "tip_id": tip.id}
+    if not smtp_configurado(cfg_smtp):
+        return {"estado": "sin_smtp", "tip_id": tip.id,
+                "motivo": "configura el correo Brevo en Ajustes (o SMTP_* en .env)"}
 
     fallos = 0
     for email in destinos:
         try:
-            await enviar(email, plant["asunto"], plant["html"], plant["texto"])
+            await enviar(email, plant["asunto"], plant["html"], plant["texto"], cfg_smtp)
             db.add(TipEnvio(tip_id=tip.id, email=email, estado="ok"))
         except Exception as exc:  # noqa: BLE001 — log por destinatario, estilo EnvioLog
             fallos += 1

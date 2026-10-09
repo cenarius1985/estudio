@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Estudio Doctorado · Tesis MRI-UTE", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="Estudio — plataforma de estudio con IA local", version="0.2.0", lifespan=lifespan)
 
 _s = get_settings()
 app.add_middleware(
