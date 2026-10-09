@@ -195,10 +195,10 @@ En **Temas** creas cuantos temas quieras (p. ej. «Tesis MRI», «Oposiciones»,
 docker compose logs -f worker        # ingesta / tips
 docker compose exec db psql -U estudio -d estudio
 python scripts/probar_correo.py      # auth SMTP sin enviar
-python scripts/sincronizar_vault.py  # docs/vault → Obsidian (si usas el vault)
 ```
 
-Documentación extendida en `docs/vault/` (PRD y runbook).
+Documentación extendida en [`docs/`](docs/): PRDs, runbook y
+[`docs/actualizaciones/`](docs/actualizaciones/) (historial de cambios).
 
 ## Licencia
 

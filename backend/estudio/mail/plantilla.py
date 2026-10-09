@@ -1,6 +1,5 @@
-"""Plantilla HTML del tip diario — adaptada de plantillaReporte
-(reportesDiariosGes/Backend/correo.js): cabecera, caja con borde, botón y
-versión texto-plano. Marca propia del doctorado, sin branding MINSAL.
+"""Plantilla HTML del tip diario: cabecera, caja con borde, botón y versión
+texto-plano, con el nombre del tema de estudio.
 
 El tip guarda su cuerpo HTML/texto en BD; reenviar usa exactamente eso
 (0 reprocesamiento).

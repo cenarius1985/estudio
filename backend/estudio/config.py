@@ -21,7 +21,7 @@ class Settings(BaseSettings):
     exclude_dirs: str = ".git,node_modules,__pycache__,.venv,Tensorflowmri,build"
     max_archivo_bytes: int = 209_715_200  # 200 MB
 
-    # Correo (SMTP Brevo — mismos valores que reportesDiariosGes)
+    # Correo (SMTP Brevo; también configurable en el panel)
     smtp_host: str = ""
     smtp_port: int = 587
     smtp_user: str = ""

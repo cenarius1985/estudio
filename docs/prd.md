@@ -8,10 +8,6 @@ tags: [prd, doctorado, mri, rag, docker]
 
 # PRD — Plataforma de estudio "Estudio Doctorado" (tesis MRI-UTE)
 
-> Nota: este archivo vive temporalmente en `docs/vault/` porque la unidad G:
-> (Google Drive) no estaba montada al generarlo. Ejecutar
-> `python scripts/sincronizar_vault.py` para copiarlo al vault oficial
-> `G:\Mi unidad\DATACEF\DOCUMENTACION-PROYECTOS\ESTUDIO-DOCTORADO-DATACEF\`.
 
 ## Objetivo
 
@@ -46,7 +42,7 @@ por contraseña simple de administrador.
   rama `gpu`) con fallback a cualquier endpoint OpenAI-compatible.
 - Tips diarios: cron idempotente, dedupe por similitud coseno contra el
   historial, reenvío desde BD sin reprocesar, log de envíos.
-- Correo por relay SMTP de Brevo (credenciales de reportesDiariosGes).
+- Correo por relay SMTP de Brevo (cuenta propia del usuario).
 - Panel Next.js + chat SSE con citas estrictas.
 
 ### Fuera

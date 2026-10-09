@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Verifica la autenticación SMTP de Brevo SIN enviar correo.
+"""Verifica la autenticación SMTP de Brevo SIN enviar correo (stdlib).
 
-Patrón equivalente a reportesDiariosGes/scripts/probar_correo.py, en stdlib.
 Uso: python scripts/probar_correo.py  (lee el .env del proyecto)
 """
 
@@ -38,7 +37,7 @@ def main() -> int:
 
     if not (host and usuario and clave):
         print("❌ Falta SMTP_HOST/SMTP_USER/SMTP_PASS en el .env "
-              "(cópialos de E:\\GitHub\\Ministerio\\reportesDiariosGes\\.env)")
+              "(configúralos en el panel: Ajustes → Correo Brevo)")
         return 1
 
     print(f"Conectando a {host}:{puerto} (STARTTLS)…")

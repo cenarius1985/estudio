@@ -2,6 +2,10 @@
 .env
 *.env.local
 
+# Documentos personales en la carpeta de fuentes (solo se versiona .gitkeep)
+fuentes/*
+!fuentes/.gitkeep
+
 # Python
 __pycache__/
 *.pyc

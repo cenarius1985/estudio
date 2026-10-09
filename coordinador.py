@@ -34,7 +34,6 @@ RAIZ = Path(__file__).resolve().parent
 ENV = RAIZ / ".env"
 ENV_EJEMPLO = RAIZ / ".env.example"
 FUENTES = RAIZ / "fuentes"
-SMTP_ORIGEN = Path("E:/GitHub/Ministerio/reportesDiariosGes/.env")
 
 # El 27B PTQ1_0 completo pesa ~5.7 GB (modelo + contexto ≈ 6.5-7 GB de VRAM).
 GGUF_MIN_BYTES = 3_000_000_000
@@ -129,7 +128,7 @@ def leer_env(ruta: Path) -> dict[str, str]:
     return vals
 
 
-def generar_env(decision: dict) -> None:
+def generar_env(decision: dict, smtp_desde: Path | None = None) -> None:
     if ENV.exists():
         print("✓ .env ya existe (no se toca)")
         return
@@ -152,16 +151,17 @@ def generar_env(decision: dict) -> None:
     else:
         reemplazos["LLM_BASE_URL"] = ""
 
-    # Conveniencia en el PC del autor: SMTP Brevo ya verificado de MINSAL.
-    origen = leer_env(SMTP_ORIGEN) if SMTP_ORIGEN.exists() else {}
-    smtp = {k: origen.get(k, "") for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM")}
-    if smtp["SMTP_USER"] and smtp["SMTP_PASS"]:
-        reemplazos.update({k: v for k, v in smtp.items() if v})
-        reemplazos["TIPS_TO"] = smtp["SMTP_FROM"]
-        print("✓ SMTP Brevo copiado desde reportesDiariosGes (solo en este PC)")
+    # Copiar SMTP de otro .env si el usuario lo pide (--smtp-desde ruta/a/.env)
+    if smtp_desde and smtp_desde.exists():
+        origen = leer_env(smtp_desde)
+        smtp = {k: origen.get(k, "") for k in ("SMTP_HOST", "SMTP_PORT", "SMTP_USER", "SMTP_PASS", "SMTP_FROM")}
+        if smtp["SMTP_USER"] and smtp["SMTP_PASS"]:
+            reemplazos.update({k: v for k, v in smtp.items() if v})
+            reemplazos["TIPS_TO"] = smtp["SMTP_FROM"]
+            print(f"✓ SMTP copiado desde {smtp_desde}")
     else:
         print("· Sin SMTP en el .env: configúralo en el panel (Ajustes → Correo Brevo, "
-              "tutorial incluido) o edítalo a mano en el .env")
+              "tutorial incluido) o con --smtp-desde ruta/a/otro.env")
 
     salida = []
     for linea in lineas:
@@ -213,6 +213,8 @@ def main() -> int:
                         help="usar perfil gpu aunque la VRAM parezca insuficiente")
     parser.add_argument("--solo-env", action="store_true", help="solo generar el .env y salir")
     parser.add_argument("--no-abrir", action="store_true", help="no abrir el navegador")
+    parser.add_argument("--smtp-desde", type=Path, default=None, metavar="RUTA_ENV",
+                        help="copiar SMTP_* y TIPS_TO desde otro .env existente")
     args = parser.parse_args()
 
     print("== Estudio · coordinador de instalación ==\n")
@@ -239,7 +241,7 @@ def main() -> int:
     if decision["usar_gpu"] and decision["motivo"].startswith("AVISO"):
         print(f"  ⚠ {decision['motivo']}")
 
-    generar_env(decision)
+    generar_env(decision, args.smtp_desde)
     if args.solo_env:
         return 0
 

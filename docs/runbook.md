@@ -8,8 +8,6 @@ tags: [runbook, docker, operación]
 
 # Runbook — Plataforma Estudio Doctorado (tesis MRI-UTE)
 
-> Sincronizar al vault con `python scripts/sincronizar_vault.py` cuando la
-> unidad G: esté montada.
 
 ## Objetivo
 
@@ -27,7 +25,7 @@ desarrollo de nuevas funciones (ver PRD `01-prd-plataforma-estudio.md`).
 
 ```bash
 cd E:\GitHub\MRI\estudio-doctorado
-python coordinador.py            # genera .env (copiando Brevo de reportesDiariosGes), detecta GPU y levanta todo
+python coordinador.py            # genera .env con credenciales aleatorias, detecta GPU y levanta todo
 ```
 
 - Panel: http://localhost:8601 — login con `ADMIN_PASSWORD` (ver `.env`).
@@ -92,4 +90,3 @@ Panel → Ajustes → **Probar autenticación** y **Ver estado LLM**.
 - [ ] Escaneo inicial indexa la tesis completa sin errores.
 - [ ] Chat cita archivo y página reales; pregunta trampa → «No encontré eso…».
 - [ ] Tip de prueba llega al correo y el re-envío no regenera.
-- [ ] `scripts/sincronizar_vault.py` copia PRD y runbook a G: cuando esté montada.

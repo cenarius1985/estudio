@@ -28,7 +28,7 @@ tags: [actualización, open-source, configuración, urls]
    la indexa; las citas muestran la URL. Verificado: artículo corto (1 chunk)
    y largo (122 bloques / 38 KB).
 5. **Open source**: `coordinador.py` genera `.env` con credenciales
-   aleatorias (en el PC del autor además copia el SMTP de reportesDiariosGes),
+   aleatorias (opcionalmente copia un SMTP existente con --smtp-desde),
    detecta GPU, build+up, abre el navegador. Compose con carpeta portable
    `./fuentes` por defecto; `LICENSE` MIT; README completo (instalación,
    arquitectura, tutorial Brevo, uso, variables).
@@ -60,8 +60,7 @@ prueba inmediata de los TRES orígenes (montada/upload/url).
 
 - Sincronizar este directorio al vault G: cuando la unidad esté montada
   (`python scripts/sincronizar_vault.py`).
-- Publicar el repo (GitHub privado→público tras purga de secretos; el .env
-  real NO está versionado).
+- Publicar el repo (hecho el 2026-10-09 tras auditoría de secretos).
 
 ## Añadido el mismo día: LLMs de pago con API key (patrón api_llm)
 
