@@ -148,15 +148,19 @@ async def ingestar_url(ctx: dict, documento_id: str) -> dict:
             log.info("Indexada URL %s → %d chunks", pagina.url_final, resultado.get("chunks", 0))
             return {"ok": True, "url": pagina.url_final, **resultado}
         except Exception as exc:  # noqa: BLE001
+            doc_id, doc_ruta = doc.id, doc.ruta  # antes del rollback (expira ORM)
             try:
                 await db.rollback()
             except Exception:  # noqa: BLE001
                 pass
+            doc = await db.get(Documento, doc_id)
+            if doc is None:
+                return {"error": f"documento {doc_id} desapareció", "url": doc_ruta}
             doc.estado = "error"
             doc.error = f"{type(exc).__name__}: {exc}"[:2000]
             await db.commit()
-            log.error("Error indexando URL %s: %s", doc.ruta, exc)
-            return {"error": doc.error, "url": doc.ruta}
+            log.error("Error indexando URL %s: %s", doc_ruta, exc)
+            return {"error": doc.error, "url": doc_ruta}
 
 
 async def _indexar(documento_id: str, forzar: bool = False) -> dict:
@@ -176,26 +180,30 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
             log.info("Indexado %s → %d chunks", doc.ruta, resultado.get("chunks", 0))
             return {"ok": True, "documento": doc.ruta, **resultado}
         except Exception as exc:  # noqa: BLE001 — el error queda en el documento
-            # Si la sesión quedó en rollback pendiente (p. ej. byte inválido al
-            # insertar), liberarla ANTES de tocar la BD o el job re-explota y
-            # arq lo reintenta 5 veces re-procesando todo.
+            # OJO: el rollback EXPIRA los objetos ORM — leer cualquier atributo
+            # después (doc.tipo…) dispara un lazy-load fuera de contexto async
+            # (MissingGreenlet) y mataba el job entero. Capturamos ANTES.
+            doc_id, doc_tipo, doc_ruta = doc.id, doc.tipo, doc.ruta
             try:
                 await db.rollback()
             except Exception:  # noqa: BLE001
                 pass
+            doc = await db.get(Documento, doc_id)  # instancia fresca
+            if doc is None:
+                return {"error": f"documento {doc_id} desapareció"}
             # Imágenes sin texto (figuras científicas, logos): no es un fallo,
             # se marcan «sin_texto» para no ensuciar la lista de errores.
-            if doc.tipo == "imagen" and "sin texto" in str(exc).lower():
+            if doc_tipo == "imagen" and "sin texto" in str(exc).lower():
                 doc.estado = "sin_texto"
                 doc.error = ""
                 doc.chunks_n = 0
                 await db.commit()
-                return {"ok": True, "documento": doc.ruta, "sin_texto": True}
+                return {"ok": True, "documento": doc_ruta, "sin_texto": True}
             doc.estado = "error"
             doc.error = f"{type(exc).__name__}: {exc}"[:2000]
             await db.commit()
-            log.error("Error indexando %s: %s", doc.ruta, exc)
-            return {"error": doc.error, "documento": doc.ruta}
+            log.error("Error indexando %s: %s", doc_ruta, exc)
+            return {"error": doc.error, "documento": doc_ruta}
 
 
 async def _procesar_bloques(db, doc: Documento, bloques: list[Bloque]) -> dict:
