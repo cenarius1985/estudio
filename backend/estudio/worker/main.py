@@ -33,22 +33,23 @@ async def al_arrancar(ctx: dict) -> None:
 
 async def al_arrancar_ingesta(ctx: dict) -> None:
     """Arranque del worker de ingesta: además, recupera documentos quedados
-    en «procesando» por un worker muerto a mitad de job (al arrancar no hay
-    jobs en vuelo, así que cualquier «procesando» es un zombi)."""
+    en «procesando» (worker muerto a mitad de job) o «pendiente» sin job en
+    cola — al arrancar no hay jobs en vuelo, así que todos se reencolan."""
     await al_arrancar(ctx)
     async with SessionLocal() as db:
         atascados = (await db.execute(
-            select(Documento.id).where(Documento.estado == "procesando")
+            select(Documento.id).where(Documento.estado.in_(["procesando", "pendiente"]))
         )).fetchall()
         if not atascados:
             return
         await db.execute(
-            update(Documento).where(Documento.estado == "procesando").values(estado="pendiente")
+            update(Documento).where(Documento.estado.in_(["procesando", "pendiente"]))
+            .values(estado="pendiente")
         )
         await db.commit()
     for (did,) in atascados:
         await ctx["redis"].enqueue_job("ingestar_archivo", did)
-    log.info("Recuperados %d documentos atascados en «procesando»", len(atascados))
+    log.info("Reencolados %d documentos pendientes/_atascados al arrancar", len(atascados))
 
 
 async def al_apagar(ctx: dict) -> None:

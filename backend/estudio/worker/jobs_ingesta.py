@@ -199,20 +199,25 @@ async def _indexar(documento_id: str, forzar: bool = False) -> dict:
 
 
 async def _procesar_bloques(db, doc: Documento, bloques: list[Bloque]) -> dict:
-    """Chunks → embeddings → inserción + grafo diccionario → commit."""
+    """Chunks → embeddings (CPU, SIN transacción abierta) → inserción rápida.
+
+    La CPU pesada va ANTES de tocar la BD: antes el DELETE abría la
+    transacción y quedaba «idle in transaction» durante minutos de
+    embeddings/OCR, acaparando locks de chunks."""
     chunks = chunkear(bloques)
     if not chunks:
         raise ValueError("sin chunks")
 
-    await db.execute(delete(Chunk).where(Chunk.document_id == doc.id))
     textos = [c.texto for c in chunks]
     embs: list[list[float]] = []
     for i in range(0, len(textos), 32):
         embs.extend(embedir_passages(textos[i : i + 32]))
+
+    # transacción corta: reemplazo atómico de los chunks del documento
+    await db.execute(delete(Chunk).where(Chunk.document_id == doc.id))
     for n, (c, e) in enumerate(zip(chunks, embs)):
         db.add(Chunk(document_id=doc.id, n=n, pagina=c.pagina, texto=c.texto, embedding=e))
     await db.flush()
-
     await _grafo_diccionario(db, doc.id)
     doc.chunks_n = len(chunks)
     doc.estado = "listo"

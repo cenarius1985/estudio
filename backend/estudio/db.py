@@ -4,13 +4,18 @@ import logging
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 
 from estudio.config import get_settings
 
 log = logging.getLogger("estudio.db")
 
 settings = get_settings()
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+# NullPool: conexión fresca por uso. En el worker (tareas ARQ concurrentes con
+# tramos síncronos largos de OCR/embeddings) un pool compartido provocaba
+# MissingGreenlet en el pre-ping al reutilizar conexiones entre greenlets;
+# el coste de conectar en localhost es despreciable frente a la ingesta.
+engine = create_async_engine(settings.database_url, poolclass=NullPool)
 SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
 
