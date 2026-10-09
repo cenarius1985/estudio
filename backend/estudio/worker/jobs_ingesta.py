@@ -82,8 +82,11 @@ async def escanear_fuentes(ctx: dict) -> dict:
                 if doc.tema_id != tema_id:
                     doc.tema_id = tema_id
                     reclasificados += 1
-                # sin_texto también es un estado estable (imagen sin OCR): no re-procesar
-                if doc.bytes_n == a["bytes"] and doc.estado in ("listo", "procesando", "sin_texto"):
+                # sin_texto es estado estable (imagen sin OCR): no re-procesar.
+                # «procesando» SÍ se reencola: si el job murió (reintentos
+                # agotados) quedaría zombi para siempre; el reencolado es
+                # idempotente (delete+insert por documento) y converge.
+                if doc.bytes_n == a["bytes"] and doc.estado in ("listo", "sin_texto"):
                     intactos += 1
                     continue
                 h = sha256_archivo(Path(a["absoluta"]))
