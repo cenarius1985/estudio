@@ -8,7 +8,7 @@ import random
 import re
 from datetime import date
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from estudio.db import SessionLocal
 from estudio.llm import chat, extraer_json
@@ -21,17 +21,23 @@ log = logging.getLogger("estudio.estudio")
 
 
 async def _fragmentos_aleatorios(db, documento_id: str | None, n: int) -> list[Fragmento]:
-    q = select(Chunk.id, Chunk.texto, Chunk.pagina, Documento.ruta).join(
+    """Muestrea chunks con texto real: prioriza documentos que NO son imágenes
+    (el OCR de figuras da tarjetas pobres) y chunks con contenido suficiente."""
+    base = select(Chunk.id, Chunk.texto, Chunk.pagina, Documento.ruta, Documento.tipo).join(
         Documento, Documento.id == Chunk.document_id
     )
     if documento_id:
-        q = q.where(Chunk.document_id == documento_id)
+        q = base.where(Chunk.document_id == documento_id)
+    else:
+        q = base.where(Documento.tipo != "imagen", func.length(Chunk.texto) > 300)
     filas = (await db.execute(q)).fetchall()
+    if not filas and not documento_id:  # solo hay imágenes indexadas → usarlas
+        filas = (await db.execute(base)).fetchall()
     if not filas:
         return []
     muestra = random.sample(filas, min(n, len(filas)))
     return [
-        Fragmento(id=f[0], texto=f[1], pagina=f[2] or "", archivo=f[3], tipo="txt", titulo=f[3])
+        Fragmento(id=f[0], texto=f[1], pagina=f[2] or "", archivo=f[3], tipo=f[4] or "txt", titulo=f[3])
         for f in muestra
     ]
 
@@ -49,9 +55,12 @@ async def generar_deck(ctx: dict, deck_id: str, documento_id: str | None = None,
             tarjetas: list[dict] = []
             from estudio.rag.prompts import construir_contexto
 
+            # contexto compacto: llama-server (BONSAI_CTX 8192) desconecta si el
+            # prompt desborda la ventana
+            contexto = construir_contexto(fragmentos[:6], max_frag=900)
             raw = await chat(
-                [{"role": "user", "content": PROMPT_DECK.format(n=n, contexto=construir_contexto(fragmentos))}],
-                temperature=0.4, max_tokens=2200, json_mode=True,
+                [{"role": "user", "content": PROMPT_DECK.format(n=n, contexto=contexto)}],
+                temperature=0.4, max_tokens=1600, json_mode=True,
             )
             datos = extraer_json(raw)
             if datos and isinstance(datos.get("tarjetas"), list) and datos["tarjetas"]:
@@ -68,7 +77,7 @@ async def generar_deck(ctx: dict, deck_id: str, documento_id: str | None = None,
                     )
 
             if not tarjetas:  # fallback determinista: cloze sobre entidades del grafo
-                deck.titulo = deck.titulo or "Repaso cloze de la tesis"
+                deck.titulo = "Repaso cloze de la tesis"
                 for frag in fragmentos:
                     if len(tarjetas) >= n:
                         break
@@ -112,15 +121,15 @@ async def generar_quiz(ctx: dict, quiz_id: str, n: int = 10, tipo: str = "quiz")
         if not quiz:
             return {"error": "quiz no existe"}
         try:
-            fragmentos = await _fragmentos_aleatorios(db, None, max(n * 2, 10))
+            fragmentos = await _fragmentos_aleatorios(db, None, max(n + 4, 8))
             if not fragmentos:
                 raise ValueError("no hay chunks indexados")
             from estudio.rag.prompts import construir_contexto
 
+            contexto = construir_contexto(fragmentos[:8], max_frag=900)
             raw = await chat(
-                [{"role": "user",
-                  "content": PROMPT_QUIZ.format(n=n, contexto=construir_contexto(fragmentos))}],
-                temperature=0.5, max_tokens=3500, json_mode=True,
+                [{"role": "user", "content": PROMPT_QUIZ.format(n=n, contexto=contexto)}],
+                temperature=0.5, max_tokens=3000, json_mode=True,
             )
             datos = extraer_json(raw)
             if not (datos and isinstance(datos.get("preguntas"), list) and datos["preguntas"]):

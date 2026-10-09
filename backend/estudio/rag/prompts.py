@@ -21,13 +21,13 @@ SISTEMA_CHAT = (
 )
 
 
-def construir_contexto(fragmentos: list[Fragmento]) -> str:
+def construir_contexto(fragmentos: list[Fragmento], max_frag: int = MAX_FRAG) -> str:
     partes = []
     for i, f in enumerate(fragmentos, start=1):
         ref = f" ({f.pagina})" if f.pagina else ""
         partes.append(
-            f"[Fuente {i}] {f.archivo}{ref}\n{f.texto[:MAX_FRAG]}"
-            + ("…" if len(f.texto) > MAX_FRAG else "")
+            f"[Fuente {i}] {f.archivo}{ref}\n{f.texto[:max_frag]}"
+            + ("…" if len(f.texto) > max_frag else "")
         )
     return "\n\n".join(partes)
 
