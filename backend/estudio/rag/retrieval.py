@@ -141,16 +141,38 @@ async def recuperar(
     return fragmentos
 
 
-async def chunk_menos_cubierto(db: AsyncSession, n: int = 1, tema_id: str | None = None) -> list[int]:
-    """Chunks menos usados por tips (cobertura por tema); aleatorio en el mínimo."""
+async def chunk_menos_cubierto(
+    db: AsyncSession, n: int = 1, tema_id: str | None = None, prioridades: str = ""
+) -> list[int]:
+    """Chunks menos usados por tips (cobertura por tema); aleatorio en el mínimo.
+
+    Con `prioridades` (prefijos de ruta coma-separados) siembra preferentemente
+    desde el CORE del tema (p. ej. capítulos y resultados de la tesis, no
+    código auxiliar); cae al resto solo si no hay."""
     filtro_tema = "JOIN documents dd ON dd.id = c.document_id AND dd.tema_id = :tema" if tema_id else ""
+    params: dict = {"n": n}
+    if tema_id:
+        params["tema"] = tema_id
+
+    sql_base = (f"SELECT c.id, COUNT(tc.tip_id) AS usos FROM chunks c {filtro_tema} "
+                "LEFT JOIN tips_chunks tc ON tc.chunk_id = c.id ")
+    prefs = [p.strip().rstrip("/") for p in (prioridades or "").split(",") if p.strip()]
+    if prefs:
+        like = " OR ".join(f"dd.ruta LIKE :pref{i}" for i in range(len(prefs)))
+        for i, p in enumerate(prefs):
+            params[f"pref{i}"] = p + "%"
+        res = await db.execute(
+            text(sql_base + f"WHERE {like} GROUP BY c.id ORDER BY usos ASC, RANDOM() LIMIT :n"),
+            params,
+        )
+        ids = [r[0] for r in res.fetchall()]
+        if ids:
+            return ids
+        # sin resultados en las prioridades → todo el tema
+        params = {k: v for k, v in params.items() if not k.startswith("pref")}
+
     res = await db.execute(
-        text(
-            f"SELECT c.id, COUNT(tc.tip_id) AS usos FROM chunks c {filtro_tema} "
-            "LEFT JOIN tips_chunks tc ON tc.chunk_id = c.id "
-            "GROUP BY c.id ORDER BY usos ASC, RANDOM() LIMIT :n"
-        ),
-        {"n": n, **({"tema": tema_id} if tema_id else {})},
+        text(sql_base + "GROUP BY c.id ORDER BY usos ASC, RANDOM() LIMIT :n"), params
     )
     return [r[0] for r in res.fetchall()]
 

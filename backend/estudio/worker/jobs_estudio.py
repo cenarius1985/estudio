@@ -20,22 +20,43 @@ from estudio.rag.retrieval import Fragmento
 log = logging.getLogger("estudio.estudio")
 
 
-async def _fragmentos_aleatorios(db, documento_id: str | None, n: int, tema_id: str | None = None) -> list[Fragmento]:
+async def _fragmentos_aleatorios(
+    db, documento_id: str | None, n: int, tema_id: str | None = None, prioridades: str = ""
+) -> list[Fragmento]:
     """Muestrea chunks con texto real: prioriza documentos que NO son imágenes
     (el OCR de figuras da tarjetas pobres) y chunks con contenido suficiente.
-    Filtra por tema cuando se indica."""
+    Filtra por tema cuando se indica; con `prioridades` (prefijos de ruta)
+    muestrea preferentemente el CORE del tema."""
     base = select(Chunk.id, Chunk.texto, Chunk.pagina, Documento.ruta, Documento.tipo).join(
         Documento, Documento.id == Chunk.document_id
     )
+
+    def _con_calidad(q):
+        return q.where(Documento.tipo != "imagen", func.length(Chunk.texto) > 300)
+
+    def _con_priors(q):
+        prefs = [p.strip().rstrip("/") for p in (prioridades or "").split(",") if p.strip()]
+        if not prefs:
+            return q, False
+        from sqlalchemy import or_
+
+        return q.where(or_(*[Documento.ruta.startswith(p) for p in prefs])), True
+
+    filas: list = []
     if documento_id:
-        q = base.where(Chunk.document_id == documento_id)
+        filas = (await db.execute(base.where(Chunk.document_id == documento_id))).fetchall()
     else:
-        q = base.where(Documento.tipo != "imagen", func.length(Chunk.texto) > 300)
+        q = base
         if tema_id:
             q = q.where(Documento.tema_id == tema_id)
-    filas = (await db.execute(q)).fetchall()
-    if not filas and not documento_id:  # solo hay imágenes indexadas → usarlas
-        filas = (await db.execute(base)).fetchall()
+        q_priorizable = _con_calidad(q)
+        q_priors, tiene = _con_priors(q_priorizable)
+        if tiene:
+            filas = (await db.execute(q_priors)).fetchall()
+        if not filas:
+            filas = (await db.execute(q_priorizable)).fetchall()
+        if not filas:  # solo hay imágenes indexadas → usarlas
+            filas = (await db.execute(q)).fetchall()
     if not filas:
         return []
     muestra = random.sample(filas, min(n, len(filas)))
@@ -54,11 +75,14 @@ async def generar_deck(ctx: dict, deck_id: str, documento_id: str | None = None,
             from estudio.models import Tema
             from estudio.rag.prompts import perfil_enfoque
 
-            enfoque = ""
+            enfoque, prioridades = "", ""
             if deck.tema_id:
                 tema = await db.get(Tema, deck.tema_id)
                 enfoque = tema.enfoque if tema else ""
-            fragmentos = await _fragmentos_aleatorios(db, documento_id, max(n * 2, 8), tema_id=deck.tema_id)
+                prioridades = tema.prioridades if tema else ""
+            fragmentos = await _fragmentos_aleatorios(
+                db, documento_id, max(n * 2, 8), tema_id=deck.tema_id, prioridades=prioridades
+            )
             if not fragmentos:
                 raise ValueError("no hay chunks indexados en el tema" if deck.tema_id else "no hay chunks indexados")
 
@@ -137,11 +161,14 @@ async def generar_quiz(ctx: dict, quiz_id: str, n: int = 10, tipo: str = "quiz")
             from estudio.models import Tema
             from estudio.rag.prompts import construir_contexto, perfil_enfoque
 
-            enfoque = ""
+            enfoque, prioridades = "", ""
             if quiz.tema_id:
                 tema = await db.get(Tema, quiz.tema_id)
                 enfoque = tema.enfoque if tema else ""
-            fragmentos = await _fragmentos_aleatorios(db, None, max(n + 4, 8), tema_id=quiz.tema_id)
+                prioridades = tema.prioridades if tema else ""
+            fragmentos = await _fragmentos_aleatorios(
+                db, None, max(n + 4, 8), tema_id=quiz.tema_id, prioridades=prioridades
+            )
             if not fragmentos:
                 raise ValueError("no hay chunks indexados en el tema" if quiz.tema_id else "no hay chunks indexados")
 

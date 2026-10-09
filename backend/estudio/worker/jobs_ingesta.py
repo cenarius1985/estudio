@@ -41,21 +41,27 @@ async def ruta_absoluta(db, doc: Documento) -> Path:
     raise ValueError(f"El documento {doc.fuente}:{doc.ruta} no es un archivo local")
 
 
-async def _temas_carpetas(db) -> list[tuple[str, list[str]]]:
-    """[(tema_id, [prefijos])] de los temas que declaran carpetas."""
-    filas = (await db.execute(select(Tema.id, Tema.carpetas).where(Tema.carpetas != ""))).fetchall()
-    return [
+async def _reglas_clasificacion(db) -> tuple[list[tuple[str, list[str]]], dict[str, str]]:
+    """(prefijos por tema, slug→tema_id). La clasificación de un archivo es:
+    1º prefijos «carpetas» del tema; 2º carpeta de primer nivel fuentes/<slug>/;
+    3º tema General."""
+    filas = (await db.execute(select(Tema.id, Tema.carpetas, Tema.slug))).fetchall()
+    prefijos_tema = [
         (tid, [c.strip().rstrip("/") for c in (carp or "").split(",") if c.strip()])
-        for tid, carp in filas
+        for tid, carp, _ in filas if carp
     ]
+    slugs = {slug: tid for tid, _, slug in filas if slug}
+    return prefijos_tema, slugs
 
 
-def _tema_de_ruta(ruta: str, temas_carpetas: list[tuple[str, list[str]]]) -> str:
-    """Auto-clasificación: primer prefijo que calza; si no, tema General."""
-    for tid, prefijos in temas_carpetas:
+def _tema_de_ruta(ruta: str, prefijos_tema: list[tuple[str, list[str]]], slugs: dict[str, str]) -> str:
+    for tid, prefijos in prefijos_tema:
         for pref in prefijos:
             if ruta.startswith(pref):
                 return tid
+    primera = ruta.split("/", 1)[0].lower()
+    if primera in slugs:
+        return slugs[primera]
     return "general"
 
 
@@ -71,9 +77,9 @@ async def escanear_fuentes(ctx: dict) -> dict:
     nuevos, actualizados, intactos, reclasificados, pendientes = 0, 0, 0, 0, []
 
     async with SessionLocal() as db:
-        temas_carpetas = await _temas_carpetas(db)
+        prefijos_tema, slugs = await _reglas_clasificacion(db)
         for a in archivos:
-            tema_id = _tema_de_ruta(a["ruta"], temas_carpetas)
+            tema_id = _tema_de_ruta(a["ruta"], prefijos_tema, slugs)
             res = await db.execute(
                 select(Documento).where(Documento.ruta == a["ruta"], Documento.fuente == "montada")
             )

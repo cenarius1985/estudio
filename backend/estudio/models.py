@@ -35,10 +35,16 @@ class Tema(Base):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     nombre: Mapped[str] = mapped_column(String(120), unique=True)
+    # carpeta de primer nivel en fuentes/ que corresponde a este tema
+    # (fuentes/<slug>/…): la estructura ES la clasificación
+    slug: Mapped[str | None] = mapped_column(String(64), unique=True, nullable=True)
     descripcion: Mapped[str] = mapped_column(Text, default="")
     color: Mapped[str] = mapped_column(String(9), default="#2c5282")
     # Prefijos de carpeta (coma-separados) para auto-clasificar el escaneo
     carpetas: Mapped[str] = mapped_column(Text, default="")
+    # Prefijos con PRIORIDAD para sembrar tips/preguntas (el core del tema;
+    # vacío = todo el tema pesa igual)
+    prioridades: Mapped[str] = mapped_column(Text, default="")
     # Perfil de nivel/temario inyectado en los prompts (tips, decks, quizzes, chat)
     enfoque: Mapped[str] = mapped_column(Text, default="")
     tips_activo: Mapped[bool] = mapped_column(default=True)

@@ -127,7 +127,7 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
     dup_sim = 0.0
 
     for _ in range(reintentos):
-        semillas = await chunk_menos_cubierto(db, n=1, tema_id=tema.id)
+        semillas = await chunk_menos_cubierto(db, n=1, tema_id=tema.id, prioridades=tema.prioridades)
         if not semillas:
             return {"estado": "error", "motivo": "el tema no tiene chunks indexados"}
         seed_row = (await db.execute(select(Chunk).where(Chunk.id == semillas[0]))).scalar_one()

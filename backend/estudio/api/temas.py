@@ -16,6 +16,22 @@ from estudio.models import Chunk, Conversacion, Deck, Documento, Quiz, Tema, Tip
 router = APIRouter(prefix="/temas", tags=["temas"])
 
 
+def _slug_de(nombre: str, db) -> str:
+    import re as _re
+    import unicodedata
+
+    base = _re.sub(r"[^a-zA-Z0-9]+", "-",
+                   unicodedata.normalize("NFKD", nombre).encode("ascii", "ignore").decode()
+                   ).strip("-").lower() or "tema"
+    slug, i = base, 2
+    while True:
+        fila = (db.execute(select(Tema.id).where(Tema.slug == slug))).fetchone()
+        if fila is None:
+            return slug
+        slug = f"{base}-{i}"
+        i += 1
+
+
 @router.get("/carpetas")
 async def listar_carpetas(ruta: str = "", db: AsyncSession = Depends(get_db)):
     """Explorador de carpetas dentro del montaje de fuentes (para el selector
@@ -59,8 +75,8 @@ async def listar(db: AsyncSession = Depends(get_db)):
             .where(Documento.tema_id == t.id)
         )).scalar() or 0
         salida.append({
-            "id": t.id, "nombre": t.nombre, "descripcion": t.descripcion, "color": t.color,
-            "carpetas": t.carpetas, "enfoque": t.enfoque, "tips_activo": t.tips_activo,
+            "id": t.id, "nombre": t.nombre, "slug": t.slug, "descripcion": t.descripcion, "color": t.color,
+            "carpetas": t.carpetas, "prioridades": t.prioridades, "enfoque": t.enfoque, "tips_activo": t.tips_activo,
             "documentos": docs, "chunks": chunks,
             "creado_en": t.creado_en.isoformat(),
         })
@@ -72,6 +88,7 @@ class TemaBody(BaseModel):
     descripcion: str = ""
     color: str = "#2c5282"
     carpetas: str = ""
+    prioridades: str = ""
     enfoque: str = ""
     tips_activo: bool = True
 
@@ -84,16 +101,18 @@ async def crear(body: TemaBody, db: AsyncSession = Depends(get_db)):
     existe = (await db.execute(select(Tema).where(Tema.nombre == nombre))).scalar_one_or_none()
     if existe:
         raise HTTPException(409, f"Ya existe el tema «{nombre}»")
-    tema = Tema(
+    async def _crear():
+        return Tema(
         nombre=nombre, descripcion=body.descripcion.strip(),
         color=body.color if body.color.startswith("#") else "#2c5282",
         carpetas=",".join(c.strip().rstrip("/") for c in body.carpetas.split(",") if c.strip()),
+        prioridades=",".join(c.strip().rstrip("/") for c in body.prioridades.split(",") if c.strip()),
         enfoque=body.enfoque.strip(),
         tips_activo=body.tips_activo,
     )
     db.add(tema)
     await db.commit()
-    return {"ok": True, "id": tema.id,
+    return {"ok": True, "id": tema.id, "slug": tema.slug,
             "nota": "ejecuta un escaneo para auto-clasificar por carpetas" if tema.carpetas else ""}
 
 
@@ -102,6 +121,7 @@ class TemaUpdate(BaseModel):
     descripcion: str | None = None
     color: str | None = None
     carpetas: str | None = None
+    prioridades: str | None = None
     enfoque: str | None = None
     tips_activo: bool | None = None
 
@@ -119,6 +139,8 @@ async def editar(tema_id: str, body: TemaUpdate, db: AsyncSession = Depends(get_
         tema.color = body.color
     if body.carpetas is not None:
         tema.carpetas = ",".join(c.strip().rstrip("/") for c in body.carpetas.split(",") if c.strip())
+    if body.prioridades is not None:
+        tema.prioridades = ",".join(c.strip().rstrip("/") for c in body.prioridades.split(",") if c.strip())
     if body.enfoque is not None:
         tema.enfoque = body.enfoque.strip()
     if body.tips_activo is not None:

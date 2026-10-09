@@ -100,7 +100,7 @@ function SelectorCarpetas({ valor, onChange }: { valor: string; onChange: (v: st
 export default function Temas() {
   const [temas, setTemas] = useState<any[]>([]);
   const [mensaje, setMensaje] = useState("");
-  const [nuevo, setNuevo] = useState({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", enfoque: "", tips_activo: true });
+  const [nuevo, setNuevo] = useState({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", prioridades: "", enfoque: "", tips_activo: true });
   const [editando, setEditando] = useState<any>(null);
 
   async function cargar() {
@@ -120,7 +120,7 @@ export default function Temas() {
     try {
       const r = await api("/temas", { method: "POST", body: JSON.stringify(nuevo) });
       setMensaje(`✅ Tema creado${r.nota ? " — " + r.nota : ""}`);
-      setNuevo({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", enfoque: "", tips_activo: true });
+      setNuevo({ nombre: "", descripcion: "", color: "#2c5282", carpetas: "", prioridades: "", enfoque: "", tips_activo: true });
       cargar();
     } catch (e: any) {
       setMensaje(`❌ ${e.message}`);
@@ -135,7 +135,8 @@ export default function Temas() {
         body: JSON.stringify({
           nombre: editando.nombre, descripcion: editando.descripcion,
           color: editando.color, carpetas: editando.carpetas,
-          enfoque: editando.enfoque, tips_activo: editando.tips_activo,
+          prioridades: editando.prioridades, enfoque: editando.enfoque,
+          tips_activo: editando.tips_activo,
         }),
       });
       setEditando(null);
@@ -209,6 +210,13 @@ export default function Temas() {
                                 onChange={(v) => setNuevo({ ...nuevo, carpetas: v })} />
             </div>
           </div>
+          <div className="md:col-span-4">
+            <label className="block text-sm">PRIORIDAD — el core del tema (tips y preguntas siembran aquí primero)</label>
+            <div className="mt-1">
+              <SelectorCarpetas valor={nuevo.prioridades}
+                                onChange={(v) => setNuevo({ ...nuevo, prioridades: v })} />
+            </div>
+          </div>
           <label className="block md:col-span-4">
             Enfoque / nivel (se inyecta en tips, preguntas, flashcards y chat)
             <textarea className="entrada mt-1" rows={2} value={nuevo.enfoque}
@@ -233,6 +241,11 @@ export default function Temas() {
                 <div className="md:col-span-4">
                   <SelectorCarpetas valor={editando.carpetas || ""}
                                     onChange={(v) => setEditando({ ...editando, carpetas: v })} />
+                  <div className="mt-3">
+                    <label className="text-xs text-slate-500">PRIORIDAD (core del tema)</label>
+                    <SelectorCarpetas valor={editando.prioridades || ""}
+                                      onChange={(v) => setEditando({ ...editando, prioridades: v })} />
+                  </div>
                 </div>
                 <textarea className="entrada md:col-span-4" rows={2} value={editando.enfoque || ""}
                   placeholder="Enfoque / nivel (tips, preguntas, flashcards y chat)"

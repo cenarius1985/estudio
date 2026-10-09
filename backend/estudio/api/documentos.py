@@ -143,7 +143,26 @@ async def upload(archivos: list[UploadFile], tema_id: str = Form(None), ruta: st
 
     async with SessionLocal() as db:
         base = Path(await ruta_fuentes_efectiva(db))
+        # convención fuentes/<tema-slug>/…: los uploads se anidan en la
+        # carpeta del tema activo (si la ruta no trae ya un slug de tema)
+        slugs: dict[str, str] = {}
+        from estudio.models import Tema as ModeloTema
+
+        for t in (await db.execute(select(ModeloTema.id, ModeloTema.slug))).fetchall():
+            if t[1]:
+                slugs[t[1]] = t[0]
+        if tema_id and tema_id not in slugs.values():
+            fila = (await db.execute(select(ModeloTema.slug).where(ModeloTema.id == tema_id))).fetchone()
+            slug = fila[0] if fila and fila[0] else "general"
+        else:
+            slug = None
     relativa = _ruta_upload_segura(ruta)
+    if relativa:
+        primera = relativa.split("/", 1)[0].lower()
+        if primera not in slugs and slug:
+            relativa = f"{slug}/{relativa}"
+    elif slug:
+        relativa = slug
     creados = []
     for archivo in archivos:
         ruta_arch = Path(archivo.filename or "archivo.bin")

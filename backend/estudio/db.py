@@ -39,6 +39,12 @@ _DDL = [
     " ('general', 'General', 'Documentos sin tema asignado', '#64748b', '', true, NOW())"
     " ON CONFLICT (id) DO NOTHING",
     "ALTER TABLE temas ADD COLUMN IF NOT EXISTS enfoque TEXT",
+    "ALTER TABLE temas ADD COLUMN IF NOT EXISTS prioridades TEXT",
+    # convención fuentes/<slug>/: slug derivado del nombre del tema
+    "ALTER TABLE temas ADD COLUMN IF NOT EXISTS slug VARCHAR(64)",
+    "UPDATE temas SET slug = lower(regexp_replace(nombre, '[^a-zA-Z0-9]+', '-', 'g'))"
+    " WHERE slug IS NULL OR slug = ''",
+    "CREATE UNIQUE INDEX IF NOT EXISTS ix_temas_slug ON temas(slug)",
 ]
 
 # tema_id en las tablas existentes (ALTER + backfill a «general» + índice)
