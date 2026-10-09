@@ -121,33 +121,70 @@ async def mover_tema(documento_id: str, body: MoverTemaBody, db: AsyncSession = 
     return {"ok": True, "tema_id": doc.tema_id}
 
 
+def _ruta_upload_segura(ruta: str | None) -> str | None:
+    """Normaliza una ruta relativa (subcarpetas incluidas) y bloquea ../ y absolutas."""
+    if not ruta:
+        return None
+    limpia = ruta.replace("\\", "/").lstrip("/").strip()
+    if not limpia or ".." in limpia.split("/") or len(limpia) > 500:
+        return None
+    return limpia
+
+
 @router.post("/upload")
-async def upload(archivos: list[UploadFile], tema_id: str = Form(None)):
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+async def upload(archivos: list[UploadFile], tema_id: str = Form(None), ruta: str = Form(None)):
+    """Carga de archivos o CARPETAS COMPLETAS a la carpeta única del proyecto
+    (el montaje de fuentes, rw). `ruta` = ruta relativa con subcarpetas; solo
+    se aceptan los formatos soportados, el resto se ignora. Los archivos
+    quedan físicamente en <proyecto>/fuentes/... — si mueves el proyecto, se
+    mueve todo — y se registran como fuente «montada» para que el escaneo
+    posterior los vea intactos (sin duplicados)."""
+    from estudio.credenciales import ruta_fuentes_efectiva
+
+    async with SessionLocal() as db:
+        base = Path(await ruta_fuentes_efectiva(db))
+    relativa = _ruta_upload_segura(ruta)
     creados = []
     for archivo in archivos:
-        sufijo = Path(archivo.filename or "archivo.bin").suffix.lower()
-        if sufijo not in EXTENSIONES:
-            continue
-        nombre = f"{uuid.uuid4().hex[:8]}-{Path(archivo.filename).name}"
-        destino = UPLOAD_DIR / nombre
+        ruta_arch = Path(archivo.filename or "archivo.bin")
+        nombre_arch = ruta_arch.name
+        sufijo = ruta_arch.suffix.lower()
+        tipo = EXTENSIONES.get(sufijo)
+        if nombre_arch == "Dockerfile" or nombre_arch.startswith("Dockerfile."):
+            tipo = "codigo"
+        if tipo is None:
+            continue  # formato no aceptado → se ignora
+        destino_rel = relativa or nombre_arch
+        destino = base / destino_rel
+        destino.parent.mkdir(parents=True, exist_ok=True)
         contenido = await archivo.read()
-        destino.write_bytes(contenido)
+        with open(destino, "wb") as f:
+            f.write(contenido)
         h = hashlib.sha256(contenido).hexdigest()
         async with SessionLocal() as db:
-            doc = Documento(
-                ruta=nombre, fuente="upload", tipo=EXTENSIONES[sufijo],
-                titulo=Path(archivo.filename).stem, hash=h, bytes_n=len(contenido),
-                estado="pendiente", tema_id=tema_id or "general",
-            )
-            db.add(doc)
-            await db.flush()
+            doc = (await db.execute(
+                select(Documento).where(Documento.ruta == destino_rel, Documento.fuente == "montada")
+            )).scalar_one_or_none()
+            if doc:  # ya existía (re-subida o lo trajo un escaneo): actualizar
+                doc.hash, doc.bytes_n, doc.tipo = h, len(contenido), tipo
+                doc.estado, doc.error = "pendiente", ""
+                if tema_id:
+                    doc.tema_id = tema_id
+            else:
+                doc = Documento(
+                    ruta=destino_rel, fuente="montada", tipo=tipo,
+                    titulo=ruta_arch.stem, hash=h, bytes_n=len(contenido),
+                    estado="pendiente", tema_id=tema_id or "general",
+                )
+                db.add(doc)
+                await db.flush()
             await db.commit()
             await encolar("ingestar_archivo", doc.id)
-            creados.append({"id": doc.id, "ruta": nombre})
+            creados.append({"id": doc.id, "ruta": destino_rel})
     if not creados:
-        raise HTTPException(400, "Ningún archivo con formato soportado (pdf, tex, txt, md, csv, docx, xlsx, png, jpg, tif, ipynb)")
-    return {"ok": True, "documentos": creados}
+        raise HTTPException(400, "Ningún archivo con formato soportado (pdf, tex, txt, md, csv, "
+                                 "docx, xlsx, imágenes, ipynb, py, jl, yaml, Dockerfile…)")
+    return {"ok": True, "documentos": creados, "carpeta": relativa}
 
 
 @router.post("/{documento_id}/reindexar")

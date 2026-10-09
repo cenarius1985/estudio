@@ -169,7 +169,10 @@ En **Temas** creas cuantos temas quieras (p. ej. «Tesis MRI», «Oposiciones»,
 ## Uso diario
 
 1. **Documentos** → «Escanear fuentes» (ingesta incremental: solo reindexa lo
-   que cambió, por hash SHA256), sube archivos sueltos o agrega URLs.
+   que cambió, por hash SHA256), «📂 Subir carpeta» (sube una carpeta completa
+   con sus subcarpetas a `fuentes/` — solo los formatos soportados, el resto
+   se ignora; el proyecto queda autocontenido: muévelo y se mueve todo),
+   archivos sueltos o URLs.
 2. **Chat** → pregunta lo que quieras; cada afirmación llega con
    `[Fuente N]` clicable al archivo y página.
 3. **Tips** → historia de tips enviados, «Generar y enviar ahora», reenviar

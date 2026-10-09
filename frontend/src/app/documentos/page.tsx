@@ -16,6 +16,7 @@ export default function Documentos() {
   const [detalle, setDetalle] = useState<{ ruta: string; chunks: any[] } | null>(null);
   const [url, setUrl] = useState("");
   const inputArchivo = useRef<HTMLInputElement>(null);
+  const inputCarpeta = useRef<HTMLInputElement>(null);
 
   async function cargar(pag: number = pagina) {
     try {
@@ -45,6 +46,52 @@ export default function Documentos() {
     } catch (e: any) {
       setMensaje(e.message);
     }
+  }
+
+  const EXT_ACEPTADAS = [".pdf", ".tex", ".txt", ".md", ".csv", ".docx", ".xlsx",
+    ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".ipynb", ".py", ".jl", ".sh",
+    ".sql", ".r", ".m", ".yaml", ".yml", ".dockerfile"];
+
+  async function subirCarpeta(e: React.ChangeEvent<HTMLInputElement>) {
+    const archivos = Array.from(e.target.files || []);
+    if (inputCarpeta.current) inputCarpeta.current.value = "";
+    // solo formatos aceptados; se conserva la estructura de subcarpetas
+    const validos = archivos.filter((f) => {
+      const nombre = f.name;
+      if (nombre === "Dockerfile" || nombre.startsWith("Dockerfile.")) return true;
+      const ext = nombre.substring(nombre.lastIndexOf(".")).toLowerCase();
+      return EXT_ACEPTADAS.includes(ext);
+    });
+    if (!validos.length) {
+      setMensaje("⚠ La carpeta no trae archivos con formatos aceptados");
+      return;
+    }
+    const raiz = (validos[0] as any).webkitRelativePath?.split("/")[0] || "carpeta";
+    const tema = getTema() || "general";
+    let ok = 0, fallos = 0;
+    for (let i = 0; i < validos.length; i++) {
+      const f = validos[i];
+      const rel: string = (f as any).webkitRelativePath || f.name;
+      setMensaje(`⬆️ ${raiz}: ${i + 1}/${validos.length}…`);
+      const form = new FormData();
+      form.append("archivos", f);
+      form.append("tema_id", tema);
+      form.append("ruta", rel);
+      try {
+        const res = await fetch(`${API_URL}/documentos/upload`, {
+          method: "POST",
+          headers: { "x-token": getToken() || "" },
+          body: form,
+        });
+        res.ok ? ok++ : fallos++;
+      } catch {
+        fallos++;
+      }
+    }
+    setMensaje(`✅ «${raiz}»: ${ok} archivos en fuentes/ e indexándose` +
+               (fallos ? ` (${fallos} fallos)` : "") +
+               ` · ${archivos.length - validos.length} ignorados por formato`);
+    setTimeout(() => cargar(), 2500);
   }
 
   async function subir(e: React.ChangeEvent<HTMLInputElement>) {
@@ -104,7 +151,11 @@ export default function Documentos() {
         </button>
         <input ref={inputArchivo} type="file" multiple className="hidden"
           accept=".pdf,.tex,.txt,.md,.csv,.docx,.xlsx,.png,.jpg,.jpeg,.tif,.tiff,.ipynb,.py,.jl,.sh,.sql,.r,.m,.yaml,.yml,Dockerfile" onChange={subir} />
+        <input ref={inputCarpeta} type="file" className="hidden" multiple
+               /* @ts-ignore webkitdirectory */
+               webkitdirectory="" directory="" onChange={subirCarpeta} />
         <button className="boton-neutro" onClick={() => inputArchivo.current?.click()}>⬆️ Subir archivos</button>
+        <button className="boton-neutro" onClick={() => inputCarpeta.current?.click()}>📂 Subir carpeta</button>
         <form onSubmit={agregarUrl} className="flex gap-2 flex-1 min-w-[280px]">
           <input className="entrada" value={url} placeholder="🔗 https://pagina.a.estudiar.com"
             onChange={(e) => setUrl(e.target.value)} />

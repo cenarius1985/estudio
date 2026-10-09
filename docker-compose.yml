@@ -65,8 +65,9 @@ services:
       - "127.0.0.1:${API_PORT:-8600}:8000"
     volumes:
       - modelos:/data/modelos
-      - cargas:/data/cargas
-      - ${RUTA_TESIS:-./fuentes}:/fuentes:ro
+      # carpeta ÚNICA del proyecto, lectura-escritura: aquí vive todo el
+      # material (el que traigas a mano y el que subas por el panel)
+      - ${RUTA_TESIS:-./fuentes}:/fuentes
     depends_on:
       db:
         condition: service_healthy
