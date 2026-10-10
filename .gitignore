@@ -32,3 +32,7 @@ Thumbs.db
 
 # Metadatos de sesión
 .zcode/
+
+# artefactos de build / capturas
+*.tsbuildinfo
+.playwright-mcp/
