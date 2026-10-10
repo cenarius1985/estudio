@@ -92,7 +92,7 @@ export default function Chat() {
               <button
                 key={c.id}
                 onClick={() => abrir(c.id)}
-                className={`w-full text-left text-xs px-3 py-2 rounded-lg truncate ${c.id === conversacionId ? "bg-marca-600 text-white" : "bg-white hover:bg-slate-50 border border-slate-200"}`}
+                className={`w-full text-left text-xs px-3 py-2 rounded-lg truncate ${c.id === conversacionId ? "bg-brand-500 text-white" : "bg-white hover:bg-lightPrimary border border-gray-200"}`}
                 title={c.titulo}
               >
                 {c.titulo}
@@ -107,7 +107,7 @@ export default function Chat() {
               <div key={i} className={m.rol === "user" ? "text-right" : ""}>
                 <div
                   className={`inline-block max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap text-left ${
-                    m.rol === "user" ? "bg-marca-600 text-white" : "bg-white border border-slate-200"
+                    m.rol === "user" ? "bg-brand-500 text-white" : "bg-white border border-gray-200"
                   }`}
                 >
                   {m.contenido || (ocupado ? "…" : "")}
@@ -115,7 +115,7 @@ export default function Chat() {
                 {(m.fuentes?.length ?? 0) > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1 justify-end">
                     {(m.fuentes || []).map((f: any, j: number) => (
-                      <span key={j} className="chip bg-marca-50 text-marca-700 text-[10px]" title={f.origen === "grafo" ? "vía grafo de conceptos" : "recuperación híbrida"}>
+                      <span key={j} className="chip bg-lightPrimary text-navy-700 text-[10px]" title={f.origen === "grafo" ? "vía grafo de conceptos" : "recuperación híbrida"}>
                         📄 {f.archivo}{f.pagina ? ` · ${f.pagina}` : ""}
                       </span>
                     ))}

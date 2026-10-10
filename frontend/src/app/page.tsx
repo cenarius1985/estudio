@@ -52,20 +52,20 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="tarjeta">
-          <div className="text-3xl font-bold text-marca-700">{totalDocs}</div>
-          <div className="text-sm text-slate-500">documentos indexados</div>
+          <div className="text-3xl font-bold text-navy-700">{totalDocs}</div>
+          <div className="text-sm text-gray-600">documentos indexados</div>
         </div>
         <div className="tarjeta">
-          <div className="text-3xl font-bold text-marca-700">{stats?.chunks ?? "—"}</div>
-          <div className="text-sm text-slate-500">fragmentos (chunks)</div>
+          <div className="text-3xl font-bold text-navy-700">{stats?.chunks ?? "—"}</div>
+          <div className="text-sm text-gray-600">fragmentos (chunks)</div>
         </div>
         <div className="tarjeta">
-          <div className="text-3xl font-bold text-marca-700">{stats?.envios_ok ?? "—"}</div>
-          <div className="text-sm text-slate-500">tips enviados por correo</div>
+          <div className="text-3xl font-bold text-navy-700">{stats?.envios_ok ?? "—"}</div>
+          <div className="text-sm text-gray-600">tips enviados por correo</div>
         </div>
         <div className="tarjeta">
-          <div className="text-3xl font-bold text-marca-700">{stats?.flashcards ?? "—"}</div>
-          <div className="text-sm text-slate-500">flashcards</div>
+          <div className="text-3xl font-bold text-navy-700">{stats?.flashcards ?? "—"}</div>
+          <div className="text-sm text-gray-600">flashcards</div>
         </div>
       </div>
 
@@ -91,12 +91,12 @@ export default function Dashboard() {
                   estado === "listo" ? "chip bg-green-100 text-green-700"
                   : estado === "error" ? "chip bg-red-100 text-red-700"
                   : estado === "procesando" ? "chip bg-blue-100 text-blue-700"
-                  : "chip bg-slate-100 text-slate-600"
+                  : "chip bg-lightPrimary text-gray-600"
                 }>{estado}</span> {n} documento(s)
               </li>
             ))}
             {Object.entries(stats?.documentos?.por_tipo || {}).map(([tipo, n]: any) => (
-              <li key={tipo} className="text-slate-500">{tipo}: {n}</li>
+              <li key={tipo} className="text-gray-600">{tipo}: {n}</li>
             ))}
           </ul>
         </div>
@@ -104,7 +104,7 @@ export default function Dashboard() {
           <h2 className="font-semibold mb-2">Tips</h2>
           <p className="text-sm">Total generados: {tipsStats?.total ?? "—"}</p>
           <p className="text-sm">Cobertura de temas: {tipsStats?.cobertura_chunks?.pct ?? 0}% ({tipsStats?.cobertura_chunks?.cubiertos ?? 0}/{tipsStats?.cobertura_chunks?.total ?? 0} chunks)</p>
-          <p className="text-sm text-slate-500 mt-1">
+          <p className="text-sm text-gray-600 mt-1">
             Último enviado: {tipsStats?.ultimo_enviado ? `${tipsStats.ultimo_enviado.fecha} — ${tipsStats.ultimo_enviado.titulo}` : "ninguno aún"}
           </p>
         </div>
@@ -117,13 +117,13 @@ export default function Dashboard() {
                 ● {t.nombre}: {t.documentos} docs
               </span>
             ))}
-            {!stats?.temas?.length && <span className="text-sm text-slate-400">Sin temas aún (crea uno en Temas)</span>}
+            {!stats?.temas?.length && <span className="text-sm text-gray-500">Sin temas aún (crea uno en Temas)</span>}
           </div>
         </div>
         <div className="tarjeta">
           <h2 className="font-semibold mb-2">Grafo de conceptos</h2>
           <p className="text-sm">{stats?.grafo?.nodos ?? "—"} nodos · {stats?.grafo?.aristas ?? "—"} relaciones</p>
-          <p className="text-xs text-slate-500 mt-1">Los conceptos de tus documentos conectan fragmentos entre fuentes (ver Documentos → grafo).</p>
+          <p className="text-xs text-gray-600 mt-1">Los conceptos de tus documentos conectan fragmentos entre fuentes (ver Documentos → grafo).</p>
         </div>
       </div>
     </ConNav>

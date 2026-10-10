@@ -59,7 +59,7 @@ export default function Tips() {
         </label>
         <button className="boton-neutro" onClick={cargar}>♻️</button>
         {stats && (
-          <span className="text-sm text-slate-500 ml-auto">
+          <span className="text-sm text-gray-600 ml-auto">
             {stats.total} tips · {stats.envios_ok} envíos OK · cobertura {stats.cobertura_chunks?.pct}%
           </span>
         )}
@@ -68,15 +68,15 @@ export default function Tips() {
 
       <div className="tarjeta">
         <table className="w-full text-sm">
-          <thead className="text-left text-slate-500 border-b">
+          <thead className="text-left text-gray-600 border-b">
             <tr><th className="py-2">Fecha</th><th>Título</th><th>Estado</th><th>Envíos</th><th></th></tr>
           </thead>
           <tbody>
             {tips.map((t) => (
-              <tr key={t.id} className="border-b last:border-0 hover:bg-slate-50">
+              <tr key={t.id} className="border-b last:border-0 hover:bg-lightPrimary">
                 <td className="py-2 whitespace-nowrap">{t.fecha}</td>
                 <td>
-                  <button className="text-marca-600 hover:underline" onClick={() => abrir(t.id)}>{t.titulo}</button>
+                  <button className="text-brand-500 hover:underline" onClick={() => abrir(t.id)}>{t.titulo}</button>
                   {(() => {
                     const tema = temas.find((x: any) => x.id === t.tema_id);
                     return tema ? (
@@ -92,7 +92,7 @@ export default function Tips() {
                     t.estado === "enviado" ? "chip bg-green-100 text-green-700"
                     : t.estado === "error" ? "chip bg-red-100 text-red-700"
                     : t.estado === "duplicado" ? "chip bg-amber-100 text-amber-700"
-                    : "chip bg-slate-100 text-slate-600"
+                    : "chip bg-lightPrimary text-gray-600"
                   }>{t.estado}</span>
                 </td>
                 <td>{t.envios?.filter((e: any) => e.estado === "ok").length ?? 0}/{t.envios?.length ?? 0}</td>
@@ -101,7 +101,7 @@ export default function Tips() {
                 </td>
               </tr>
             ))}
-            {!tips.length && <tr><td colSpan={5} className="py-6 text-center text-slate-400">Aún no hay tips — genera el primero</td></tr>}
+            {!tips.length && <tr><td colSpan={5} className="py-6 text-center text-gray-500">Aún no hay tips — genera el primero</td></tr>}
           </tbody>
         </table>
       </div>
@@ -118,7 +118,7 @@ export default function Tips() {
             </div>
             <div className="p-5" dangerouslySetInnerHTML={{ __html: detalle.cuerpo_html }} />
             {detalle.envios?.length > 0 && (
-              <div className="px-5 pb-5 text-xs text-slate-500">
+              <div className="px-5 pb-5 text-xs text-gray-600">
                 Envíos: {detalle.envios.map((e: any) => `${e.email} (${e.estado})`).join(", ")}
               </div>
             )}

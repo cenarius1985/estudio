@@ -1,6 +1,24 @@
 "use client";
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8600";
+// Base de la API: si se configura un localhost y el usuario entra por otra
+// IP (127.0.0.1, LAN), se usa ese hostname para no chocar con IPv6 (::1).
+function _apiUrl(): string {
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8600";
+  try {
+    const u = new URL(base);
+    if ((u.hostname === "localhost" || u.hostname === "127.0.0.1")
+        && typeof window !== "undefined"
+        && window.location.hostname !== u.hostname
+        && window.location.hostname !== "") {
+      u.hostname = window.location.hostname;
+    }
+    return u.toString().replace(/\/$/, "");
+  } catch {
+    return base;
+  }
+}
+
+export const API_URL = _apiUrl();
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;

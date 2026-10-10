@@ -1,35 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body {
-  @apply bg-slate-100 text-slate-800;
+/* ===== Horizon UI base (github.com/horizon-ui/horizon-tailwind-react) ===== */
+@layer base {
+  html {
+    font-family: 'DM Sans', sans-serif !important;
+    font-feature-settings: 'kern' !important;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.5px;
+  }
+  body {
+    @apply bg-lightPrimary text-navy-700;
+  }
+  h1, h2, h3 {
+    @apply font-poppins;
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
 }
 
+/* Tarjeta Horizon: radius 20px, sombra suave 3xl, sin borde */
 .tarjeta {
-  @apply bg-white rounded-xl shadow-sm border border-slate-200 p-5;
+  @apply relative flex flex-col rounded-[20px] bg-white bg-clip-border p-5 shadow-3xl;
 }
 
+/* Botón primario: gradiente linear de Horizon (brandLinear → brand-500) */
 .boton {
-  @apply inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors;
+  @apply inline-flex items-center gap-2 rounded-xl px-4 py-[10px] text-sm font-medium transition-all duration-200;
 }
-
 .boton-primario {
-  @apply boton bg-marca-600 text-white hover:bg-marca-700;
+  @apply boton text-white shadow-[0px_10px_20px_-6px_rgba(75,53,240,0.35)] hover:shadow-[0px_16px_30px_-8px_rgba(75,53,240,0.5)] hover:-translate-y-px;
+  background: linear-gradient(135deg, #868cff 0%, #4318ff 100%);
 }
-
 .boton-neutro {
-  @apply boton bg-slate-200 text-slate-700 hover:bg-slate-300;
+  @apply boton bg-lightPrimary text-navy-700 hover:bg-gray-200;
 }
-
 .boton-peligro {
-  @apply boton bg-red-600 text-white hover:bg-red-700;
+  @apply boton bg-red-500 text-white hover:bg-red-600;
 }
 
+/* Campo estilo Horizon: fondo claro, sin borde, radius completo */
 .entrada {
-  @apply w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-marca-600 focus:outline-none;
+  @apply w-full rounded-xl bg-lightPrimary px-4 py-[10px] text-sm font-medium text-navy-700 outline-none transition-all placeholder:text-gray-500 focus:ring-2 focus:ring-brand-400/60;
+}
+select.entrada {
+  @apply cursor-pointer appearance-none;
 }
 
 .chip {
   @apply inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold;
+}
+
+a {
+  @apply hover:underline;
 }

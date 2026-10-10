@@ -165,7 +165,7 @@ export default function Documentos() {
       </div>
       {mensaje && <div className="tarjeta mb-4 text-sm">{mensaje}</div>}
 
-      <div className="flex items-center gap-2 mb-3 text-sm text-slate-600">
+      <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
         <span className="mr-auto">{total} documento(s){getTema() ? " en el tema activo" : ""}</span>
         <button className="boton-neutro !px-2 !py-1" disabled={pagina <= 1}
                 onClick={() => cargar(pagina - 1)}>◀</button>
@@ -176,20 +176,20 @@ export default function Documentos() {
 
       <div className="tarjeta overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-left text-slate-500 border-b">
+          <thead className="text-left text-gray-600 border-b">
             <tr>
               <th className="py-2">Ruta</th><th>Tema</th><th>Tipo</th><th>Fuente</th><th>Chunks</th><th>Estado</th><th></th>
             </tr>
           </thead>
           <tbody>
             {docs.map((d) => (
-              <tr key={d.id} className="border-b last:border-0 hover:bg-slate-50">
+              <tr key={d.id} className="border-b last:border-0 hover:bg-lightPrimary">
                 <td className="py-2 max-w-md truncate" title={d.ruta}>
-                  <button className="text-marca-600 hover:underline" onClick={() => verChunks(d)}>{d.ruta}</button>
+                  <button className="text-brand-500 hover:underline" onClick={() => verChunks(d)}>{d.ruta}</button>
                 </td>
                 <td>
                   <select
-                    className="text-xs rounded border border-slate-200 px-1 py-0.5"
+                    className="text-xs rounded border border-gray-200 px-1 py-0.5"
                     value={d.tema_id || ""}
                     onChange={(e) => moverTema(d, e.target.value)}
                     title="Mover a tema"
@@ -208,7 +208,7 @@ export default function Documentos() {
                     d.estado === "listo" ? "chip bg-green-100 text-green-700"
                     : d.estado === "error" ? "chip bg-red-100 text-red-700"
                     : d.estado === "procesando" ? "chip bg-blue-100 text-blue-700"
-                    : "chip bg-slate-100 text-slate-600"
+                    : "chip bg-lightPrimary text-gray-600"
                   }>{d.estado}</span>
                   {d.estado === "error" && <div className="text-xs text-red-500 mt-1 max-w-sm truncate" title={d.error}>{d.error}</div>}
                 </td>
@@ -218,7 +218,7 @@ export default function Documentos() {
                 </td>
               </tr>
             ))}
-            {!docs.length && <tr><td colSpan={6} className="py-6 text-center text-slate-400">Sin documentos aún — escanea las fuentes</td></tr>}
+            {!docs.length && <tr><td colSpan={6} className="py-6 text-center text-gray-500">Sin documentos aún — escanea las fuentes</td></tr>}
           </tbody>
         </table>
       </div>
@@ -228,7 +228,7 @@ export default function Documentos() {
           <h2 className="font-semibold mb-2">Grafo de conceptos (top por conexiones)</h2>
           <div className="flex flex-wrap gap-2">
             {grafo.nodos.slice(0, 30).map((n: any) => (
-              <span key={n.id} className="chip bg-marca-50 text-marca-700" title={`${n.grado} conexiones`}>
+              <span key={n.id} className="chip bg-lightPrimary text-navy-700" title={`${n.grado} conexiones`}>
                 {n.nombre} · {n.grado}
               </span>
             ))}
@@ -245,7 +245,7 @@ export default function Documentos() {
             </div>
             {detalle.chunks.map((c: any) => (
               <div key={c.id} className="text-xs border-b py-2 last:border-0">
-                <span className="chip bg-slate-100 text-slate-500 mr-2">#{c.n} {c.pagina}</span>
+                <span className="chip bg-lightPrimary text-gray-600 mr-2">#{c.n} {c.pagina}</span>
                 {c.texto}…
               </div>
             ))}

@@ -114,19 +114,19 @@ export default function Ajustes() {
         {/* ---------------- Correo Brevo ---------------- */}
         <div className="tarjeta">
           <h2 className="font-semibold mb-1">📬 Correo — Brevo SMTP</h2>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-gray-600 mb-3">
             Necesario para los tips diarios. Consigue tus claves gratis en{" "}
-            <a className="text-marca-600 underline font-semibold" href="https://www.brevo.com/" target="_blank" rel="noreferrer">
+            <a className="text-brand-500 underline font-semibold" href="https://www.brevo.com/" target="_blank" rel="noreferrer">
               brevo.com
             </a>{" "}
             —{" "}
-            <button className="text-marca-600 underline" onClick={() => setMostrarTuto(!mostrarTuto)}>
+            <button className="text-brand-500 underline" onClick={() => setMostrarTuto(!mostrarTuto)}>
               {mostrarTuto ? "ocultar tutorial" : "ver tutorial para conseguir las claves"}
             </button>
           </p>
 
           {mostrarTuto && (
-            <ol className="text-xs text-slate-600 bg-marca-50 rounded-lg p-3 mb-3 list-decimal list-inside space-y-1">
+            <ol className="text-xs text-gray-600 bg-lightPrimary rounded-lg p-3 mb-3 list-decimal list-inside space-y-1">
               <li>Crea una cuenta gratuita en <a className="underline" href="https://www.brevo.com/" target="_blank" rel="noreferrer">brevo.com</a> (300 correos/día gratis).</li>
               <li>Verifica tu cuenta con el correo que te envían.</li>
               <li>Entra al menú <b>SMTP &amp; API</b> (Perfil → SMTP &amp; API).</li>
@@ -167,7 +167,7 @@ export default function Ajustes() {
             <button className="boton-primario" onClick={() => guardarSeccion(smtp, "Correo Brevo")}>Guardar correo</button>
             <button className="boton-neutro" onClick={probarSmtp}>🧪 Probar autenticación</button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-gray-500 mt-2">
             Estado: {datos?.smtp.configurado ? "✅ configurado" : "⚠ sin configurar"} · Los valores del panel tienen prioridad sobre el .env.
           </p>
         </div>
@@ -212,7 +212,7 @@ export default function Ajustes() {
         {/* ---------------- Fuentes + URL ---------------- */}
         <div className="tarjeta">
           <h2 className="font-semibold mb-1">📁 Fuentes de documentos</h2>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-gray-600 mb-3">
             Carpeta con tu material: pdf, tex, txt, md, csv, docx, xlsx, imágenes con OCR, ipynb y
             <b> código (.py, .jl, Dockerfile, yaml, sh, sql)</b> — las citas de código indican líneas exactas.
             En Docker debe estar montada: ajusta <code>RUTA_TESIS</code> en el <code>.env</code> y ejecuta <code>docker compose up -d</code>.
@@ -236,7 +236,7 @@ export default function Ajustes() {
               onChange={(e) => setUrl(e.target.value)} />
             <button className="boton-primario" disabled={!url.trim()}>Agregar</button>
           </form>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-gray-500 mt-2">
             La página se descarga, se indexa y queda citable en el chat y los tips (mostrando su URL).
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function Ajustes() {
         {/* ---------------- LLM ---------------- */}
         <div className="tarjeta">
           <h2 className="font-semibold mb-1">🤖 LLM</h2>
-          <p className="text-xs text-slate-500 mb-3">
+          <p className="text-xs text-gray-600 mb-3">
             Local (Bonsai/Ollama, gratis y privado) o <b>de pago</b> con tu propia API key —
             más avanzado que Bonsai si lo necesitas.
           </p>
@@ -265,11 +265,11 @@ export default function Ajustes() {
               return (
                 <p className="text-xs bg-amber-50 border border-amber-200 rounded-lg p-2">
                   🔑 Consigue tu API key en{" "}
-                  <a className="text-marca-600 underline font-semibold" href={p.url_key} target="_blank" rel="noreferrer">
+                  <a className="text-brand-500 underline font-semibold" href={p.url_key} target="_blank" rel="noreferrer">
                     {p.url_key.replace(/^https?:\/\//, "")}
                   </a>
                   <br />
-                  <span className="text-slate-500">
+                  <span className="text-gray-600">
                     Ojo: con un LLM en la nube, los fragmentos recuperados de tus documentos se envían a ese proveedor para responder.
                   </span>
                 </p>
@@ -306,7 +306,7 @@ export default function Ajustes() {
               setMensaje("LLM: " + Object.entries(e.llm).map(([k, v]) => `${k} → ${v}`).join(" · "));
             }}>🩺 Estado</button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">Embeddings: multilingual-e5-large (local, CPU — siempre privado)</p>
+          <p className="text-[11px] text-gray-500 mt-2">Embeddings: multilingual-e5-large (local, CPU — siempre privado)</p>
         </div>
 
         {/* ---------------- Seguridad ---------------- */}
@@ -327,7 +327,7 @@ export default function Ajustes() {
               Volver a la del .env
             </button>
           </div>
-          <p className="text-[11px] text-slate-400 mt-2">
+          <p className="text-[11px] text-gray-500 mt-2">
             Actual: {datos?.password_panel || "…"} · al cambiarla se cierran las sesiones (vuelve a iniciar sesión).
           </p>
         </div>

@@ -8,7 +8,7 @@ const CALIDADES = [
   { q: 1, label: "Otra vez", clase: "bg-red-500 hover:bg-red-600" },
   { q: 3, label: "Difícil", clase: "bg-amber-500 hover:bg-amber-600" },
   { q: 4, label: "Bien", clase: "bg-green-500 hover:bg-green-600" },
-  { q: 5, label: "Fácil", clase: "bg-marca-600 hover:bg-marca-700" },
+  { q: 5, label: "Fácil", clase: "bg-brand-500 hover:bg-navy-700" },
 ];
 
 export default function Estudio() {
@@ -137,7 +137,7 @@ export default function Estudio() {
             <div key={d.id} className="flex items-center gap-2 py-2 border-b last:border-0 text-sm">
               <div className="flex-1">
                 <div className="font-medium">{d.titulo}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-gray-600">
                   {d.tarjetas} tarjetas · {d.pendientes_hoy} pendientes hoy ·{" "}
                   <span className={d.estado === "listo" ? "text-green-600" : d.estado === "error" ? "text-red-600" : "text-blue-600"}>{d.estado}</span>
                   {d.error && <span title={d.error}> ⚠️</span>}
@@ -148,7 +148,7 @@ export default function Estudio() {
               </button>
             </div>
           ))}
-          {!decks.length && <p className="text-sm text-slate-400">Sin decks todavía.</p>}
+          {!decks.length && <p className="text-sm text-gray-500">Sin decks todavía.</p>}
         </div>
 
         <div className="tarjeta">
@@ -157,7 +157,7 @@ export default function Estudio() {
             <div key={q.id} className="flex items-center gap-2 py-2 border-b last:border-0 text-sm">
               <div className="flex-1">
                 <div className="font-medium">{q.tipo === "simulacro" ? "⏱️" : "📝"} {q.titulo}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-gray-600">
                   {q.preguntas} preguntas ·{" "}
                   <span className={q.estado === "listo" ? "text-green-600" : q.estado === "error" ? "text-red-600" : "text-blue-600"}>{q.estado}</span>
                 </div>
@@ -167,7 +167,7 @@ export default function Estudio() {
               </button>
             </div>
           ))}
-          {!quizzes.length && <p className="text-sm text-slate-400">Sin quizzes todavía.</p>}
+          {!quizzes.length && <p className="text-sm text-gray-500">Sin quizzes todavía.</p>}
         </div>
       </div>
 
@@ -175,7 +175,7 @@ export default function Estudio() {
       {repaso && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-8">
           <div className="tarjeta max-w-xl w-full text-center">
-            <div className="text-xs text-slate-400 mb-3">
+            <div className="text-xs text-gray-500 mb-3">
               {repaso.idx + 1} / {repaso.tarjetas.length}
             </div>
             <div className="text-lg font-medium min-h-24 flex items-center justify-center">
@@ -184,7 +184,7 @@ export default function Estudio() {
             {repaso.visible ? (
               <>
                 <div className="mt-4 p-4 bg-green-50 rounded-lg text-sm">{repaso.tarjetas[repaso.idx].reverso}</div>
-                <div className="text-xs text-slate-400 mt-2">
+                <div className="text-xs text-gray-500 mt-2">
                   📄 {repaso.tarjetas[repaso.idx].cita?.archivo} {repaso.tarjetas[repaso.idx].cita?.pagina ? `· ${repaso.tarjetas[repaso.idx].cita.pagina}` : ""}
                 </div>
                 <div className="flex justify-center gap-2 mt-5">
@@ -212,7 +212,7 @@ export default function Estudio() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="tarjeta max-w-2xl w-full max-h-[88vh] flex flex-col !p-0 overflow-hidden">
             {/* cabecera con progreso */}
-            <div className="px-5 py-3 border-b bg-marca-700 text-white shrink-0">
+            <div className="px-5 py-3 border-b bg-navy-700 text-white shrink-0">
               <div className="flex justify-between items-center">
                 <h2 className="font-semibold text-sm truncate">{quiz.quiz.titulo}</h2>
                 <div className="flex items-center gap-2">
@@ -237,11 +237,11 @@ export default function Estudio() {
             {/* cuerpo scrolleable */}
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {quiz.resultado && (
-                <div className="text-center mb-4 p-4 bg-marca-50 rounded-xl border border-marca-600/20">
+                <div className="text-center mb-4 p-4 bg-lightPrimary rounded-xl border border-brand-400/20">
                   <div className={`text-4xl font-bold ${quiz.resultado.puntaje >= 70 ? "text-green-600" : quiz.resultado.puntaje >= 50 ? "text-amber-600" : "text-red-600"}`}>
                     {quiz.resultado.puntaje}%
                   </div>
-                  <div className="text-sm text-slate-600">
+                  <div className="text-sm text-gray-600">
                     {quiz.resultado.aciertos}/{quiz.resultado.total} correctas
                     {quiz.resultado.puntaje >= 70 ? " ✅ Aprobado" : quiz.resultado.puntaje >= 50 ? " ⚠️ Al límite" : " ❌ Repasar"}
                   </div>
@@ -259,10 +259,10 @@ export default function Estudio() {
                     </div>
                     <div className="space-y-1">
                       {p.alternativas.map((alt: string, j: number) => {
-                        let clase = "border border-slate-200 hover:border-marca-600";
+                        let clase = "border border-gray-200 hover:border-brand-400";
                         if (quiz.resultado && j === correcta) clase = "border-green-500 bg-green-50";
                         else if (quiz.resultado && j === elegida && j !== correcta) clase = "border-red-500 bg-red-50";
-                        else if (j === elegida) clase = "border-marca-600 bg-marca-50";
+                        else if (j === elegida) clase = "border-brand-400 bg-lightPrimary";
                         return (
                           <button
                             key={j}
@@ -276,10 +276,10 @@ export default function Estudio() {
                       })}
                     </div>
                     {quiz.resultado && p.explicacion && (
-                      <div className="text-xs text-slate-500 mt-1.5 p-2 bg-slate-50 rounded">
+                      <div className="text-xs text-gray-600 mt-1.5 p-2 bg-lightPrimary rounded">
                         💡 {p.explicacion}
                         {p.cita?.archivo && (
-                          <span className="block mt-0.5 text-[10px] text-slate-400">
+                          <span className="block mt-0.5 text-[10px] text-gray-500">
                             📄 {p.cita.archivo} {p.cita.pagina ? `· ${p.cita.pagina}` : ""}
                           </span>
                         )}
@@ -291,7 +291,7 @@ export default function Estudio() {
             </div>
 
             {/* pie: entregar o cerrar */}
-            <div className="px-5 py-3 border-t bg-slate-50 shrink-0">
+            <div className="px-5 py-3 border-t bg-lightPrimary shrink-0">
               {!quiz.resultado ? (
                 <button className="boton-primario w-full justify-center" onClick={entregarQuiz}
                         disabled={Object.keys(quiz.respuestas).length < quiz.quiz.preguntas.length}>

@@ -31,13 +31,13 @@ function SelectorCarpetas({ valor, onChange }: { valor: string; onChange: (v: st
     <div>
       <div className="flex flex-wrap gap-1.5 mb-2 min-h-8">
         {chips.map((c) => (
-          <span key={c} className="chip bg-marca-50 text-marca-700 flex items-center gap-1">
+          <span key={c} className="chip bg-lightPrimary text-navy-700 flex items-center gap-1">
             📁 {c}
-            <button type="button" className="text-marca-600 hover:text-red-600 font-bold"
+            <button type="button" className="text-brand-500 hover:text-red-600 font-bold"
                     onClick={() => quitar(c)}>✕</button>
           </span>
         ))}
-        {!chips.length && <span className="text-xs text-slate-400">Sin carpetas — todo irá a «General»</span>}
+        {!chips.length && <span className="text-xs text-gray-500">Sin carpetas — todo irá a «General»</span>}
       </div>
       <div className="flex gap-2">
         <button type="button" className="boton-neutro !py-1 text-xs" onClick={() => abrir("")}>
@@ -50,7 +50,7 @@ function SelectorCarpetas({ valor, onChange }: { valor: string; onChange: (v: st
                  if (e.key === "Enter" && manual.trim()) { agregar(manual.trim()); setManual(""); }
                }} />
       </div>
-      <p className="text-[11px] text-slate-400 mt-1">
+      <p className="text-[11px] text-gray-500 mt-1">
         El explorador muestra lo montado en <code>RUTA_TESIS</code>; para carpetas de otro punto del disco,
         amplía esa variable en el <code>.env</code> y haz <code>docker compose up -d</code>.
       </p>
@@ -69,7 +69,7 @@ function SelectorCarpetas({ valor, onChange }: { valor: string; onChange: (v: st
                 <button className="boton-neutro !px-2 !py-1 text-xs" onClick={() => setExplorando(false)}>✕</button>
               </div>
             </div>
-            <div className="text-xs text-slate-500 mb-2 flex flex-wrap gap-1 items-center">
+            <div className="text-xs text-gray-600 mb-2 flex flex-wrap gap-1 items-center">
               <button className="hover:underline" onClick={() => abrir("")}>fuentes/</button>
               {rutaActual.split("/").filter(Boolean).map((seg, i, arr) => (
                 <span key={i}>
@@ -78,13 +78,13 @@ function SelectorCarpetas({ valor, onChange }: { valor: string; onChange: (v: st
                 </span>
               ))}
             </div>
-            {hijos.length === 0 && <p className="text-sm text-slate-400 py-4 text-center">Sin subcarpetas aquí</p>}
+            {hijos.length === 0 && <p className="text-sm text-gray-500 py-4 text-center">Sin subcarpetas aquí</p>}
             {hijos.map((h) => (
               <div key={h.ruta} className="flex items-center gap-2 border-b last:border-0 py-1.5 text-sm">
-                <button className="flex-1 text-left hover:text-marca-600 truncate"
+                <button className="flex-1 text-left hover:text-brand-500 truncate"
                         onClick={() => abrir(h.ruta)} title={`Entrar en ${h.ruta}`}>
                   📂 {h.nombre}
-                  <span className="text-xs text-slate-400 ml-2">{h.documentos} docs</span>
+                  <span className="text-xs text-gray-500 ml-2">{h.documentos} docs</span>
                 </button>
                 <button className="boton-neutro !px-2 !py-0.5 text-xs"
                         onClick={() => agregar(h.ruta)} title="Añadir como carpeta del tema">✚</button>
@@ -242,7 +242,7 @@ export default function Temas() {
                   <SelectorCarpetas valor={editando.carpetas || ""}
                                     onChange={(v) => setEditando({ ...editando, carpetas: v })} />
                   <div className="mt-3">
-                    <label className="text-xs text-slate-500">PRIORIDAD (core del tema)</label>
+                    <label className="text-xs text-gray-600">PRIORIDAD (core del tema)</label>
                     <SelectorCarpetas valor={editando.prioridades || ""}
                                       onChange={(v) => setEditando({ ...editando, prioridades: v })} />
                   </div>
@@ -265,12 +265,12 @@ export default function Temas() {
                 <span className="w-4 h-4 rounded-full shrink-0" style={{ background: t.color }} />
                 <div className="flex-1 min-w-48">
                   <div className="font-semibold text-sm">{t.nombre}</div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-gray-600">
                     {t.documentos} documentos · {t.chunks} chunks
                     {t.carpetas && <> · carpetas: <code>{t.carpetas}</code></>}
                     {t.tips_activo ? " · ✉️ tips activos" : " · tips apagados"}
                   </div>
-                  {t.descripcion && <div className="text-xs text-slate-400 mt-0.5">{t.descripcion}</div>}
+                  {t.descripcion && <div className="text-xs text-gray-500 mt-0.5">{t.descripcion}</div>}
                 </div>
                 <button className="boton-neutro !px-3 !py-1 text-xs" onClick={() => setEditando(t)}>✏️ Editar</button>
                 {t.carpetas && (
