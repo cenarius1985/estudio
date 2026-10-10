@@ -25,6 +25,22 @@ PROVEEDORES: list[dict] = [
         "url_key": None,
     },
     {
+        "id": "glm-flash",
+        "nombre": "GLM Flash (ZAI, tu suscripción — sin costo API)",
+        "base_url": "https://api.z.ai/api/coding/paas/v4",
+        "model": "glm-4-flash",
+        "requiere_api_key": True,
+        "url_key": "https://z.ai/settings/apikey",
+    },
+    {
+        "id": "glm-5",
+        "nombre": "GLM-5 (ZAI, tu suscripción — sin costo API)",
+        "base_url": "https://api.z.ai/api/coding/paas/v4",
+        "model": "glm-5",
+        "requiere_api_key": True,
+        "url_key": "https://z.ai/settings/apikey",
+    },
+    {
         "id": "openai",
         "nombre": "OpenAI (de pago)",
         "base_url": "https://api.openai.com/v1",

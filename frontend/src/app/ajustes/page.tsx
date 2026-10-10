@@ -53,6 +53,24 @@ export default function Ajustes() {
     if (!p) return;
     if (p.base_url) setLlm((prev) => ({ ...prev, llm_base_url: p.base_url }));
     if (p.model) setLlm((prev) => ({ ...prev, llm_model: p.model }));
+    // Auto-aplicar la config del proveedor inmediatamente (sin escribir nada)
+    const payload: Record<string, any> = {
+      llm_base_url: p.base_url || "",
+      llm_model: p.model || "",
+      llm_fallback_url: "", // limpiar fallback al cambiar
+    };
+    if (!p.requiere_api_key) {
+      // Bonsai/Ollama: sin API key, limpiar
+      payload.llm_api_key = "";
+    }
+    // Para proveedores con API key: el usuario la pega una vez y queda guardada
+    // en el input llmApiKey; al pulsar "Guardar LLM" se persiste en la BD
+    api("/ajustes", { method: "PUT", body: JSON.stringify(payload) })
+      .then(() => {
+        setMensaje(`✅ Cambiado a ${p.nombre} — config aplicada automáticamente`);
+        if (!p.requiere_api_key) setLlmApiKey("");
+      })
+      .catch((e: any) => setMensaje(`⚠️ ${e.message}`));
   }
 
   useEffect(() => {
