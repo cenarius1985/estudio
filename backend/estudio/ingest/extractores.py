@@ -229,12 +229,19 @@ def extraer_docx(ruta: Path) -> list[Bloque]:
     return bloques
 
 
+MAX_FILAS_XLSX = 5000   # hojas-monstruo (k-space crudo): solo las primeras filas
+
+
 def extraer_xlsx(ruta: Path) -> list[Bloque]:
     wb = load_workbook(str(ruta), read_only=True, data_only=True)
     bloques = []
     for hoja in wb.worksheets:
         filas = []
+        truncada = False
         for fila in hoja.iter_rows(values_only=True):
+            if len(filas) >= MAX_FILAS_XLSX:
+                truncada = True
+                break
             celdas = ["" if c is None else str(c) for c in fila]
             if any(c.strip() for c in celdas):
                 filas.append(celdas)
@@ -243,6 +250,9 @@ def extraer_xlsx(ruta: Path) -> list[Bloque]:
         for i in range(0, len(filas), FILAS_POR_BLOQUE):
             lote = filas[i : i + FILAS_POR_BLOQUE]
             bloques.append(Bloque(_tabla_markdown(lote), f"hoja {hoja.title} filas {i + 1}-{i + len(lote)}"))
+        if truncada:
+            bloques.append(Bloque(f"[Hoja «{hoja.title}» truncada: primeras {MAX_FILAS_XLSX} filas]",
+                                  f"hoja {hoja.title}"))
     wb.close()
     if not bloques:
         raise IngestaError("XLSX sin celdas con contenido")
