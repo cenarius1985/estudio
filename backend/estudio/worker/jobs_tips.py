@@ -196,6 +196,16 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
             **{k: v for k, v in resultado.items() if k != "estado"}}
 
 
+def _titulo_fallback(texto: str) -> str:
+    """Primera línea legible del chunk: salta cabeceras de código, tablas y
+    opciones LaTeX/TikZ para no titular un tip con '[ enhanced, colback=…'."""
+    for linea in texto.splitlines():
+        l = linea.strip()
+        if len(l) > 40 and not l.startswith(("#", "[", "|", "%", "\\", "-", "=", "ink", "muted")):
+            return " ".join(l.split()[:9]).strip(" ,.;:")
+    return "Repaso de estudio"
+
+
 async def _generar_contenido(
     seed: Chunk, fragmentos: list[Fragmento], cfg_llm: dict, enfoque: str = ""
 ) -> tuple[str, str, list[Fragmento]]:
@@ -215,8 +225,7 @@ async def _generar_contenido(
     # Fallback: extractivo (garantiza tip aunque el LLM esté apagado)
     oraciones = [o for o in re.split(r"(?<=[.!?])\s+", seed.texto.strip()) if len(o) > 40]
     cuerpo = " ".join(oraciones[:3]) + " [Fuente 1]"
-    titulo = " ".join(seed.texto.split()[:8]).strip(" ,.;:")
-    return titulo or "Repaso de estudio", cuerpo, []
+    return _titulo_fallback(seed.texto), cuerpo, []
 
 
 def _citas_de(fragmentos: list[Fragmento]) -> list[dict]:
