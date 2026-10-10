@@ -187,12 +187,12 @@ def extraer_latex(ruta: Path) -> list[Bloque]:
             continue
         legibles = sum(1 for c in p if c.isalpha() or c.isspace() or c in ".,;:!?()[]ÁÉÍÓÚÑáéíóúñ")
         if legibles / len(p) > 0.55:
-            bloques.append(Bloque(p, "tex"))
+            bloques.append(Bloque(p, ""))
     if not bloques:
         raise IngestaError("LaTeX sin contenido extraíble")
     if sum(len(b.texto) for b in bloques) > MAX_TEXTO_ARCHIVO:
         bloques = bloques[: MAX_TEXTO_ARCHIVO // 2000]
-        bloques.append(Bloque("[Archivo truncado por tamaño]", "tex"))
+        bloques.append(Bloque("[Archivo truncado por tamaño]", ""))
     return bloques
 
 

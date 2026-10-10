@@ -127,17 +127,34 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
     dup_sim = 0.0
 
     for _ in range(reintentos):
-        semillas = await chunk_menos_cubierto(db, n=1, tema_id=tema.id, prioridades=tema.prioridades)
-        if not semillas:
-            return {"estado": "error", "motivo": "el tema no tiene chunks indexados"}
-        seed_row = (await db.execute(select(Chunk).where(Chunk.id == semillas[0]))).scalar_one()
-        fragmentos = await recuperar(db, seed_row.texto[:800], k=6, tema_id=tema.id)
+        # Semilla: si el tema trae una CONSULTA de siembra (campo prioridades
+        # usado como consulta semántica por el ciclo dirigido), se buscan los
+        # chunks más pertinentes a esa consulta. Si no, cobertura por tema.
+        consulta = (tema.prioridades or "").strip()
+        if consulta and not any(c in consulta for c in ("/", ",")) and len(consulta) > 40:
+            frs_semilla = await recuperar(db, consulta, k=8, tema_id=tema.id)
+            if not frs_semilla:
+                return {"estado": "error", "motivo": "sin chunks para la consulta"}
+            seed_row = (await db.execute(
+                select(Chunk).where(Chunk.id == frs_semilla[0].id)
+            )).scalar_one()
+            fragmentos = frs_semilla
+        else:
+            semillas = await chunk_menos_cubierto(db, n=1, tema_id=tema.id, prioridades=tema.prioridades)
+            if not semillas:
+                return {"estado": "error", "motivo": "el tema no tiene chunks indexados"}
+            seed_row = (await db.execute(select(Chunk).where(Chunk.id == semillas[0]))).scalar_one()
+            fragmentos = await recuperar(db, seed_row.texto[:800], k=6, tema_id=tema.id)
         if fragmentos:
             semilla = next((f for f in fragmentos if f.id == seed_row.id), None)
         else:
             semilla = None
 
-        titulo, cuerpo, usados = await _generar_contenido(seed_row, fragmentos, cfg_llm, tema.enfoque)
+        generado = await _generar_contenido(seed_row, fragmentos, cfg_llm, tema.enfoque)
+        if generado is None:
+            log.info("[%s] semilla sin material técnico; otra semilla", tema.nombre)
+            continue
+        titulo, cuerpo, usados = generado
         if semilla:
             usados = usados or [semilla]
         if not usados:
@@ -173,7 +190,11 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
         # almacenado SIN reprocesar (requisito: nada de re-generar).
         original = await db.get(Tip, dup_id) if dup_id else None
         if not original:
-            return {"estado": "error", "motivo": "duplicados sin original"}
+            # Los reintentos se agotaron sin duplicado real (p. ej. todas las
+            # semillas fueron rechazadas por falta de material técnico): no es
+            # un error del sistema, simplemente no hay tip nuevo hoy.
+            return {"estado": "omitido",
+                    "motivo": "sin semillas con material técnico nuevo"}
         log.info("[%s] reutilizando tip del %s (sim=%.3f) sin reprocesar",
                  tema.nombre, original.fecha, dup_sim)
         tip = Tip(
@@ -208,8 +229,13 @@ def _titulo_fallback(texto: str) -> str:
 
 async def _generar_contenido(
     seed: Chunk, fragmentos: list[Fragmento], cfg_llm: dict, enfoque: str = ""
-) -> tuple[str, str, list[Fragmento]]:
-    """LLM con citas y el nivel/enfoque del tema; fallback extractivo sin LLM."""
+) -> tuple[str, str, list[Fragmento]] | None:
+    """LLM con citas y el nivel/enfoque del tema.
+
+    Devuelve None si los fragmentos no traen material técnico real
+    (`sin_material: true`) — el llamador prueba otra semilla. Solo hay
+    fallback extractivo cuando el LLM no responde JSON válido.
+    """
     from estudio.rag.prompts import perfil_enfoque
 
     contexto = construir_contexto(fragmentos) if fragmentos else seed.texto[:1800]
@@ -219,13 +245,86 @@ async def _generar_contenido(
         temperature=0.6, max_tokens=600, json_mode=True, cfg=cfg_llm,
     )
     datos = extraer_json(raw)
-    if datos and datos.get("titulo") and datos.get("cuerpo"):
-        return str(datos["titulo"]).strip(), str(datos["cuerpo"]).strip(), fragmentos
+    if datos is not None and datos.get("sin_material"):
+        log.info("semilla sin material técnico; se descarta (otra semilla)")
+        return None
+    titulo = str(datos.get("titulo") or "").strip() if datos else ""
+    cuerpo = str(datos.get("cuerpo") or "").strip() if datos else ""
+    if datos and titulo and cuerpo and _titulo_valido(titulo) and _cuerpo_valido(cuerpo):
+        return titulo, cuerpo, fragmentos
+    if datos and titulo and cuerpo:
+        # título ilegible (frase cortada, signos, LaTeX) → derivar del cuerpo
+        titulo = _titulo_desde_cuerpo(cuerpo)
+        if titulo and _cuerpo_valido(cuerpo):
+            return titulo, cuerpo, fragmentos
+    # Sin JSON válido o contenido inválido: NO hay fallback extractivo. Copiar
+    # el chunk crudo producía tips de código, OCR de figuras y tablas de datos
+    # (causa de los tips ilegibles). Mejor descartar y probar otra semilla.
+    log.info("respuesta sin contenido técnico utilizable; otra semilla")
+    return None
 
-    # Fallback: extractivo (garantiza tip aunque el LLM esté apagado)
-    oraciones = [o for o in re.split(r"(?<=[.!?])\s+", seed.texto.strip()) if len(o) > 40]
-    cuerpo = " ".join(oraciones[:3]) + " [Fuente 1]"
-    return _titulo_fallback(seed.texto), cuerpo, []
+
+def _cuerpo_valido(c: str) -> bool:
+    """Descarta cuerpos que son código, OCR de figura o volcado de datos."""
+    if len(c) < 120:
+        return False
+    # debe citar al menos una fuente (el tip se fundamenta en tus documentos)
+    if not re.search(r"\[Fuente\s+\d+", c):
+        return False
+    sucio = (
+        "```" in c or c.count("def ") >= 2 or "print(" in c
+        or c.count(" = {") >= 1 or "import " in c
+        or re.search(r"\b\d{2,}\s+\d{2,}\s+\d{2,}", c)          # filas de números
+        or len(re.findall(r"[|\t]", c)) > 6                      # tablas crudas
+    )
+    if sucio:
+        return False
+    # proporción de texto en español razonable (tiene palabras funcionales)
+    comunes = (" de ", " la ", " el ", " y ", " en ", " que ", " se ", " con ")
+    return sum(c.lower().count(p) for p in comunes) >= 3
+
+
+def _titulo_valido(t: str) -> bool:
+    """Título legible: 4-14 palabras, sin LaTeX, sin empezar con signos."""
+    limpio = t.strip()
+    if not limpio or len(limpio) > 110:
+        return False
+    if limpio[0] in "-*#|$\\<>()[]{}":
+        return False
+    if any(c in limpio for c in "\\$^{}_|"):
+        return False
+    if any(k in limpio for k in ("def ", "print(", "import ", "http", ".py",
+                                 "n = ", "r = ", "p = ")):
+        return False
+    # sin palabras funcionales del español → no es un título en español
+    # (captura "A Subject 1 - female, 49", "10 — Gx — Gy — 62")
+    texto_min = f" {limpio.lower()} "
+    funcionales = (" de ", " la ", " el ", " en ", " y ", " con ", " para ",
+                   " del ", " por ", " un ", " una ", " al ", " en ")
+    if sum(texto_min.count(p) for p in funcionales) == 0:
+        return False
+    # exceso de separadores sueltos (OCR de gráficos, ejes, leyendas)
+    if len(re.findall(r"[—–]", limpio)) >= 2 or limpio.count(",") >= 3:
+        return False
+    palabras = limpio.split()
+    if not (4 <= len(palabras) <= 14):
+        return False
+    # termina a medias (conjunción/preposición/artículo o signo) → ilegible.
+    # Comparar la PALABRA completa, no el sufijo (evita rechazar "cuadrática").
+    ultima = palabras[-1].lower().strip(" ,.;:—-\"'()")
+    if ultima in {"de", "del", "en", "y", "o", "con", "para", "por", "a", "al",
+                  "el", "la", "los", "las", "un", "una", "que", "su", "sin"}:
+        return False
+    if limpio.endswith(("—", "-", ",", ":")):
+        return False
+    return True
+
+
+def _titulo_desde_cuerpo(cuerpo: str) -> str:
+    """Deriva un título legible de la primera oración del cuerpo."""
+    oracion = re.split(r"(?<=[.!?])\s+", cuerpo.strip())[0]
+    palabras = " ".join(oracion.split()[:8]).strip(" ,.;:—")
+    return palabras if _titulo_valido(palabras) else ""
 
 
 def _citas_de(fragmentos: list[Fragmento]) -> list[dict]:
