@@ -51,6 +51,9 @@ def _headers(cfg: dict | None) -> dict[str, str]:
 def _payload_base(cfg: dict | None, temperature: float, max_tokens: int, json_mode: bool) -> dict[str, Any]:
     modelo = (cfg or _cfg_por_defecto()).get("model") or get_settings().llm_model
     p: dict[str, Any] = {"model": modelo, "temperature": temperature, "max_tokens": max_tokens}
+    # GLM/ZAI: desactivar razonamiento para respuesta inmediata (razona ~2500 tokens si no)
+    if "z.ai" in ((cfg or {}).get("base_url", "") or get_settings().llm_base_url):
+        p["thinking"] = {"type": "disabled"}
     if json_mode:
         p["response_format"] = {"type": "json_object"}
     return p
@@ -59,11 +62,12 @@ def _payload_base(cfg: dict | None, temperature: float, max_tokens: int, json_mo
 async def chat(
     mensajes: list[dict],
     temperature: float = 0.3,
-    max_tokens: int = 900,
+    max_tokens: int = 3000,
     json_mode: bool = False,
     cfg: dict | None = None,
 ) -> str | None:
-    """Respuesta completa (str) o None si ningún endpoint responde."""
+    """Respuesta completa (str) o None si ningún endpoint responde.
+    GLM-5/5.3 razona ~1000-2700 tokens antes de escribir: max_tokens >= 3000."""
     s = get_settings()
     for ep in _endpoints(cfg):
         try:
@@ -74,7 +78,8 @@ async def chat(
                     json={"messages": mensajes, **_payload_base(cfg, temperature, max_tokens, json_mode)},
                 )
                 resp.raise_for_status()
-                return resp.json()["choices"][0]["message"]["content"].strip() or None
+                content = resp.json()["choices"][0]["message"].get("content", "")
+                return content.strip() or None
         except Exception as exc:  # noqa: BLE001 — fail-soft es el contrato
             log.warning("LLM %s falló: %s", ep, exc)
     return None
@@ -83,7 +88,7 @@ async def chat(
 async def chat_stream(
     mensajes: list[dict],
     temperature: float = 0.3,
-    max_tokens: int = 900,
+    max_tokens: int = 3000,
     cfg: dict | None = None,
 ) -> AsyncIterator[str]:
     """Stream de deltas de texto. Si todos los endpoints fallan → LLMNoDisponible."""
@@ -110,7 +115,9 @@ async def chat_stream(
                     if dato == "[DONE]":
                         break
                     try:
-                        delta = json.loads(dato)["choices"][0]["delta"].get("content")
+                        d = json.loads(dato)["choices"][0]["delta"]
+                        # GLM-5: razona primero (reasoning_content), luego responde (content)
+                        delta = d.get("content")
                     except (ValueError, KeyError, IndexError):
                         continue
                     if delta:
