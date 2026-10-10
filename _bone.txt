@@ -1,0 +1,674 @@
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap2.txt | 
+Capítulo 2. Marco conceptual y estado del arte
+
+Marco conceptual
+Fragilidad ósea y calidad ósea
+La fragilidad ósea corresponde a la pérdida de la capacidad del esqueleto para resistir cargas que un hueso sano tolera, y en la práctica se manifiesta como la fractura por bajo trauma. Es la fractura, y no el puntaje densitométrico, la que define la carga de la enfermedad. La osteoporosis, definida en términos operacionales por un T-score de densidad mineral ósea (DMO) areal igual o menor a -2.5, constituye una causa de fragilidad entre varias, y no sinónimo de ella.
+La evidencia clínica muestra una y otra vez la disociación entre densidad y riesgo. La diabetes tipo 2, la obesidad y la terapia con glucocorticoides aumentan el riesgo de fractura 
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap5.txt | 
+Capítulo 5. Metodología y protocolo de adquisición UTE
+
+Introducción
+La sección de metodología definió el diseño del estudio; este capítulo presenta el protocolo de adquisición de secuencias de tiempo de eco ultracorto (UTE) en resonancia magnética de bajo campo, estableciendo un procedimiento estandarizado que detalla los parámetros de secuencia y el flujo de trabajo tal como se ejecutan en el resonador y en la plataforma.
+Protocolo de adquisición UTE
+Regiones anatómicas de estudio
+Centraré las adquisiciones de RM en la evaluación del hueso cortical de la tibia media izquierda, único sitio explorado por UTE-MRI en este protocolo. Las mediciones de ultrasonido BDAT ( Bidirectional Axial Transmission) se realizarán en cambio sobre la tibia y
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap6.txt | 
+Capítulo 6. Planificación
+
+Cronograma de trabajo
+El proyecto de tesis doctoral se planificó para ejecutarse en un periodo total de 24 meses, con el mes 1 correspondiente a marzo de 2025, y el plan fue aprobado en la defensa del proyecto de tesis. A la fecha de esta actualización, septiembre de 2026, la ejecución se encuentra en el mes 19 de 24. Las fases de desarrollo, es decir, secuencias, reconstrucción y plataforma, están completadas; las fases de plataforma, además, se adelantaron y se ejecutaron en paralelo con la fase experimental, de modo que la plataforma contenerizada ya opera sobre datos reales de la campaña de mediciones. Esa campaña de mediciones in vivo RM-UTE y US-BDAT, la actividad más demorosa del proyecto, se encuentra en c
+===== defensa_tesis_doctoral/Paper-MRI-US/narracion/texto/methods.txt | 
+Methods
+
+Study Design and Anatomical Regions
+Cortical bone was assessed at two skeletal sites of the left extremities, the tibial mid-diaphysis and the radius. The UTE-MRI protocol was applied at the left tibial mid-diaphysis only, whereas Bidirectional Axial Transmission (BDAT) ultrasound was acquired at both the left tibia and the left radius; the site-matched MRI-ultrasound comparison therefore takes place at the tibial mid-diaphysis.
+Study Population and Ethical Considerations
+Twenty healthy adult volunteers (age range 20-80 years) were recruited for this ongoing study. Exclusion criteria were a body mass index above 35 kg/m squared, the presence of non-MRI-compatible metallic implants or devices, and inability to tolerate the examinati
+===== MRI-UTE PROYECTO DE TESIS/docs/doi-check-tesis-full.md | 
+- Fecha: 2026-09-20
+- .bib: `referencias.bib`
+- Entradas con estado: 312
+
+| # | Clave | DOI | Estado | Detalle |
+|---|---|---|---|---|
+| 1 | `[MinonzioBDATMeasurements2022` | - | ➖ NO_DOI | entrada sin DOI |
+| 2 | `ACRPhantom2018` | - | ➖ NO_DOI | entrada sin DOI |
+| 3 | `Aelterman2012On` | - | ➖ NO_DOI | entrada sin DOI |
+| 4 | `Afsahi2021` | 10.1002/jmri.28032 | ✅ OK |  |
+| 5 | `Akbari_2016` | 10.1016/j.bone.2015.10.006 | ✅ OK |  |
+| 6 | `akcakaya2022magnetic` | - | ➖ NO_DOI | entrada sin DOI |
+| 7 | `akid_doberman_2021` | - | ➖ NO_DOI | entrada sin DOI |
+| 8 | `Anand2008` | 10.1007/978-3-540-79409-7_3 | ✅ OK |  |
+| 9 | `angularv17` | - | ➖ NO_DOI | entrada sin DOI |
+| 10 | `Araya2021` | 10.1109/laus53676.2021.9639171 | ✅ OK |  |
+| 11 | `
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/scripts/gen_guion.py | líneas 271-435
+# gen_guion.py · python · líneas 271-435
+      r"medio grado centigrado en modo normal. Y hay un riesgo local, que suele ser el mas relevante en la practica: el calentamiento no es "
+      r"uniforme, sino que se concentra en las interfaces entre tejidos, en zonas mal perfundidas —que no pueden disipar por flujo "
+      r"sanguineo— y, sobre todo, alrededor de cualquier material metalico, donde puede llegar a producir quemaduras.",
+      r"Un matiz importante: el efecto es acumulativo. Por eso la norma no limita el pulso aislado, sino el promedio en ventanas temporales, "
+      r"concretamente de diez segundos y de seis minutos. Una secuencia puede tener pulsos individuales intensos y aun asi ser segura si su "
+      r"ciclo de trabajo es b
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 271-427
+# gen_guion.py · python · líneas 271-427
+      r"falla como ancla: su magnitud ONDULA —la grasa entra y sale de fase cada $12.2$ ms a $82$ Hz— y un modelo que no ondula absorbe esa "
+      r"interferencia como decaimiento aparente, devolviendo un $T_2^{*}$ sesgado para exactamente el uso que mas duele, anclar la medula. "
+      r"El two-decay lleva la oscilacion dentro del modelo, asi que su $T_2^{*}$ de grasa sale limpio. El mono sigue corriendo como "
+      r"REFERENCIA —ambas curvas se dibujan juntas, el sesgo queda a la vista— y como respaldo legado si el two-decay no califica.",
+      r"Con que reglas se acepta el ancla. Dos compuertas: converger sin parametros pegados al borde del rango —un valor en tope no es una "
+      r"medida, es
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo1.txt | 
+Anexo 1: Fundamentos físicos de la secuencia UTE
+
+Física de la excitación y la lectura UTE
+Este anexo desarrolla la física y la matemática de la secuencia UTE 2D implementada en esta tesis (anexo), una secuencia radial de eco ultracorto para 0.55 tesla cuyo diseño se resume en cuatro decisiones: excitar con un par de medios pulsos VERSE cuya trayectoria termina en kz = 0, leer desde el centro del espacio k muestreando la rampa del gradiente, destruir la magnetización residual combinando spoiling de gradiente y de RF, y sincronizar todos los eventos al raster del hardware. Cada decisión ataca el mismo obstáculo: los tejidos objetivo pierden la coherencia transversal en escalas de submilisegundo, de modo que cada microsegundo entre la excitac
+===== MRI-UTE PROYECTO DE TESIS/docs/fusion-log.md | 
+## Reemplazos
+
+| clave tesis | via | entrada paper |
+|---|---|---|
+| `Wang2004SSIM` | DOI 10.1109/tip.2003.819861 | `Wang2004SSIM` |
+| `Dietrich2007SNR` | DOI 10.1002/jmri.20969 | `Dietrich2007SNR` |
+| `Larson2007` | DOI 10.1002/mrm.21341 | `Larson2007` |
+| `GonzalezWoods2018DIP4e` | DOI 10.1007/s00223-015-9977-5 | `granke2015role` |
+| `Carl2010Optimization` | DOI 10.1002/mrm.22433 | `Carl2010Optimization` |
+| `Du2012Ultrashort` | DOI 10.1002/mrm.23047 | `Du2012Ultrashort` |
+| `Robson2003Magnetic` | DOI 10.1097/00004728-200311000-00001 | `Robson2003Magnetic` |
+| `Chang2015UTE` | DOI 10.1002/jmri.24713 | `Chang_2015` |
+| `Schenck2005Physical` | DOI 10.1016/j.pbiomolbio.2004.08.009 | `Schenck2005Physical` |
+| `Moonen1990Functional` | DOI 10.1
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/scripts/gen_guion.py | líneas 181-330
+# gen_guion.py · python · líneas 181-330
+      r"una NUFFT directa y una adjunta por iteracion. Su curvatura, el operador $E^{\mathrm{H}}E$, es lo que gobierna el condicionamiento del "
+      r"problema.",
+      r"Segundo termino, el regularizador, $\lambda\,\mathrm{TV}(x)=\lambda\|\nabla\,x\|_1$. Es un prior de esparsidad del gradiente —la norma "
+      r"$\ell_1$ de $\nabla\,x$ (el gradiente de la imagen)— que impone la estructura suave por tramos. Al no ser suave, se maneja con su "
+      r"subgradiente o, en la practica, con el suavizado de Huber que veremos en la siguiente diapositiva; $\lambda$ fija su peso relativo. "
+      r"Su efecto es restringir la variedad de soluciones al aliasing incoherente, suprimiendo los streaks sin borrar
+===== MRI-UTE PROYECTO DE TESIS/docs/baseline/compile-baseline.txt | 
+)
+(see the transcript file for additional information)
+pdfTeX warning (dest): name{Hfootnote.1} has been referenced but does not exist
+, replaced by a fixed one
+
+<C:/Users/Ferna/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cm
+bx10.pfb><C:/Users/Ferna/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfo
+nts/cm/cmbx8.pfb><C:/Users/Ferna/AppData/Local/Programs/MiKTeX/fonts/type1/publ
+ic/amsfonts/cm/cmex10.pfb><C:/Users/Ferna/AppData/Local/Programs/MiKTeX/fonts/t
+ype1/public/amsfonts/cm/cmmi10.pfb><C:/Users/Ferna/AppData/Local/Programs/MiKTe
+X/fonts/type1/public/amsfonts/cm/cmmi12.pfb><C:/Users/Ferna/AppData/Local/Progr
+ams/MiKTeX/fonts/type1/public/amsfonts/cm/cmmi6.pfb><C:/Users/Ferna/AppData/Loc
+al/Programs/MiKTeX/fonts/typ
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo4.txt | 
+Anexo 4: Fundamentos matemáticos del modelado de relajación transversal con ruido Rician ( T2 estrella)
+
+Este anexo desarrolla la matemática del modelado de la relajación transversal T2 estrella cuando las mediciones de magnitud en RM están afectadas por ruido Rician y, en su generalización multicanal, por ruido chi no central. Cubre el modelo de señal mono y bi-exponencial, la derivación de la distribución de la magnitud y de su esperanza exacta, la estimación del ruido y de los grados de libertad efectivos desde el fondo, las dos funciones de ajuste (mínimos cuadrados sobre la esperanza y máxima verosimilitud), las condiciones de validez de los datos y los criterios de métricas, incertidumbre y selección de modelo. Estos fundamentos son l
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/bib-update-log.md | 
+## Reconstruidas
+
+| clave | estado doi2bib | sim titulo | doi |
+|---|---|---|---|
+| `Wang2004SSIM` | OK | 1.00 | 10.1109/tip.2003.819861 |
+| `Dietrich2007SNR` | OK | 1.00 | 10.1002/jmri.20969 |
+| `Larson2007` | OK | 0.93 | 10.1002/mrm.21341 |
+| `Carl2010Optimization` | OK | 0.94 | 10.1002/mrm.22433 |
+| `Du2012Ultrashort` | OK | 1.00 | 10.1002/mrm.23047 |
+| `Robson2003Magnetic` | OK | 1.00 | 10.1097/00004728-200311000-00001 |
+| `Chang2015UTE` | MISMATCH | 1.00 | 10.1002/jmri.24713 |
+| `Schenck2005Physical` | WARN | 1.00 | 10.1016/j.pbiomolbio.2004.08.009 |
+| `Moonen1990Functional` | WARN | 1.00 | 10.1126/science.2218514 |
+| `Black1993Advances` | WARN | 1.00 | 10.1056/nejm199304293281706 |
+| `Cheng2023` | OK | 1.00 | 10.1007/s00256-022-04269-
+===== defensa_tesis_doctoral/presentacion-especiales/chemical-shift/scripts/gen_guion.py | líneas 181-300
+# gen_guion.py · python · líneas 181-300
+
+    ("DIAPOSITIVA 8", BLUE, "Solucion (2): el desfase, explicito en el modelo",
+     [r"La segunda linea de defensa es no luchar contra la interferencia sino incorporarla al modelo. En lugar de suprimir la grasa o de "
+      r"corregir la imagen, el desfase entra en las ecuaciones como lo que es: un termino conocido.",
+      r"El modelo de senal es la magnitud de una suma compleja de tres terminos: "
+      r"$M(TE)=|S_{bw}e^{-TE/T_{2,bw}^{*}}+S_{pw}e^{-TE/T_{2,pw}^{*}}+S_{bm}e^{-TE/T_{2,bm}^{*}}e^{\,j2\pi\Delta\,f\,TE}|$. Los dos primeros "
+      r"terminos son el agua cortical —agua ligada y agua de poro— y van en fase, contribuyendo solo a la parte real. El tercero es la medula, "
+      r"multipli
+===== MRI-UTE PROYECTO DE TESIS/docs/mapa-referencias.md | 
+## 1. Match por DOI (tesis_key <- paper_key)
+
+| clave tesis | clave paper | doi |
+|---|---|---|
+| `NIH2001osteoporosis` (=) | `NIH2001osteoporosis` | 10.1001/jama.285.6.785 |
+| `DeGraaf1997` (=) | `DeGraaf1997` | 10.1002/(sici)1099-0534(1997)9:4<247::aid-cmr4>3.0.co;2-z |
+| `Pruessmann1999` (=) | `Pruessmann1999` | 10.1002/(sici)1522-2594(199911)42:5<952::aid-mrm16>3.0.co;2-s |
+| `Butts2001` (=) | `Butts2001` | 10.1002/1522-2586(200101)13:1<99::aid-jmri1015>3.0.co;2-o |
+| `he2023micron` (=) | `he2023micron` | 10.1002/advs.202300959 |
+| `einstein` (=) | `einstein` | 10.1002/andp.19053221004 |
+| `Shen2020Magnetic` (=) | `Shen2020Magnetic` | 10.1002/ima.22463 |
+| `Bae_2012` (=) | `Bae_2012` | 10.1002/jbmr.1535 |
+| `Ong_2012` (=) | `Ong_2012` |
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo6.txt | 
+Anexo 6: Fundamentos de ondas guiadas en la corteza ósea y estimación BDAT
+
+Alcance
+La tesis compara dos rutas sin radiación hacia los mismos biomarcadores corticales: la cadena UTE de la resonancia, cuyos fundamentos ocupan los anexos anteriores, y el ultrasonido de transmisión axial bidireccional (BDAT), el comparador emparejado por sitio. Este anexo desarrolla la física del comparador: por qué la corteza se comporta como una guía de ondas, cómo la geometría bidireccional elimina el retardo del tejido blando, cómo se extraen las curvas de dispersión experimentales y cómo el problema inverso entrega espesor y porosidad corticales. El marco conceptual y la formulación operativa del método están en el cuerpo de la tesis (secciones y); aquí s
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 91-180
+# gen_guion.py · python · líneas 91-180
+      r"De ahi se siguen dos consecuencias que conviene anticipar. La primera: con tan pocos puntos, cada decision de modelado pesa mucho, porque "
+      r"no hay datos de sobra para absorber un error de especificacion; esto justifica el cuidado con el ruido Rician y con el numero de "
+      r"parametros libres. La segunda: como la ROI es la misma en todos los ecos, existe una condicion previa obligatoria, y es que esa ROI vea "
+      r"efectivamente el mismo tejido en los doce ecos. De eso trata la diapositiva siguiente."]),
+
+    ("DIAPOSITIVA 3", TEAL, "Correccion de movimiento: co-registrar la serie multi-eco",
+     [r"Antes de ajustar cualquier modelo hay un paso previo imprescindible, y por eso l
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/scripts/gen_guion.py | líneas 91-180
+# gen_guion.py · python · líneas 91-180
+    ("DIAPOSITIVA 3", TEAL, "Condicion 2: el muestreo debe ser incoherente",
+     [r"La segunda condicion es la incoherencia. El punto de partida es que submuestrear siempre genera error; no hay forma de evitarlo. Lo que "
+      r"decide si ese error se puede eliminar despues no es su magnitud, sino su aspecto: si el error se parece a estructura anatomica, es "
+      r"irrecuperable, porque ningun algoritmo puede distinguirlo de la anatomia real; si se parece a ruido difuso, la minimizacion $\ell_1$ "
+      r"lo separa sin dificultad.",
+      r"Que ocurre en cartesiano uniforme? Saltarse lineas de forma regular produce replicas periodicas de la imagen, el clasico ghosting. Una "
+      r"replica despla
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 181-270
+# gen_guion.py · python · líneas 181-270
+      r"corresponde a una combinacion tipo RSS— y la barra de ruido de la UI reporta el N efectivo con su modelo. Lo que se ve y lo que se "
+      r"ajusta ya no pueden divergir."]),
+
+    ("DIAPOSITIVA 7", BLUE, "Ajuste mono-exponencial: minimos cuadrados y maxima verosimilitud",
+     [r"Antes de ir al modelo completo, fijemos el ajuste de un solo exponencial, que aplica a tejidos con un pool dominante, como la medula, "
+      r"el musculo o la grasa, y que sirve de base y de referencia para el cortical. Hay dos estimadores, y los presento en paralelo. El vector "
+      r"de parametros es $\theta=(S_0,T_2^{*},\sigma)$ (amplitud inicial, tiempo de relajacion efectivo y ruido).",
+      r"El primero es 
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/scripts/gen_guion.py | líneas 181-270
+# gen_guion.py · python · líneas 181-270
+      r"$G_x=G\cos\phi$ y sobre $y$ como $G_y=G\sin\phi$. Cambiar de radio es cambiar dos amplitudes, no redisenar la secuencia.",
+      r"Sobre como se eligen esos angulos hay exactamente dos modos en la implementacion, y conviene ser preciso porque a menudo se supone "
+      r"otra cosa. En el modo de muestreo Nyquist completo, cuando el factor de submuestreo vale uno, los angulos son secuenciales "
+      r"uniformes: $\phi_i=\Delta\theta\,(i-1)$ con $\Delta\theta=2\pi/N_r$. En el modo Compressed Sensing, cuando el factor es menor que "
+      r"uno, los angulos se sortean aleatoriamente y de forma uniforme entre $0$ y $2\pi$, con semilla fija para reproducibilidad. No se usa "
+      r"angulo aureo 
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/scripts/gen_guion.py | líneas 91-180
+# gen_guion.py · python · líneas 91-180
+    ("DIAPOSITIVA 3", TEAL, "Excitacion: el medio pulso acaba con Gz = 0",
+     [r"Entremos en la excitacion. El pulso de radiofrecuencia es un sinc apodizado, generado con make sinc pulse, con una apodizacion de "
+      r"$0.5$ y un producto tiempo-ancho de banda (TBW) de $2$. El ancho de banda del pulso es ese TBW dividido por su duracion; y el "
+      r"gradiente de seleccion de corte se fija de modo que el grosor de corte sea el deseado: $G_z=BW/(\gamma\,\Delta z)$ (ancho de banda "
+      r"$BW$ dividido por la constante giromagnetica $\gamma$ y por el grosor $\Delta z$). Con los numeros: flip angle de $30^\circ$, "
+      r"$TBW=2$, duracion de $0.5$ ms y corte $\Delta z=10$ mm.",
+      r"La decis
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap3.txt | 
+Capítulo 3. Definición del problema
+
+Formulación del problema
+La resonancia magnética (RM) de bajo campo ( B 0 < 1 tesla) representa un reto significativo en la obtención de imágenes de tejidos con tiempos de relajación transversal ultracortos ( T2 estrella), como el hueso cortical, tendones, ligamentos y pulmón. Estos tejidos pierden coherencia de magnetización en tiempos extremadamente cortos, lo que dificulta su detección con secuencias convencionales de eco de espín y eco de gradiente. Técnicas especializadas, como Tiempo de Eco Ultracorto (UTE) y Tiempo de Eco Cero (ZTE), permiten capturar estas señales antes de que se atenúen significativamente; sin embargo, su implementación en entornos de bajo campo enfrenta varios desafíos:
+Baja re
+===== defensa_tesis_doctoral/presentacion-especiales/chemical-shift/scripts/gen_guion.py | líneas 91-180
+# gen_guion.py · python · líneas 91-180
+      r"con el tiempo. Si dos poblaciones de espines precesan a frecuencias que difieren en $\Delta\,f$, al cabo de un tiempo TE han "
+      r"acumulado una diferencia de fase $\phi(TE)=2\pi\,\Delta\,f\,TE$. La frecuencia se ha convertido en un angulo.",
+      r"Y ese angulo entra en la senal medida de una manera muy concreta. La senal de un voxel que contiene agua $W$ y grasa $F$ es una suma "
+      r"de dos vectores en el plano complejo: $S(TE)=W+F\,e^{j2\pi\Delta\,f\,TE}$. Como el escaner registra la magnitud, lo que se mide es "
+      r"$|S(TE)|=\sqrt{W^2+2WF\cos\phi+F^2}$. Fijense en el termino central: la grasa no se suma simplemente al agua, sino que "
+      r"interfiere con ella a traves del c
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap4.txt | 
+Capítulo 4. Metodología
+
+Diseño de la investigación
+La investigación sigue un enfoque cuantitativo, aplicado y exploratorio. Su objetivo es medir el agua del hueso cortical con RM-UTE a 0.55 tesla, cuantificarla como biomarcadores de porosidad y validarla contra el ultrasonido US-BDAT en el mismo sitio anatómico, como base para evaluar la calidad ósea sin radiación.
+El diseño es multimodal y emparejado por sitio: la RM-UTE se aplica en la diáfisis tibial media izquierda y el ultrasonido BDAT se mide en el mismo sitio tibial (y además en el radio), de modo que los biomarcadores de ambas técnicas describen la misma región cortical y su comparación es directa. La validación avanza en tres etapas encadenadas, cada una habilitando la siguiente: 
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_generacion_ute/src/crearPulsoSeleccionCorte.py | líneas 1-6+líneas 7-180
+# crearPulsoSeleccionCorte.py · python · líneas 1-6
+import numpy as np
+from scipy.interpolate import interp1d
+from pypulseq.make_sinc_pulse import make_sinc_pulse
+from visualizar_espectro_rf import visualizar_espectro_rf
+# from pypulseq import Opts # Para pruebas si es necesario
+
+# crearPulsoSeleccionCorte.py · python · líneas 7-180
+def crearPulsoSeleccionCorte(alpha_deg, rf_duration_param, slice_thickness_param, sys_obj,
+                             apodization=0.5, time_bw_product=2):
+    """
+    Crea el pulso de selección de corte de alpha grados y su gradiente
+    con remuestreo del pulso RF a la rampa (VERSE-like), replicando
+    la lógica de asignación de duraciones de MATLAB.
+
+    Entradas:
+        alpha_deg (float): Ángulo de flip e
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo5.txt | 
+Anexo 5: Implementación UTE-hmrGC de separación agua-grasa en adquisiciones multi-eco
+
+Propósito y alcance
+Este anexo documenta la matemática y el comportamiento de la implementación UTE-hmrGC usada en esta tesis para la separación water-only/fat-only a partir de adquisiciones UTE multi-eco, junto con los mapas de PDFF, R2 y delta mayúscula f (B0). La separación se construye sobre la librería fieldmapping-hmrGC ( hierarchical multi-resolution Graph Cut) y corre hoy como etapa del servicio de mapas T2 de la plataforma (módulo api_mapas_t2, servicio wf_separation_service), que adapta formato de datos, máscara y parámetros al flujo experimental.
+Relación con el protocolo del capítulo de metodología: el modelo de este anexo es la forma completa
+===== paper-mri-us/scripts/UTE/crearPulsoSeleccionCorte.py | líneas 1-6+líneas 7-177
+# crearPulsoSeleccionCorte.py · python · líneas 1-6
+import numpy as np
+from scipy.interpolate import interp1d
+from pypulseq.make_sinc_pulse import make_sinc_pulse
+from visualizar_espectro_rf import visualizar_espectro_rf
+# from pypulseq import Opts # Para pruebas si es necesario
+
+# crearPulsoSeleccionCorte.py · python · líneas 7-177
+def crearPulsoSeleccionCorte(alpha_deg, rf_duration_param, slice_thickness_param, sys_obj):
+    """
+    Crea el pulso de selección de corte de alpha grados y su gradiente
+    con remuestreo del pulso RF a la rampa (VERSE-like), replicando
+    la lógica de asignación de duraciones de MATLAB.
+
+    Entradas:
+        alpha_deg (float): Ángulo de flip en grados.
+        rf_duration_param (float): Duración nominal del
+===== defensa_tesis_doctoral/Paper-MRI-US/scripts/UTE/crearPulsoSeleccionCorte.py | líneas 1-6+líneas 7-177
+# crearPulsoSeleccionCorte.py · python · líneas 1-6
+import numpy as np
+from scipy.interpolate import interp1d
+from pypulseq.make_sinc_pulse import make_sinc_pulse
+from visualizar_espectro_rf import visualizar_espectro_rf
+# from pypulseq import Opts # Para pruebas si es necesario
+
+# crearPulsoSeleccionCorte.py · python · líneas 7-177
+def crearPulsoSeleccionCorte(alpha_deg, rf_duration_param, slice_thickness_param, sys_obj):
+    """
+    Crea el pulso de selección de corte de alpha grados y su gradiente
+    con remuestreo del pulso RF a la rampa (VERSE-like), replicando
+    la lógica de asignación de duraciones de MATLAB.
+
+    Entradas:
+        alpha_deg (float): Ángulo de flip en grados.
+        rf_duration_param (float): Duración nominal del
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 1-90
+# gen_guion.py · python · líneas 1-90
+# -*- coding: utf-8 -*-
+"""Genera el guion de lectura (PDF) para la presentacion de Relaxometria T2*.
+Usa solo matplotlib (mathtext, sin LaTeX). Una pagina por diapositiva.
+
+Las formulas se escriben con notacion real (mathtext, entre $...$) en lugar de
+fonetica, y cada simbolo/acronimo se define entre parentesis la primera vez que
+aparece. Regla interna: dentro de cada $...$ NO puede haber espacios ASCII
+(se usa \\, como separador) para que textwrap no rompa la formula al ajustar."""
+import textwrap
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
+# Fuente de las formulas: Computer Modern (aspecto clasico academico).
+plt.rcPara
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_reconstruccion_radial/src/coordinador.py | líneas 353-525
+# coordinador.py · python · líneas 353-525
+def process_batch(data_dir='test', ktraj_path=None, output_dir=None, tv_scale=1e-4,
+                  parametros=None):
+    """
+    Procesa todos los archivos .dat o .npy en el directorio especificado
+    Implementa NORMALIZACIÓN GLOBAL: Calcula el máximo de todo el lote antes de guardar.
+
+    Args:
+        data_dir (str): Directorio que contiene los archivos .dat o .npy
+        ktraj_path (str): Ruta al archivo con las trayectorias k-space
+        output_dir (str): Directorio donde guardar los resultados
+        tv_scale (float): LEGADO (ver process_file). Sólo aplica sin `parametros`.
+        parametros (dict | None): Overrides validados en parametros.py. La API
+            los registrará en meta
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap8.txt | 
+Capítulo 8. Supresión de grasa en IR-UTE: protocolo adiabático Silver-Hoult
+
+Introducción
+La supresión efectiva de la señal de grasa constituye uno de los desafíos más significativos en la implementación clínica de secuencias Ultra-Short Echo Time (UTE) para la caracterización de tejidos con tiempos de relajación ultracortos. A diferencia de las secuencias convencionales donde el desplazamiento químico grasa-agua puede ser manejado mediante técnicas espectrales establecidas, las secuencias UTE presentan limitaciones únicas que requieren enfoques innovadores para lograr una supresión de grasa homogénea y robusta.
+En el contexto específico de la resonancia magnética de bajo campo (0.55 tesla), este capítulo presenta el desarrollo e implementa
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap7.txt | 
+Capítulo 7. Resultados preliminares
+
+Introducción
+Este capítulo muestra, en orden de validación, lo que el proyecto lleva a la fecha: fantomas de referencia, corte animal ex vivo y los primeros resultados in vivo con el protocolo final. Los resultados in vivo corresponden a los dos primeros voluntarios sanos de la cohorte en curso ( N=20, con aprobación ética de la Universidad de Valparaíso y protocolo de RM iHEALTH de la Pontificia Universidad Católica de Chile, ID 210125006, cuyas mediciones cierran en septiembre de 2026) y a los quince pares de mediciones RM-BDAT emparejadas por sitio adquiridos a la fecha; todo el contenido proviene del artículo de investigación y de la presentación iHealth (ISMRM 2026).
+Pruebas en fantomas de referenci
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/scripts/gen_guion.py | líneas 1-90
+# gen_guion.py · python · líneas 1-90
+# -*- coding: utf-8 -*-
+"""Genera el guion de lectura (PDF) para la presentacion de la Secuencia UTE 2D.
+Usa solo matplotlib (mathtext, sin LaTeX). Una pagina por diapositiva.
+
+Las formulas se escriben con notacion real (mathtext, entre $...$) en lugar de
+fonetica, y cada simbolo/acronimo se define entre parentesis la primera vez que
+aparece. Regla interna: dentro de cada $...$ NO puede haber espacios ASCII
+(se usa \\, como separador) para que textwrap no rompa la formula al ajustar."""
+import textwrap
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
+# Fuente de las formulas: Computer Modern (aspecto clasico academico).
+plt.rcP
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/scripts/gen_guion.py | líneas 1-90
+# gen_guion.py · python · líneas 1-90
+# -*- coding: utf-8 -*-
+"""Genera el guion de lectura (PDF) para la presentacion de Compressed Sensing.
+Usa solo matplotlib (mathtext, sin LaTeX). Una pagina por diapositiva.
+
+Las formulas se escriben con notacion real (mathtext, entre $...$) en lugar de
+fonetica, y cada simbolo/acronimo se define entre parentesis la primera vez que
+aparece. Regla interna: dentro de cada $...$ NO puede haber espacios ASCII
+(se usa \\, como separador) para que textwrap no rompa la formula al ajustar."""
+import textwrap
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
+# Fuente de las formulas: Computer Modern (aspecto clasico academico).
+plt.rcPa
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_generacion_ute/src/ejecutarSecuenciaRadial.py | líneas 26-187
+# ejecutarSecuenciaRadial.py · python · líneas 26-187
+def ejecutarSecuenciaRadial(seq, rf, gz, gx, adc,
+                            spoiler_x, spoiler_y, spoil_duration_real,
+                            Nr, Ndummy, TR, delta_theta, rfSpoilingInc,
+                            minRF_to_ADC_time, mcm_raster_time,
+                            random_sampling=True, random_seed=42, cs_undersampling_factor=1.0):
+    """
+    Ejecuta la secuencia UTE con adquisición radial, incluyendo dummy scans,
+    spoiling de RF y opcionalmente muestreo aleatorio para Compressed Sensing.
+    
+    Parámetros adicionales para Compressed Sensing:
+    - random_sampling: Si True, usa muestreo aleatorio para CS. Si False, usa muestreo secuencial.
+    - random_seed: Semi
+===== defensa_tesis_doctoral/Paper-MRI-US/narracion/texto/intro.txt | 
+Introduction
+
+Bone fragility, the loss of a skeleton's ability to resist loads that a healthy bone tolerates, expresses itself clinically as the fragility fracture, and it is the fracture, not the densitometric score, that defines the burden of disease. Osteoporosis, defined operationally by an areal bone mineral density (BMD) T-score less than or equal to q -2.5, is one cause of bone fragility among several. Type 2 diabetes, obesity, and glucocorticoid therapy increase fracture risk without a comparable decrease in areal BMD; in type 2 diabetes, fractures occur despite normal-to-elevated BMD, reflecting greater cortical porosity, abnormal mineralization, and collagen glycation. Consistent with this dissociation, more than half of individua
+===== defensa_tesis_doctoral/presentacion-especiales/chemical-shift/scripts/gen_guion.py | líneas 1-90
+# gen_guion.py · python · líneas 1-90
+# -*- coding: utf-8 -*-
+"""Genera el guion de lectura (PDF) para la presentacion de Chemical Shift.
+Usa solo matplotlib (mathtext, sin LaTeX). Una pagina por diapositiva.
+
+Las formulas se escriben con notacion real (mathtext, entre $...$) en lugar de
+fonetica, y cada simbolo/acronimo se define entre parentesis la primera vez que
+aparece. Reglas internas:
+  - dentro de cada $...$ NO puede haber espacios ASCII (se usa \\, como
+    separador) para que textwrap no rompa la formula al ajustar;
+  - mathtext NO admite \\le ni \\gtrsim: usar \\leq y \\geq;
+  - si una pagina supera ~5 parrafos largos, draw_page la trunca en silencio.
+    Partir la pagina en dos antes que arriesgarse a perder texto.
+"""
+import te
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_mapas_t2/src/relajacionTransversalMono.py | líneas 664-835
+# relajacionTransversalMono.py · python · líneas 664-835
+                                             options={'maxiter': 500})
+                            if res_b.success:
+                                boot_params.append(res_b.x)
+                        except Exception:
+                            continue
+                    if len(boot_params) >= 5:
+                        boot_arr = np.array(boot_params)
+                        std_arr = boot_arr.std(axis=0, ddof=1)
+                        S0_std    = float(std_arr[0])
+                        T2_std    = float(std_arr[1])
+                        sigma_std = float(std_arr[2])
+                        std_method = f"Bootstrap (n={len(boot_params)})"
+                except Exception:
+  
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_modelo_tricomponente/src/simulador_t2.py | líneas 135-301
+# simulador_t2.py · python · líneas 135-301
+def construir_tabla(te_us: np.ndarray,
+                    senal: np.ndarray,
+                    sigma: float = SIGMA_DEFECTO,
+                    n_canales: int = 1,
+                    senal_medula: Optional[np.ndarray] = None,
+                    semilla_fondo: int = 1) -> pd.DataFrame:
+    """
+    La tabla que entiende el ajuste. Mismas columnas que escribe el extractor.
+
+    `STD Ruido` y `Promedio Ruido` salen de un fondo SIMULADO, no de σ: así el
+    ajuste tiene que despejarlos igual que hace con datos reales, y el fantasma
+    ejercita esa ruta en vez de saltársela.
+    """
+    te = np.asarray(te_us, dtype=float)
+    m = np.asarray(senal, dtype=float)
+    f = fondo(sigma=sigma, n_canales
+===== defensa_tesis_doctoral/articulos/Magnetic Resonance in Med - 2026 - Rohe - Fat Water Separation at 7 T Using a 3D Radial Sequence With Quasi‐Continuous Echo.pdf | 12
+5. J. Burakiewicz, C. D. J. Sinclair, D. Fischer, G. A. Walter, H. E. Kan, and
+K. G. Hollingsworth, “Quantifying Fat Replacement of Muscle by Quan-
+titative MRI in Muscular Dystrophy,” Journal of Neurology 264 (2017):
+2053–2067.
+6. A. Grimm, H. Meyer, M. D. Nickel, et al., “A Comparison Between
+6-Point Dixon MRI and MR Spectroscopy to Quantify Muscle Fat in the
+Thigh of Subjects With Sarcopenia,” Journal of Frailty and Aging 8 (2019):
+21–26.
+7. G. C. Feuerriegel, B. Fritz, A. A. Marth, S. Sommer, K. Wieser, and
+R. Sutter, “Assessment of the Rotator Cuff Muscles: State-Of-The-Art MRI
+and Clinical Implications,” Radiology 315, no. 2 (2025): e242131.
+8. D. Kumar, D. C. Karampinos, T. D. MacLeod, et al., “Quadriceps Intra-
+muscular Fat Fraction
+===== defensa_tesis_doctoral/articulos/Magnetic Resonance in Med - 2026 - Krämer - Chemical Shift Separated and Compensated Ultra‐Short Echo‐Time Imaging.pdf | 13
+Funding
+This work was supported by Deutsche Forschungsgemeinschaft (KR
+4783/2-1 and 576738170).
+Conflicts of Interest
+Lumeng Cui and Stefan Sommer are employed by Siemens Healthineers.
+Data Availability Statement
+The data that support the findings of this study are available on request
+from the corresponding author. The data are not publicly available due to
+privacy or ethical restrictions.
+References
+1. S. Y. Huang, R. T. Seethamraju, P. Patel, P. F. Hahn, J. E. Kirsch, and
+A. R. Guimaraes, “Body MR Imaging: Artifacts, k-Space, and Solutions,”
+Radiographics 35, no. 5 (2015): 1439–1460, https://doi.org/10.1148/rg.
+2015140289.
+2. C.
+Von
+Deuster,
+S.
+Sommer,
+C.
+Germann,
+et
+al.,
+“Con-
+trolling
+Through-Slice
+Chemical-Shift
+Artifacts
+for
+Improved
+===== defensa_tesis_doctoral/Paper-MRI-US/narracion/texto/discussion.txt | 
+Discussion
+
+In this work we present, to our knowledge, the first in vivo tri-component T2 star quantification of cortical bone water at 0.55 tesla, combining an ultrashort-echo-time radial sequence with a marrow-aware signal model and a radiation-free ultrasound comparator. The preliminary analyses reported above demonstrate that, even at the reduced SNR of low field, the cortical decay curve supports a stable separation between a sub-millisecond and a multi-millisecond ( approximately 14 - 16 milliseconds) water component, and that the marrow contribution can be absorbed by the model rather than avoided by the acquisition.
+The low-field regime is a deliberate methodological choice rather than a limitation. Reduced susceptibility at 0.55 te
+===== MRI-UTE PROYECTO DE TESIS/docs/notebooklm-fuentes.md | 
+## Fuentes
+
+| source_id | título | tipo |
+|---|---|---|
+| bc3b5728-7ce4-434e-920d-e79766d3c0d6 | **Paper MRI-US propio (v5.17, 2026-09)** | pdf ⭐ |
+| 3f79f57f-4139-491f-a3b2-903e37e2e643 | 0951.pdf | pdf |
+| 6b02a2a6-6aee-45a4-9338-93ffccfa8476 | 1-s2.0-0730725X89904852-main.pdf | pdf |
+| e68deda0-4270-4598-b3d3-15117f4e5669 | 1-s2.0-S0009926024004999-main.pdf | pdf |
+| 7776a989-3373-445c-8b4d-5e97177cee3f | 1-s2.0-S1063458406001804-main.pdf | pdf |
+| a09d9710-e1cd-45c5-8ea9-ee028d114f3c | 1-s2.0-S8756328224000206-main.pdf | pdf |
+| 7cec41ec-37b4-4639-a57a-771285560511 | 1-s2.0-S8756328225000420-main.pdf | pdf |
+| 72c3942b-f104-4fd2-beb6-eaf479d94f5f | 1-s2.0-S8756328226001997-main.pdf | pdf |
+| 8a0fa960-f123-4e4a-9647-849b6feb71db | 1040IM
+===== defensa_tesis_doctoral/articulos/1-s2.0-S1120179726000086-main.pdf | 9
+without metallic implants, the addition of a low-field system in tertiary 
+centres offers clear advantages, including better visualisation near im­
+plants, as we have demonstrated here. These low-field systems also offer 
+other advantages such as reduced acoustic noise, and reduced (0.55 T) 
+or even non-existent (0.3 T) helium consumption, which are significant 
+factors in terms of patient experience and current energy costs. Future 
+studies incorporating anthropomorphic phantoms are needed to explore 
+in more detail the clinical impact of low-field imaging on diagnostic 
+accuracy.
+Declaration of competing interest
+The authors declare that they have no known competing financial 
+interests or personal relationships that could have appeared t
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_modelo_tricomponente/src/utils_relajacion.py | líneas 755-882
+# utils_relajacion.py · python · líneas 755-882
+def interpretar_resultados_clinicos(self, resultados_modelos: Dict) -> None:
+    """Proporciona interpretación clínica específica para los modelos ajustados"""
+    # Filtrar modelos MLE si mostrar_mle=False
+    mostrar_mle = getattr(self, 'mostrar_mle', True)
+    if not mostrar_mle:
+        resultados_modelos = {k: v for k, v in resultados_modelos.items() if 'MLE' not in k}
+    
+    print(f"\n🩺 INTERPRETACIÓN CLÍNICA:")
+    
+    if 'Mono' in resultados_modelos:
+        mono = resultados_modelos['Mono']
+        tejido = getattr(self, 'tipo_tejido', 'Tejido').capitalize()
+        print(f"\n📋 Modelo Mono-exponencial (LS Rician) - {tejido}:")
+        print(f"   • T2* = {mono['T2']/1000.0:.2f} ms")
+===== MRI-UTE PROYECTO DE TESIS/img/Collage/collage_simple.py | líneas 81-87+líneas 88-229
+# collage_simple.py · python · líneas 81-87
+def agregar_borde(imagen, grosor, color):
+    """Agrega borde a la imagen."""
+    ancho, alto = imagen.size
+    nueva_imagen = Image.new('RGB', (ancho + 2 * grosor, alto + 2 * grosor), color)
+    nueva_imagen.paste(imagen, (grosor, grosor))
+    return nueva_imagen
+
+# collage_simple.py · python · líneas 88-229
+def crear_collage_compacto():
+    """Crea un collage horizontal compacto."""
+    
+    # Verificar imagen central
+    if not os.path.exists(IMAGEN_CENTRAL):
+        print(f"Error: No se encontró {IMAGEN_CENTRAL}")
+        return
+    
+    # Buscar imágenes UTE
+    archivos_us = glob.glob(PATRON_IMAGENES)
+    if not archivos_us:
+        print(f"Error: No se encontraron imágenes UTE")
+        ret
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_mapas_t2/src/utils_relajacion.py | líneas 924-1033
+# utils_relajacion.py · python · líneas 924-1033
+            # 0.655*sigma para N=1: sigma salia subestimada x1.53. Ademas eso
+            # daba por hecho ruido Rician, cierto solo para reconstrucciones
+            # que combinan canales LINEALMENTE (SENSE). Sobre RSS el ruido es
+            # chi no central con 2N gdl y el piso es ~5x mas alto con 20
+            # canales.
+            #
+            # Con media y STD del fondo se despejan sigma y N sin necesidad de
+            # saber que reconstruccion fue: los datos lo dicen. Ver
+            # estimar_ruido_desde_fondo().
+            sigma_val = None
+            n_coils_ef = 1.0
+            _media_fondo = _std_fondo = None
+
+            if 'Promedio Ruido' in self.datos_originales.columns
+===== MRI-UTE PROYECTO DE TESIS/docs/scripts/doi_verify.py | líneas 207-213+líneas 214-349
+# doi_verify.py · python · líneas 207-213
+def cache_path(idx, key):
+    safe = re.sub(r"[^A-Za-z0-9_.-]", "_", key)
+    return CACHE / ("%04d__%s.bib" % (idx, safe))
+
+
+# ---------------------------------------------------------------------- main
+
+# doi_verify.py · python · líneas 214-349
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--all", action="store_true")
+    ap.add_argument("--pending", action="store_true", help="reanudar las que faltan")
+    ap.add_argument("--keys", default="")
+    ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--delay", type=float, default=1.0)
+    ap.add_argument("--retries", type=int, default=2)
+    ap.add_argument("--retry-wait", type=float, default=60.0)
+    ap.add_a
+===== defensa_tesis_doctoral/articulos/Magnetic Resonance in Med - 2026 - Rohe - Fat Water Separation at 7 T Using a 3D Radial Sequence With Quasi‐Continuous Echo.pdf | 11
+this effective resolution with our proposed quasi-continuous
+acquisition by increasing the nominal resolution.
+Notably, the PDFF maps across multiple transverse slices and in
+multiplanar form demonstrate the spatial robustness of the pro-
+posed quasi-continuous acquisition.
+To further test the robustness of the quantification with respect
+to B0 inhomogeneity, in vivo measurements were taken under
+varying shim conditions. The shim was manipulated so that
+the resulting B0 field exhibited a non-vanishing x-gradient
+of varying strengths. For zero or small x-gradients, both the
+quasi-continuous and conventional acquisitions performed sim-
+ilarly well in estimating the field map and quantifying the PDFF.
+For larger x-gradients, fat/water swaps we
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_mapas_t2/src/utils_relajacion.py | líneas 715-833
+# utils_relajacion.py · python · líneas 715-833
+def interpretar_resultados_clinicos(self, resultados_modelos: Dict) -> None:
+    """Proporciona interpretación clínica específica para los modelos ajustados"""
+    # Filtrar modelos MLE si mostrar_mle=False
+    mostrar_mle = getattr(self, 'mostrar_mle', True)
+    if not mostrar_mle:
+        resultados_modelos = {k: v for k, v in resultados_modelos.items() if 'MLE' not in k}
+    
+    print(f"\n🩺 INTERPRETACIÓN CLÍNICA:")
+    
+    if 'Mono' in resultados_modelos:
+        mono = resultados_modelos['Mono']
+        tejido = getattr(self, 'tipo_tejido', 'Tejido').capitalize()
+        print(f"\n📋 Modelo Mono-exponencial (LS Rician) - {tejido}:")
+        print(f"   • T2* = {mono['T2']/1000.0:.2f} ms")
+===== MRI-UTE PROYECTO DE TESIS/img/Collage/collage_around.py | líneas 179-318
+# collage_around.py · python · líneas 179-318
+    collage.paste(img_central, (x_central, y_central))
+    
+    print(f"Debug - Posiciones:")
+    print(f"  Canvas: {ancho_total} x {alto_total}")
+    print(f"  Central: ({x_central}, {y_central}) - {ancho_central} x {alto_central}")
+    print(f"  Límites central: x={x_central} a {x_central + ancho_central}")
+    print(f"  Espacio izquierda: {x_central - ESPACIADO - tamaño_ute_con_borde}")
+    print(f"  Espacio derecha: {ancho_total - (x_central + ancho_central) - ESPACIADO - tamaño_ute_con_borde}")
+    
+    # Distribuir imágenes UTE en sentido antihorario (invertido)
+    idx = 0
+    
+    # Fila superior - de derecha a izquierda para invertir giro
+    if num_arriba > 0 and idx < len(imagenes_ute
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo2.txt | 
+Anexo 2: Implementación de la secuencia UTE 2D en Pypulseq
+
+Alcance
+La secuencia UTE 2D se implementó con el framework Pypulseq para el resonador de 0.55 tesla, y hoy se genera desde el servicio de secuencias de la plataforma (módulo api_generacion_ute/src, sincronizado con el repositorio del proyecto). El módulo consta de la configuración del sistema y del ADC, la creación de los gradientes de lectura y spoiler, la ejecución radial, el guardado y un banco de validación ( validateUTEImplementation, testUTEValidation, análisis de trayectoria y de spoiling); los parámetros viven centralizados con sus rangos admitidos ( parametros.py), de modo que un mismo núcleo científico sirve a la simulación y al escáner. Este anexo conserva como código ún
+===== MRI-UTE PROYECTO DE TESIS/docs/scripts/_tmp_clean_cap5.py | líneas 1-60
+# _tmp_clean_cap5.py · python · líneas 1-60
+import pathlib
+
+P = pathlib.Path(r"E:\GitHub\MRI\Proyecto-Tesis\MRI-UTE PROYECTO DE TESIS\capitulos\capitulo5.tex")
+t = P.read_text(encoding="utf-8")
+
+REPL = [
+    ("la plataforma dockerizada ya opera", "la plataforma contenerizada ya opera"),
+    ("5. Arquitectura dockerizada &", "5. Arquitectura de la plataforma &"),
+    ("plataformas de software para RM (Pypulseq, SigPy, MRIReco.jl, etc.), y tecnologías de contenerización (Docker).",
+     "plataformas de software para RM y tecnologías de contenerización (el catálogo de herramientas se resume en el anexo~\\ref{anexo9:herramientas})."),
+    ("secuencias UTE (compatibles con Pypulseq), leer", "secuencias UTE, leer"),
+    ("portabilidad (uso de Doc
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_modelo_tricomponente/src/utils_relajacion.py | líneas 1333-1429
+# utils_relajacion.py · python · líneas 1333-1429
+            elif bandas_libres:
+                print("   • Ajustando modelo 3-Componentes + Chemical Shift (LSQ) "
+                      "— bandas LIBRES, T2_bm sin prior")
+            elif t2_bm_fijo_us is not None:
+                print(f"   • Ajustando modelo 3-Componentes + Chemical Shift (LSQ) "
+                      f"— T2_bm CONGELADO en {t2_bm_fijo_us/1000:.1f} ms")
+            else:
+                print(f"   • Ajustando modelo 3-Componentes + Chemical Shift (LSQ) "
+                      f"— Prior médula T2*={t2_long_ref/1000:.2f} ms")
+            t2_bm_ref = t2_long_ref if es_cortical else None
+            if sigma_val is not None and np.isfinite(sigma_val) and sigma_val > 0:
+    
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_modelo_tricomponente/src/priors.py | líneas 91-214
+# priors.py · python · líneas 91-214
+# ── Otros priors del modelo (inventario) ─────────────────────────────────────
+
+#: Frontera agua ligada / agua de poro. **Es el prior más influyente del
+#: modelo**, más que el de médula, y hasta ahora estaba igual de escondido: se
+#: observó `T2_bw` pegado EXACTAMENTE aquí sobre datos reales — y se volvió a
+#: observar en la verificación de la Etapa 5, en 2 de 3 sujetos.
+T2_BW_PW_SPLIT_US_DEFECTO: float = 1_500.0
+T2_BW_PW_SPLIT_US_MIN: float = 300.0
+T2_BW_PW_SPLIT_US_MAX: float = 5_000.0
+
+#: Desplazamiento químico agua-grasa a 0,55 T. NO es arbitrario: sale de
+#: 3,5 ppm × 42,577 MHz/T × 0,55 T = 81,96 Hz.
+#:
+#: Es editable porque el campo real de un escáner no es exactamente su valor
+#: nominal, y por

@@ -17,7 +17,18 @@ def sha256_archivo(ruta: Path) -> str:
 
 
 def escanear(raiz: Path, excludes: list[str], max_bytes: int) -> list[dict]:
-    """Archivos indexables bajo raíz. Cada dict: ruta, tipo, bytes, absoluta."""
+    """Archivos indexables bajo raíz. Cada dict: ruta, tipo, bytes, absoluta.
+
+    Además de los directorios excluidos, se descartan archivos basura de
+    compilación: logs LaTeX, auxiliares y artefactos sin contenido técnico
+    (contaminan el RAG con miles de chunks de ruido).
+    """
+    excluye_nombre = {
+        "compilation_log.txt", "main.log", "main.bcf", "main.run.xml",
+        "main.snm", "main.toc", "main.nav", "main.out", "main.aux",
+        "main.bbl", "main.blg", "guion_bilingue.log",
+    }
+    excluye_sufijo = (".log", ".aux", ".bbl", ".blg", ".out", ".synctex.gz")
     encontrados: list[dict] = []
     if not raiz.is_dir():
         return encontrados
@@ -27,6 +38,8 @@ def escanear(raiz: Path, excludes: list[str], max_bytes: int) -> list[dict]:
                 continue
             rel = p.relative_to(raiz)
             if any(part in excludes for part in rel.parts):
+                continue
+            if p.name in excluye_nombre or p.name.endswith(excluye_sufijo):
                 continue
             tipo = tipo_de(p)
             if tipo is None:

@@ -1,0 +1,329 @@
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo1.tex | tex
+donde \( \) es la razón giromagnética. Si la fase acumulada a lo largo de la extensión \(L\) de la muestra cubre varias vueltas, la magnetización remanente se cancela al sumarse vectorialmente. La condición general de spoiling efectivo puede escribirse como:
+
+\, L
+ _0^T_ spoil
+ \| G_ spoil( )\|\, d 
+ \; \; 2 
+ 
+ dispersión de fase 2 
+ eq:spoiling_gradiente
+
+En la secuencia implementada, el spoiling de gradiente actúa de dos maneras complementarias (sección sec:anexo1_spoiling del anexo de implementación):
+
+- Dentro del readout: la meseta del gradiente de lectura puede extenderse más allá de la última muestra (factor ro\_spoil), de modo que la cola de la trayectoria dispersa la coherencia res
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo3.tex | tex
+## Anexo 3: Resumen de tipos de reconstrucción
+
+anexo3:tipos-reconstruccion
+
+## Resumen de tipos de reconstrucción
+
+anexo3:resumen-reconstruccion
+ A lo largo de las últimas décadas se han desarrollado numerosos métodos de reconstrucción en imágenes por resonancia magnética (IRM) que permiten mejorar la calidad de las imágenes, acelerar la adquisición y mitigar artefactos inherentes a la física del proceso. A continuación se presenta un resumen de las principales técnicas y sus formulaciones generales, enmarcadas en el contexto de la modelización física y matemática del fenómeno magnético akcakaya2022magnetic; la sección final desarrolla, con detalle, las reconstrucciones que la plataforma do
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo8.tex | tex
+## Anexo 8: Interfaz web de la plataforma local
+
+anexo8:interfaz-web
+
+## Interfaz gráfica de la plataforma web local
+
+La plataforma de automatización del proceso (diseño de secuencia, reconstrucción y análisis) se expone como una aplicación web local dockerizada. La figura fig:Interfaz_WEB muestra la pantalla de acceso de la interfaz web del sistema, que exige autenticación antes de operar el flujo.
+
+[H]
+ 
+ img/logos/Portada_WEB.png
+ Interfaz gráfica: pantalla de acceso a la web local (captura en operación, septiembre de 2026).
+ fig:Interfaz_WEB
+
+## Módulo de reconstrucción del nuevo template DIIA
+
+sec:anexo6_diia
+ La plataforma local dockerizada (anexo anexo7:entorno-docker) integra el fron
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo1.tex | tex
+La resonancia magnética (RM) se posiciona como una de las técnicas más relevantes y avanzadas en la adquisición y análisis de imágenes médicas, debido a su capacidad para proporcionar información anatómica y funcional precisa en diversas aplicaciones experimentales. Sin embargo, las secuencias convencionales de RM están optimizadas principalmente para tejidos con tiempos de relajación largos, dificultando así la visualización adecuada de estructuras con tiempos de relajación ultracortos, tales como hueso cortical, tendones y ligamentos Chang2015UTE, ma2022makingtheinvisiblevisible, Du2012Ultrashort, jerban2023ultrashort, Du_2010, Malhi2024Tendon. Con el fin de superar esta limitación, se han
+===== MRI-UTE PROYECTO DE TESIS/AGENTS.md | 
+# AGENTS.md — MRI-UTE PROYECTO DE TESIS
+
+## Estado de la bibliografía (REVISIÓN COMPLETA HECHA)
+
+**`bibliografia/referencias.bib` fue revisado Y ACTUALIZADO entrada por entrada el
+2026-09-19/20** contra https://www.doi2bib.org/ (Playwright, una a una, sin datos
+inventados: todo campo actualizado proviene del BibTeX devuelto por doi2bib, en
+caché en `docs/qa/doi-cache/`). Detalle completo:
+
+- **312/312 entradas verificadas**: 311 vía doi2bib + `NIH2001osteoporosis` vía
+  doi.org content negotiation (doi2bib nunca sirve ese registro: redirect JAMA
+  muerto, falla silenciosa confirmada; aprobado por el autor).
+- **233 entradas reconstruidas** con los datos canónicos; **27 duplicados/junk
+  elim
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo2.tex | tex
+## Anexo 2: Implementación de la secuencia UTE 2D en Pypulseq
+
+anexo2:secuencia-ute
+
+La secuencia UTE 2D se implementó con el framework Pypulseq para el resonador de 0.55\,T, y hoy se genera desde el servicio de secuencias de la plataforma (módulo api\_generacion\_ute/src, sincronizado con el repositorio del proyecto). El módulo consta de la configuración del sistema y del ADC, la creación de los gradientes de lectura y spoiler, la ejecución radial, el guardado y un banco de validación ( validateUTEImplementation, testUTEValidation, análisis de trayectoria y de spoiling); los parámetros viven centralizados con sus rangos admitidos ( parametros.py), de modo que un mismo núcleo científico sirv
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo5.tex | tex
+## Anexo 5: Implementación UTE-hmrGC de separación agua--grasa en adquisiciones multi-eco
+
+anexo5:ute-hmrgc
+
+## Propósito y alcance
+
+Este anexo documenta la matemática y el comportamiento de la implementación UTE-hmrGC usada en esta tesis para la separación water-only/fat-only a partir de adquisiciones UTE multi-eco, junto con los mapas de PDFF, $R_2^ $ y $ f$ (B0). La separación se construye sobre la librería fieldmapping-hmrGC (hierarchical multi-resolution Graph Cut) Stelter2022 y corre hoy como etapa del servicio de mapas T2 de la plataforma (módulo api\_mapas\_t2, servicio wf\_separation\_service), que adapta formato de datos, máscara y parámetros al flujo experimental.
+
+Relación con el
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo4.tex | tex
+## Anexo 4: Fundamentos matemáticos del modelado de relajación transversal con ruido Rician ($T_2^*$)
+
+Este anexo desarrolla la matemática del modelado de la relajación transversal $T_2^*$ cuando las mediciones de magnitud en RM están afectadas por ruido Rician y, en su generalización multicanal, por ruido chi no central. Cubre el modelo de señal mono y bi-exponencial, la derivación de la distribución de la magnitud y de su esperanza exacta, la estimación del ruido y de los grados de libertad efectivos desde el fondo, las dos funciones de ajuste (mínimos cuadrados sobre la esperanza y máxima verosimilitud), las condiciones de validez de los datos y los criterios de métricas, incertidumbre y 
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo6.tex | tex
+## Anexo 6: Fundamentos de ondas guiadas en la corteza ósea y estimación BDAT
+
+La tesis compara dos rutas sin radiación hacia los mismos biomarcadores corticales: la cadena UTE de la resonancia, cuyos fundamentos ocupan los anexos anteriores, y el ultrasonido de transmisión axial bidireccional (BDAT), el comparador emparejado por sitio. Este anexo desarrolla la física del comparador: por qué la corteza se comporta como una guía de ondas, cómo la geometría bidireccional elimina el retardo del tejido blando, cómo se extraen las curvas de dispersión experimentales y cómo el problema inverso entrega espesor y porosidad corticales. El marco conceptual y la formulación operativa del método están e
+===== defensa_tesis_doctoral/Paper-MRI-US/Others/pag8_final.png | OCR
+Front. Comput. Sci.
+
+4. Acquisition protocol for in vivo BDAT validation
+in the tibia. (a) Lateral view of the leg showing the acqui-
+sition sites for AT ultrasound, PQCT, and HR-pQCT; axial
+transmission was performed on the medial facies ofthe tibia
+coinciding with the mid-diaphysis (50% of tibial length). (b)
+Axial pQCT image showing the tangential positioning of the
+
+AT probe; the probe was slowly tilted in both circumferential
+
+directions to obtain 400 individual measurements [41]
+
+at the marker position, followed immediately by
+BDAT ultrasound at the same location, so that the
+biomarkers of both techniques reflect the same
+cortical region.
+
+2.8 Image Reconstruction and Pre-processing
+
+R
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo7.tex | tex
+## Anexo 7: Entorno dockerizado de la plataforma (template DIIA)
+
+anexo7:entorno-docker
+
+## Entorno integrado del template DIIA
+
+El desarrollo de la tesis produjo una plataforma que empaqueta cada componente del flujo de trabajo, desde el diseño de la secuencia hasta el reporte, en servicios contenerizados. Este anexo resume la arquitectura vigente de la plataforma (repositorio PROYECTO-INFORMATICO-MRI-US-DOCKERIZADO, rama mri-us-bdat-test); su función en la tesis es de soporte, producto parcial exógeno al problema científico, por lo que se describe su estructura y no la configuración archivo por archivo. Una copia de los módulos científicos ( src/ de cada API) se respalda versionada junto a
+===== defensa_tesis_doctoral/Paper-MRI-US/Others/pag8_v2.png | OCR
+Front. Comput. Sci.
+
+4. Acquisition protocol for in vivo BDAT validation
+
+in the tibia. (a) Lateral view of the leg showing the acqui-
+and HR-pQCT; axial
+transmission was performed on the medial facies of the tibia,
+
+sition sites for AT ultrasound, pQC
+
+coinciding with the mid-diaphysis (50% of tibial length). (b)
+Axial pQCT image showing the tangential positioning of the
+
+AT probe; the probe was slowly tilted in both circumferential
+
+directions to obtain 400 individual measurements [41]
+
+BDAT ultrasound at the same location, so that the
+biomarkers of both techniques reflect the same
+cortical region.
+
+8 Image Reconstruction and Pre-processing
+
+Raw k-space data were reconstructed with the
+Ten
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo4.tex | tex
+## Diseño de la investigación
+
+sec:metod_investigacion
+
+La investigación sigue un enfoque cuantitativo, aplicado y exploratorio. Su objetivo es medir el agua del hueso cortical con RM-UTE a 0.55\,T, cuantificarla como biomarcadores de porosidad y validarla contra el ultrasonido US-BDAT en el mismo sitio anatómico, como base para evaluar la calidad ósea sin radiación.
+
+El diseño es multimodal y emparejado por sitio: la RM-UTE se aplica en la diáfisis tibial media izquierda y el ultrasonido BDAT se mide en el mismo sitio tibial (y además en el radio), de modo que los biomarcadores de ambas técnicas describen la misma región cortical y su comparación es directa. La validación avanza en tres eta
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo2.tex | tex
+## Marco conceptual
+
+sec:marco-conceptual
+
+## Fragilidad ósea y calidad ósea
+
+subsec:fragilidad
+
+La fragilidad ósea corresponde a la pérdida de la capacidad del esqueleto para resistir cargas que un hueso sano tolera, y en la práctica se manifiesta como la fractura por bajo trauma. Es la fractura, y no el puntaje densitométrico, la que define la carga de la enfermedad. La osteoporosis, definida en términos operacionales por un T-score de densidad mineral ósea (DMO) areal igual o menor a $-2.5$ Kanis_2018, constituye una causa de fragilidad entre varias, y no sinónimo de ella.
+
+La evidencia clínica muestra una y otra vez la disociación entre densidad y riesgo. La diabetes tipo 2, la obesidad 
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo3.tex | tex
+## Formulación del problema
+
+La resonancia magnética (RM) de bajo campo (B$_0$ < 1T) representa un reto significativo en la obtención de imágenes de tejidos con tiempos de relajación transversal ultracortos (T2*), como el hueso cortical, tendones, ligamentos y pulmón. Estos tejidos pierden coherencia de magnetización en tiempos extremadamente cortos, lo que dificulta su detección con secuencias convencionales de eco de espín y eco de gradiente. Técnicas especializadas, como Tiempo de Eco Ultracorto (UTE) y Tiempo de Eco Cero (ZTE), permiten capturar estas señales antes de que se atenúen significativamente; sin embargo, su implementación en entornos de bajo campo enfrenta varios desafíos:
+
+- 
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo5.tex | tex
+## Cronograma de trabajo
+
+El proyecto de tesis doctoral se planificó para ejecutarse en un periodo total de 24 meses, con el mes 1 correspondiente a marzo de 2025, y el plan fue aprobado en la defensa del proyecto de tesis. A la fecha de esta actualización, septiembre de 2026, la ejecución se encuentra en el mes 19 de 24. Las fases de desarrollo, es decir, secuencias, reconstrucción y plataforma, están completadas; las fases de plataforma, además, se adelantaron y se ejecutaron en paralelo con la fase experimental, de modo que la plataforma contenerizada ya opera sobre datos reales de la campaña de mediciones. Esa campaña de mediciones in vivo RM-UTE y US-BDAT, la actividad más demorosa del 
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo9.tex | tex
+La sección de metodología definió el diseño del estudio; este capítulo presenta el protocolo de adquisición de secuencias de tiempo de eco ultracorto (UTE) en resonancia magnética de bajo campo, estableciendo un procedimiento estandarizado que detalla los parámetros de secuencia y el flujo de trabajo tal como se ejecutan en el resonador y en la plataforma.
+
+## Protocolo de adquisición UTE
+
+## Regiones anatómicas de estudio
+
+Centraré las adquisiciones de RM en la evaluación del hueso cortical de la tibia media izquierda, único sitio explorado por UTE-MRI en este protocolo. Las mediciones de ultrasonido BDAT (Bidirectional Axial Transmission) se realizarán en cambio sobre la tibia y el radio i
+===== defensa_tesis_doctoral/marco-teorico/bloque-G-ruido-modelos/T37-modelo-monoexponencial.md | 
+> **Mono-exponencial** ya alcanza $R^2 > 0.93$ en hueso cortical, validando la calidad técnica de la adquisición. Sin embargo, el bi-exponencial mejora a $R^2 = 0.9757$ (ver [T38](./T38-modelo-biexponencial.md)), motivando el modelo más complejo.
+
+## 37.11 Limitaciones del mono-exponencial en hueso cortical
+
+| Limitación | Impacto |
+|------------|---------|
+| Asume un solo pool | Hueso cortical tiene 3 (BW, PW, BM) |
+| No captura oscilaciones chemical shift | Médula con CS → mínimos a 6.1 ms ignorados |
+| $T_2^*$ estimado es un "promedio" | No revela información compositiva |
+| Útil como inicialización | Para bi-exp y tri-exp |
+
+> **Conclusión:** Mono es la **base**, pero hueso cortical requ
+===== defensa_tesis_doctoral/marco-teorico/bloque-G-ruido-modelos/T39-modelo-tricomponente.md | 
+# T39 — Modelo tricomponente con Chemical Shift (señal compleja)
+
+> **Bloque:** G — Teoría del ruido y modelos de relajación
+> **Fuentes:** `explicacion-matematica.md` §10, `relajacionTransversalTri.py`, `05_metodo_tricomponente.tex`
+> **Objetivo:** Derivar el modelo tricomponente completo con corrección de chemical shift para hueso cortical, formular la señal compleja con los tres pools y su magnitud observable, y especificar los bounds fisiológicos para cada parámetro.
+
+## 39.1 Motivación: por qué tricomponente
+
+El hueso cortical tiene **tres pools** físicamente distintos (ver [T04](../bloque-A-marco-clinico-anatomico/T04-tres-pools-protones.md)):
+
+| Pool | $T_2^*$ | Frecuencia | Contribuc
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo7a.tex | tex
+Este capítulo muestra, en orden de validación, lo que el proyecto lleva a la fecha: fantomas de referencia, corte animal ex vivo y los primeros resultados in vivo con el protocolo final. Los resultados in vivo corresponden a los dos primeros voluntarios sanos de la cohorte en curso ($N=20$, con aprobación ética de la Universidad de Valparaíso y protocolo de RM iHEALTH de la Pontificia Universidad Católica de Chile, ID 210125006, cuyas mediciones cierran en septiembre de 2026) y a los quince pares de mediciones RM--BDAT emparejadas por sitio adquiridos a la fecha; todo el contenido proviene del artículo de investigación y de la presentación iHealth (ISMRM 2026).
+
+## Pruebas en fantomas de ref
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo7b.tex | tex
+Sujetos in vivo: validación con el protocolo final
+ sec:resultados_protocolo_final
+
+Imagen multi-eco UTE in vivo
+ La secuencia UTE radial 2D con reconstrucción por compressed sensing produjo señal cortical medible en los doce tiempos de eco en ambos voluntarios (figura fig:collages_invivo_tesis). La señal del hueso cortical se capturó en el eco más corto ($TE = 30\, $s) y decayó dentro de los primeros milisegundos, mientras que médula y músculo persistieron hasta los ecos largos; el batido agua--grasa a 0.55\,T ($ f 82$\,Hz) modula la médula, con mínimo cerca de $TE 6.1$\,ms y recuperación en el eco en fase de 12.2\,ms.
+
+[htbp]
+ 
+ 
+[t]0.49 
+ 
+ img/paper/collage_magnitude_cs_subjet_vivo.png
+ 
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/README.md | 
+# Módulos de código de la plataforma (snapshot)
+
+Copia de los módulos científicos (`src/`) de la plataforma dockerizada que esta tesis
+documenta, tomada del repo `PROYECTO-INFORMATICO-MRI-US-DOCKERIZADO`
+(rama `mri-us-bdat-test`, commit `99f0656`, 2026-09-19). El código vivo vive en ese
+repo; esta carpeta es el respaldo versionado junto a la tesis.
+
+| Carpeta | Contenido | Anexo relacionado |
+|---|---|---|
+| `api_generacion_ute/src/` | Diseño de la secuencia UTE 2D (Pypulseq): pulsos, gradientes, ADC, tiempos a raster, spoiling, validaciones | Anexo 2 |
+| `api_reconstruccion_radial/` | Pipeline de reconstrucción radial (CS) + cartesiana + libre; `servicios/collage_ute_service.py` genera el c
+===== defensa_tesis_doctoral/marco-teorico/bloque-G-ruido-modelos/T38-modelo-biexponencial.md | 
+# T38 — Modelo bi-exponencial
+
+> **Bloque:** G — Teoría del ruido y modelos de relajación
+> **Fuentes:** `anexo8.tex` §Modelo bi-exponencial, `capitulo7d.tex` §Resultados RL
+> **Objetivo:** Caracterizar el modelo bi-exponencial como puente teórico entre mono y tricomponente, demostrar su capacidad de capturar la heterogeneidad del hueso cortical (validado en piloto 28-11-2025), y describir su implementación con LSQ Rician.
+
+## 38.1 Definición del modelo
+
+### 38.1.1 Señal determinista subyacente
+
+$$\boxed{\;\nu(TE) \;=\; S_{0,\text{short}}\, e^{-TE / T_{2,\text{short}}^*} \;+\; S_{0,\text{long}}\, e^{-TE / T_{2,\text{long}}^*}\;}$$
+
+Donde:
+
+- **$S_{0,\text{short}}, T_{2,\text{short}}^*$** — A
+===== MRI-UTE PROYECTO DE TESIS/docs/informe-bib-tesis.md | 
+- (ninguna)
+---
+
+# Verificacion y actualizacion doi2bib completa (2026-09-19, post-update)
+
+- Entradas: **285** (antes 312; -27 duplicados/junk, ver `dedup-log.md`)
+- Claves citadas: **190** | Citas rotas: **0** | Duplicados por DOI: **0** | por titulo+ano: **0**
+- Verificadas 1 a 1 contra https://www.doi2bib.org/ (Playwright, script `docs/scripts/doi_verify.py`):
+  **214 OK · 12 WARN · 22 MISMATCH (corregidos: ano online-first vs impresion, manda doi.org) · 63 sin DOI (libros/docs/web o sin hallazgo Crossref verificado) · 0 pendientes** (`NIH2001osteoporosis`: doi2bib.org nunca pudo servir el registro — redirect JAMA muerto, falla silenciosa confirmada con captura `qa/doi2bib-nih2001.png` t
+===== MRI-UTE PROYECTO DE TESIS/docs/marco-conceptual-especificacion.md | 
+# Especificación metodológica del Marco Conceptual (cap. 2, §2.1) — 2026-09-19
+
+Estado: ✅ aplicado (commits posteriores a esta fecha). Fuente principal de contenido: `paper-mri-us/Content/2_Introduction.tex` (v5.17); estilo según skill `estilo-fernando` (corpus de defensa); verificación de cifras con NotebookLM (notebook "MRI", turnos 23–24).
+
+## A qué debe dar respuesta el marco conceptual
+
+Un marco conceptual doctoral debe dejar establecidas, antes de la metodología, las respuestas conceptuales que el estudio presupone. Para esta tesis son seis:
+
+1. **¿Cuál es el problema y por qué la medida estándar no alcanza?** (fragilidad ósea: la fractura define la carga; límite densitométrico de DXA)
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/anexo1b_p82.png | OCR
+9.4. Spoiling y ciclo radial
+
+La ejecución radial (ejecutarSecuenciaRadial . py) alterna dos excitaciones por TR con la
+polaridad del gradiente de corte invertida, el par de medios pulsos que completa el perfil de corte, y
+recorre los N, ángulos de lectura rotando el gradiente de lectura en las componentes cos p (eje )
+y sin: (eje y). Cada lectura cierra con un spoiler de gradiente en el plano de lectura, rotado en la
+misma dirección del radio, con amplitud del 20 % del máximo del sistema y duración acotada por
+el tiempo disponible del TR; y entre disparos aplica spoiling de RF con el incremento clásico de
+117°, la progresión aritmética de fase cuya formulación se desarrolla en el anexo 14, 
+===== MRI-UTE PROYECTO DE TESIS/docs/notebooklm-verificacion-citas.md | 
+# Verificación de citas con NotebookLM (E18) — 2026-09-19
+
+Notebook "MRI" (`20e688a6-eb68-4e7a-8cec-81d7017f5ab5`), conversación `561db9fe-47c5-4f72-8b15-e98c366829db` (turn 23). Política: toda afirmación bibliográfica nueva respaldada por fuentes del corpus o heredada de las citas ya validadas del paper.
+
+## Verificaciones realizadas
+
+| Afirmación (capítulo) | Resultado | Fuentes del corpus | Acción |
+|---|---|---|---|
+| Lu 2019: tricomponente UTE de hueso cortical a 3 T (cap. 2, estado del arte) | ⚠️ **CORREGIDA**: la demostración de Lu et al. 2019 fue **ex vivo** (especímenes cadavéricos y tiras de cortex tibial a 3 T); la traducción in vivo seguía pendiente de validación | `14e1f678` (Du
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/anexo1_p79.png | OCR
+Capítulo 9
+
+Anexo 1: Implementación de la secuencia
+UTE 2D en Pypulseq
+
+9.1. Alcance
+
+La secuencia UTE 2D se implementó con el framework Pypulseq para el resonador de 0.55.
+Este anexo conserva únicamente el código de las tres decisiones de diseño que hacen ultracor-
+ta la secuencia: la excitación VERSE remuestreada a la rampa del gradiente de corte con retomo
+a k. = 0, el muestreo en rampa con patrón cuadrático, y la cuantización de los tiempos al ras-
+ter del ADC. El desarrollo matemático completo de cada bloque está en el capítulo de meto-
+dología y protocolo UTE (perfil de corte, VERSE, momento nulo, reparto de muestras y cuan-
+el resto de la generación de la secuencia, es decir, configur
+===== MRI-UTE PROYECTO DE TESIS/docs/planificacion-parcial-final.md | 
+# Planificación — Actualización parcial final de la tesis doctoral (rama `parcialTesisDoctoralFinal`)
+
+**Estado:** 📝 borrador (runbook aprobable por el autor)
+**Fecha:** 2026-09-19
+**Rama de trabajo:** `parcialTesisDoctoralFinal` (creada desde `ParcialesTesisDoctoral`, commit `3ca9081`)
+**Autor del documento:** asistente ZCode, bajo las reglas de las skills `paper-mri-us`, `paper-mri-us-reviewer`, `notebooklm` y `collage-ute`.
+
+## 1. Objetivo
+
+Actualizar **completamente** el proyecto de tesis `MRI-UTE PROYECTO DE TESIS` con el contenido validado del artículo de investigación `paper-mri-us` (v5.17, 2026-09-12), incorporando además lo que la tesis abarca y el paper no: **la automatización del 
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/anexo1_p83.png | OCR
+Capítulo 10
+
+Anexo 2: Entorno dockerizado de la
+plataforma (template DITA)
+
+10.1. Entorno integrado del template DITA
+
+El desarrollo de la tesis produjo una plataforma que empaqueta cada componente del
+flujo de trabajo, desde el diseño de la secuencia hasta el reporte, en servicios con-
+tenerizados. Este anexo resume la arquitectura vigente de la plataforma (repositorio
+PROYECTO-INFORMATICO-MRI-US-DOCKERIZADO, rama mri-us-bdat-test) su
+función en la tesis es de soporte, producto parcial exógeno al problema científico, por lo que se
+describe su estructura y no la configuración archivo por archivo. Una copia de los módulos científicos
+(sre/ de cada API) se respalda versionada junto a la tesis 

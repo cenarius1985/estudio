@@ -1,0 +1,885 @@
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap5.txt | 
+Capítulo 5. Metodología y protocolo de adquisición UTE
+
+Introducción
+La sección de metodología definió el diseño del estudio; este capítulo presenta el protocolo de adquisición de secuencias de tiempo de eco ultracorto (UTE) en resonancia magnética de bajo campo, estableciendo un procedimiento estandarizado que detalla los parámetros de secuencia y el flujo de trabajo tal como se ejecutan en el resonador y en la plataforma.
+Protocolo de adquisición UTE
+Regiones anatómicas de estudio
+Centraré las adquisiciones de RM en la evaluación del hueso cortical de la tibia media izquierda, único sitio explorado por UTE-MRI en este protocolo. Las mediciones de ultrasonido BDAT ( Bidirectional Axial Transmission) se realizarán en cambio sobre la tibia y el radio izquierdos, de modo que la comparación m
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 181-270
+# gen_guion.py · python · líneas 181-270
+      r"corresponde a una combinacion tipo RSS— y la barra de ruido de la UI reporta el N efectivo con su modelo. Lo que se ve y lo que se "
+      r"ajusta ya no pueden divergir."]),
+
+    ("DIAPOSITIVA 7", BLUE, "Ajuste mono-exponencial: minimos cuadrados y maxima verosimilitud",
+     [r"Antes de ir al modelo completo, fijemos el ajuste de un solo exponencial, que aplica a tejidos con un pool dominante, como la medula, "
+      r"el musculo o la grasa, y que sirve de base y de referencia para el cortical. Hay dos estimadores, y los presento en paralelo. El vector "
+      r"de parametros es $\theta=(S_0,T_2^{*},\sigma)$ (amplitud inicial, tiempo de relajacion efectivo y ruido).",
+      r"El primero es minimos cuadrados. Buscamos el $\theta$ que minimi
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 271-427
+# gen_guion.py · python · líneas 271-427
+      r"falla como ancla: su magnitud ONDULA —la grasa entra y sale de fase cada $12.2$ ms a $82$ Hz— y un modelo que no ondula absorbe esa "
+      r"interferencia como decaimiento aparente, devolviendo un $T_2^{*}$ sesgado para exactamente el uso que mas duele, anclar la medula. "
+      r"El two-decay lleva la oscilacion dentro del modelo, asi que su $T_2^{*}$ de grasa sale limpio. El mono sigue corriendo como "
+      r"REFERENCIA —ambas curvas se dibujan juntas, el sesgo queda a la vista— y como respaldo legado si el two-decay no califica.",
+      r"Con que reglas se acepta el ancla. Dos compuertas: converger sin parametros pegados al borde del rango —un valor en tope no es una "
+      r"medida, es el limite del optimizador— y un $R^2$ de al menos
+===== MRI-UTE PROYECTO DE TESIS/narracion/partes/cap5/par_015.txt | 
+piper|es_AR-daniela-high.onnx|ls=1.0
+Pipeline de cuantificación del hueso cortical a 0.55 tesla: adquisición UTE de doce ecos, reconstrucción por compressed sensing con normalización por eco, alineación rígida de los ecos (ECC) y definición de ROIs, ancla de médula por ajuste bi-componente agua-grasa congelada (Paso 1), ajuste tricomponente anclado por máxima verosimilitud con ruido Rician y selección por AICc (Paso 2), y biomarcadores resultantes (fracciones de agua cortical, PI 1 y PI 2). La franja inferior muestra los bloques de soporte y comparación: separación UTE-hmrGC para mapas water-only, US-BDAT emparejada por sitio y análisis estadístico. Elaboración propia a partir del artículo de investigación y la presentación iHealth.
+
+Modelo tricomponente con ancla de médula ósea
+
+El modelo
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 15
+PREGUNTAS Y RESPUESTAS (1/2)
+Preguntas de defensa, preparadas y respondidas
+P1. Por que el hueso cortical exige secuencias UTE y bajo campo? — R: Su T ¤
+2  es ultracorto,
+de 0:1 a 1 ms (el agua esta ligada al colageno y confinada en poros diminutos, lo que acelera
+el desfase de los espines). Una secuencia convencional, con ecos de milisegundos, llega tarde: la
+senal ya decayo, por eso se usa UTE (Ultra-short Echo Time), con TE de 8 a 50 ¹s.
+Ademas el cortical es multi-pool, con componentes cuyos T ¤
+2  difieren en torno a un factor
+100, asi que un solo exponencial no basta. A bajo campo, aqui 0:55 T, el SNR (relacion
+senal-ruido) es limitado y la senal cae rapido hacia el piso de ruido, lo que vuelve critico el
+sesgo de magnitud.
+P2. Que es el ruido Rician y por que la magnitud tiene sesgo
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/scripts/gen_guion.py | líneas 1-90
+# gen_guion.py · python · líneas 1-90
+# -*- coding: utf-8 -*-
+"""Genera el guion de lectura (PDF) para la presentacion de Relaxometria T2*.
+Usa solo matplotlib (mathtext, sin LaTeX). Una pagina por diapositiva.
+
+Las formulas se escriben con notacion real (mathtext, entre $...$) en lugar de
+fonetica, y cada simbolo/acronimo se define entre parentesis la primera vez que
+aparece. Regla interna: dentro de cada $...$ NO puede haber espacios ASCII
+(se usa \\, como separador) para que textwrap no rompa la formula al ajustar."""
+import textwrap
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_pdf import PdfPages
+
+# Fuente de las formulas: Computer Modern (aspecto clasico academico).
+plt.rcParams["mathtext.fontset"] = "cm"
+
+OUT = r"E:/GitHub/M
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/cap9_pipeline.png | OCR
+9.2.6. Modelos de relajación 7;
+
+Realizaré la cuantificación del tiempo de relajación transversal efectivo (T3) ajustando la evolución
+de la magnitud de la señal en función del tiempo de eco. La figura 9.3 resume la cadena completa
+de cuantificación tal como corre en la plataforma, de extremo a extremo: adquisición de los doce
+ecos, reconstrucción por compressed sensing con normalización por eco, alineación rígida de los ecos
+contra la referencia de 30 ys y definición de las ROIs, ancla de médula por ajuste bi-componente
+agua-grasa (Paso 1), ajuste tricomponente anclado con verosimilitud Rician (Paso 2) y derivación de
+los biomarcadores de agua cortical y de los índices de porosidad; la separación UTE-hmrGC entra
+como soporte para los mapas water-only y la comparación US-BDAT y el análisis
+===== RESULTADOS-MRI/data/analisis_t2_export_20260926_123838.xlsx | hoja Diccionario filas 1-60
+| Columna | Descripción |
+|---|---|
+| Codigo Estudio | Paciente (código anonimizado) al que pertenece el análisis. Un mismo sujeto puede tener varios análisis. |
+| Fecha analisis | Fecha (AAAA-MM-DD) en que el análisis fue guardado — hora del servidor Parse. |
+| Hora analisis | Hora (HH:MM:SS) en que el análisis fue guardado. Junto con la fecha, la marca temporal completa del análisis. |
+| Fecha y hora analisis | Marca temporal completa AAAA-MM-DD HH:MM:SS (una sola columna, ordena y filtra en Excel). |
+| Fecha reconstruccion | Fecha de la reconstrucción/adquisición usada por el análisis (viene de la carpeta fuente). |
+| Hora carpeta | Hora (HH:MM:SS) extraída del nombre de la carpeta de reconstrucción (formato HHMMSS_Paciente-X). |
+| Carpeta reconstruccion | Carpeta fuente de imágenes del
+===== RESULTADOS-MRI/data/analisis_t2_export_20261006_233501.xlsx | hoja Diccionario filas 1-60
+| Columna | Descripción |
+|---|---|
+| Codigo Estudio | Paciente (código anonimizado) al que pertenece el análisis. Un mismo sujeto puede tener varios análisis. |
+| Fecha analisis | Fecha (AAAA-MM-DD) en que el análisis fue guardado — hora del servidor Parse. |
+| Hora analisis | Hora (HH:MM:SS) en que el análisis fue guardado. Junto con la fecha, la marca temporal completa del análisis. |
+| Fecha y hora analisis | Marca temporal completa AAAA-MM-DD HH:MM:SS (una sola columna, ordena y filtra en Excel). |
+| Fecha reconstruccion | Fecha de la reconstrucción/adquisición usada por el análisis (viene de la carpeta fuente). |
+| Hora carpeta | Hora (HH:MM:SS) extraída del nombre de la carpeta de reconstrucción (formato HHMMSS_Paciente-X). |
+| Carpeta reconstruccion | Carpeta fuente de imágenes del
+===== RESULTADOS-MRI/descargas/Base_datos_final_MRI_IS_Bdat.xlsx | hoja diccionario filas 1-60
+| columna | descripcion |
+|---|---|
+| Codigo Estudio | Paciente (código anonimizado) al que pertenece el análisis. Un mismo sujeto puede tener varios análisis. |
+| Fecha analisis | Fecha (AAAA-MM-DD) en que el análisis fue guardado — hora del servidor Parse. |
+| Hora analisis | Hora (HH:MM:SS) en que el análisis fue guardado. Junto con la fecha, la marca temporal completa del análisis. |
+| Fecha y hora analisis | Marca temporal completa AAAA-MM-DD HH:MM:SS (una sola columna, ordena y filtra en Excel). |
+| Fecha reconstruccion | Fecha de la reconstrucción/adquisición usada por el análisis (viene de la carpeta fuente). |
+| Hora carpeta | Hora (HH:MM:SS) extraída del nombre de la carpeta de reconstrucción (formato HHMMSS_Paciente-X). |
+| Carpeta reconstruccion | Carpeta fuente de imágenes del
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/README.md | 
+## Fuentes de las fórmulas e implementación
+
+`PROYECTO-INFORMATICO-MRI-US-DOCKERIZADO/core/api_modelo_tricomponente/src/`:
+
+- `relajacionTransversalTri.py` — modelo 3-componentes + chemical shift (`ajustar_modelo_triexponencial_cs`, `ajustar_modelo_mle_triexponencial_cs`), `differential_evolution`, fracciones stick-breaking con `f_bw+f_pw+f_bm=1` y `S_0` total (restricción de la tutora, 2026-08-14), **poda de pools nulos por AICc**, y ancla de médula **two-decay water–fat** (`ajustar_modelo_biexponencial_cs` en bandas libres sobre la ROI de médula; compuertas sin-topes + R²≥0,50, recorte [30–120] ms): si califica, `congelar_ancla_medida` congela el T2*f en el tri (5 libres, AICc k=5); si no, ventana ±50 % con aviso; el mono queda como respaldo legado. Configuración water-fat+congelado+band
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 1
+GLOSARIO
+Glosario de simbolos y acronimos
+Tiempos y senal. T ¤
+2 : tiempo de relajacion transversal efectivo (muy corto en hueso cortical,
+incluye desfase por campo). T2: tiempo de relajacion transversal intrinseco. S0: amplitud
+inicial de la senal (en TE = 0). TE: tiempo de eco (instante en que se mide la senal). s(TE):
+senal en funcion del tiempo de eco. ° (gamma): constante giromagnetica (relaciona campo y
+frecuencia). ¢ B0: inhomogeneidad local del campo magnetico principal B0.
+¢ f: chemical shift o desplazamiento quimico (diferencia de frecuencia agua-grasa, en Hz).
+j: unidad imaginaria (j 2 = ¡1).
+Ruido y estadistica. SNR: Signal-to-Noise Ratio (relacion senal-ruido). ROI: Region Of Interest
+(region de interes). Distribucion Rician o de Rice: la que sigue la magnitud de una senal com
+===== MRI-UTE PROYECTO DE TESIS/docs/template-parcial-final-2026-09-19.pdf | 136+137+138
+Figura 9.1: Validación en fantoma: curvas de decaimiento T ∗
+2 de dos viales medidas con la
+secuencia UTE y ajustadas con el modelo riciano. La serie UTE reproduce las referencias
+GRE con desviaciones relativas de 2.2 % y 0.8 %.
+118
+
+Figura 9.2: Validación in vivo (sujeto 1, mujer de 20 años): imágenes de magnitud por com-
+pressed sensing de la tibia en los doce tiempos de eco (TE = 0.03–25 ms, ordenados de
+izquierda a derecha y de arriba abajo). La señal cortical de T ∗
+2 corto decae dentro de los
+primeros milisegundos, mientras que médula y músculo persisten; la señal de médula está
+modulada por el desplazamiento químico agua–grasa, con mínimo cerca de TE ≈6.1 ms y
+recuperación en el eco en fase de 12.2 ms.
+119
+
+9.2.6.
+Modelos de relajación T ∗
+2
+Realizaré la cuantificación del tiempo de
+===== MRI-UTE PROYECTO DE TESIS/main.pdf | 45
+de poro a campo alto) y señal de médula/grasa residual (bm). A diferencia del modelo bi-exponencial
+clásico, el término de grasa incorpora de forma explícita la fase de desplazamiento químico agua–
+grasa, con ∆f ≈82 Hz a 0.55 T [57, 130]:
+S(TE) = S0
+fbw e−TE/T ∗
+2,bw + fpw e−TE/T ∗
+2,pw + fbm e−TE/T ∗
+2,bm ei2π∆f TE
+(5.13)
+donde S0 es la amplitud total a TE = 0 y las fracciones de señal cumplen la restricción de suma
+unitaria (implementada mediante stick-breaking, de modo que la suma es exactamente 1 en todo el
+dominio de búsqueda):
+fbw + fpw + fbm = 1
+(5.14)
+Ambas componentes buscan en una única banda compartida [0.03, 120] ms, que abarca sus valores
+reportados a campo clínico, y se etiquetan de forma canónica tras el ajuste (la más rápida es bw), sin
+imponer una frontera arbitraria entre
+===== RESULTADOS-MRI/database/datos_crudos_mri_us.xlsx | hoja diccionario filas 1-60
+|  | Diccionario de datos — descripción de columnas |  |
+|---|---|---|
+|  | columna | descripcion |
+|  | Codigo Estudio | Paciente (código anonimizado) al que pertenece el análisis. Un mismo sujeto puede tener varios análisis. |
+|  | Fecha analisis | Fecha (AAAA-MM-DD) en que el análisis fue guardado — hora del servidor Parse. |
+|  | Hora analisis | Hora (HH:MM:SS) en que el análisis fue guardado. Junto con la fecha, la marca temporal completa del análisis. |
+|  | Fecha y hora analisis | Marca temporal completa AAAA-MM-DD HH:MM:SS (una sola columna, ordena y filtra en Excel). |
+|  | Fecha reconstruccion | Fecha de la reconstrucción/adquisición usada por el análisis (viene de la carpeta fuente). |
+|  | Hora carpeta | Hora (HH:MM:SS) extraída del nombre de la carpeta de reconstrucción (forma
+===== RESULTADOS-MRI/database/datos_crudos_mri_us_v1.xlsx | hoja diccionario filas 1-60
+|  | Diccionario de datos — descripción de columnas |  |
+|---|---|---|
+|  | columna | descripcion |
+|  | Codigo Estudio | Paciente (código anonimizado) al que pertenece el análisis. Un mismo sujeto puede tener varios análisis. |
+|  | Fecha analisis | Fecha (AAAA-MM-DD) en que el análisis fue guardado — hora del servidor Parse. |
+|  | Hora analisis | Hora (HH:MM:SS) en que el análisis fue guardado. Junto con la fecha, la marca temporal completa del análisis. |
+|  | Fecha y hora analisis | Marca temporal completa AAAA-MM-DD HH:MM:SS (una sola columna, ordena y filtra en Excel). |
+|  | Fecha reconstruccion | Fecha de la reconstrucción/adquisición usada por el análisis (viene de la carpeta fuente). |
+|  | Hora carpeta | Hora (HH:MM:SS) extraída del nombre de la carpeta de reconstrucción (forma
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo9.tex | tex
+## Modelo tricomponente con ancla de médula ósea
+
+subsec:tricomponente
+ El modelo principal del protocolo descompone la señal del hueso cortical en tres componentes: una de $T_2^*$ corto (subíndice $bw$, el agua ligada de la literatura a campo alto), una de $T_2^*$ largo ($pw$, el agua de poro a campo alto) y señal de médula/grasa residual ($bm$). A diferencia del modelo bi-exponencial clásico, el término de grasa incorpora de forma explícita la fase de desplazamiento químico agua--grasa, con $ f 82$\,Hz a 0.55\,T Lu_2019, Dixon1984:
+
+S(TE) = S_0 | f_bw\, e^-TE/T^*_2,bw + f_pw\, e^-TE/T^*_2,pw + f_bm\, e^-TE/T^*_2,bm\, e^i 2 f\, TE |
+ eq:tricomponente
+
+donde $S_0$ es la amplitud total a TE\,$=0$ y las fracciones de señal cumplen la restricción de suma unitaria (implementada mediante stick-
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/cap9_tricomp_p138.png | OCR
+9.2.6. Modelos de relajación 73
+
+Realizaré la cuantificación del tiempo de relajación transversal efectivo (73) ajustando la evolución
+de la magnitud de la señal en función del tiempo de eco. Dado que las imágenes de magnitud siguen
+una distribución de Rice (o chi no central al combinar canales), el ajuste minimizará el error respecto
+a la esperanza matemática de dicha distribución, E[M(T.E)], en lugar de la señal determinista pura
+1176, 177).
+
+Modelo tricomponente con ancla de médula ósea
+
+El modelo principal del protocolo descompone la señal del hueso cortical en tres reservas de protones:
+agua ligada a la matriz de colágeno (bound water, subindice bw), agua de poro (pore water, pw) y
+señal de médula/grasa residual (bm). A diferencia del modelo bi-exponencial clásico, el término de
+grasa
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/tricomp_p45.png | OCR
+señal de médula/grasa residual (bm). A diferencia del modelo bi-exponencial clásico, el término de
+grasa incorpora de forma explícita la fase de desplazamiento químico agua-grasa, con Af = 82 Hz a
+0.55T [57, 130]:
+
+S(LE) = So | fw 1 Vid + fy TE fn OTP Tim @RPRAITE (5.13)
+
+donde Sp es la amplitud total a TE= 0 y las fracciones de señal cumplen la restricción de suma
+unitaria (implementada mediante stick-breaking, de modo que la suma es exactamente 1 en todo el
+dominio de búsqueda):
+
+fou + Fow + fom =1 (5.14)
+
+Ambos pools de agua buscan en una única banda compartida (0.03, 120] ms, que abarca los valores
+del agua ligada y del agua de poro reportados a campo clínico, y se etiquetan de forma canónica tras
+el ajuste (el componente más rápido es bw), sin imponer una frontera arbitraria entre amb
+===== MRI-UTE PROYECTO DE TESIS/docs/trazabilidad-formulas.md | 
+# Trazabilidad de fórmulas — Capítulo 9 (E07)
+
+Cada ecuación del capítulo 9 tras la actualización, su origen y fuente de verdad.
+Paper = `paper-mri-us/Content/3_Methods.tex` (v5.17). Código = repo dockerizado
+(`mri-us-bdat-test`), hojas `docs/formulas_*.md|.tex` y `references/constantes-proyecto.md`.
+
+| # | Label cap. 9 | Contenido | Origen | Verificada contra |
+|---|---|---|---|---|
+| 1 | `eq:perfil_corte` | $M_\perp(z) \propto \int B_1 e^{-i2\pi k_z z} dt$ | Paper 3.3.1 (eq 1) | Pauly1989 |
+| 2 | `eq:kz_restante` | $k_z(t)$ por área restante | Paper 3.3.1 (eq 2, `eq:kz_remaining_area`) | Lu2023 (ec. 3.1), Bernstein2004, código (`cumsum − max`) |
+| 3 | `eq:verse_pulse` | Remapeo VERSE $\tilde{B}_1 = B_1 G_z/\tilde{G}_z$ | Paper 3.3.1 (eq 3) | Conolly1988, Hargreaves2004, constantes (VERSE
+===== defensa_tesis_doctoral/marco-teorico/bloque-G-ruido-modelos/README.md | 
+# Bloque G — Teoría del Ruido y Modelos de Relajación
+
+Fundamentos matemáticos del ajuste cuantitativo de T2\* en presencia de ruido Rician. Comprende: la naturaleza estadística del ruido gaussiano en canales complejos, su transformación a distribución de Rice al tomar magnitud, los modelos de señal (mono-, bi- y tricomponente con chemical shift) y el prior fisiológico de médula que estabiliza el ajuste.
+
+## Pasos del bloque
+
+| N° | Tema | Archivo | Estado |
+|----|------|---------|--------|
+| T34 | Ruido gaussiano en canales reales e imaginarios | [T34-ruido-gaussiano.md](./T34-ruido-gaussiano.md) | `[x]` |
+| T35 | Distribución de Rice: PDF, momentos y noise floor | [T35-distribucion-rice.md](./T35-distribucion-rice.md) | `[x]` |
+| T36 | Función de Bessel modificada $I_0$ | [T36-bessel-mod
+===== paper-mri-us/main.pdf | 10
+10
+Front. Comput. Sci., 2026, 0(0): 1–23
+2.6.4
+Paso 2: Ajuste Cortical Tricomponente
+Con el T ∗
+2,bm anclado del Paso 1 congelado, que-
+dan libres cinco par´ametros: θ = {S 0, fbw, fpw, T ∗
+2,bw, T ∗
+2,pw},
+con fbm = 1 −fbw −fpw. La restricci´on de suma
+unitaria se impuso en forma exacta mediante una
+reparametrizaci´on stick-breaking, que garantiza
+fracciones admisibles sobre cotas de b´usqueda rec-
+tangulares. Los dos pools de agua buscaron un
+´unico rango compartido [0.03, 120] ms, que abar-
+ca los valores del agua ligada (T ∗
+2 ≈0.3–0.5 ms a
+1.5–3 T) y el rango del agua de poro (hasta varios
+ms, gobernado por la escala de poro) reportados a
+campos cl´ınicos [14,45,49]; a 0.55 T ambos se es-
+peran alargados. Tras el ajuste, los pools se etique-
+taron can´onicamente (componente m´as r´api
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_modelo_tricomponente/src/relajacionTransversalTri.py | líneas 197-286
+# relajacionTransversalTri.py · python · líneas 197-286
+class RelajacionTransversal:
+    """
+    Analizador de relajación transversal T2* con modelo de ruido Rician.
+
+    Modelos implementados:
+      - Mono-exponencial Rician (LS): M(TE) = E_Rice[S₀·exp(-TE/T2*), σ]
+      - Mono-exponencial Rician (MLE): maximiza log-PDF Rician
+      - 3-Componentes + Chemical Shift (cortical):
+          |S_bw·e^(-TE/T2_bw) + S_pw·e^(-TE/T2_pw) + S_bm·e^(-TE/T2_bm)·e^(j·2π·Δf·TE)|
+          Separa bound water, pore water y contaminación de médula.
+
+    Para hueso cortical (tipo_tejido='cortical'):
+      El modelo 3-Comp-CS separa tres pools:
+      - Bound water (BW): colágeno, T2* ~ 50-500 µs
+      - Pore water (PW): canales Haversianos, T2* ~ 1-50 ms
+      - Bone marrow (BM): contaminación por volumen par
+===== defensa_tesis_doctoral/Paper-MRI-US/scripts/Analysis/relajacionTransversalTri.py | líneas 44-133
+# relajacionTransversalTri.py · python · líneas 44-133
+class RelajacionTransversal:
+    """
+    Analizador de relajación transversal T2* con modelo de ruido Rician.
+
+    Modelos implementados:
+      - Mono-exponencial Rician (LS): M(TE) = E_Rice[S₀·exp(-TE/T2*), σ]
+      - Mono-exponencial Rician (MLE): maximiza log-PDF Rician
+      - 3-Componentes + Chemical Shift (cortical):
+          |S_bw·e^(-TE/T2_bw) + S_pw·e^(-TE/T2_pw) + S_bm·e^(-TE/T2_bm)·e^(j·2π·Δf·TE)|
+          Separa bound water, pore water y contaminación de médula.
+
+    Para hueso cortical (tipo_tejido='cortical'):
+      El modelo 3-Comp-CS separa tres pools:
+      - Bound water (BW): colágeno, T2* ~ 50-500 µs
+      - Pore water (PW): canales Haversianos, T2* ~ 1-50 ms
+      - Bone marrow (BM): contaminación por volumen parc
+===== paper-mri-us/scripts/Analysis/relajacionTransversalTri.py | líneas 44-133
+# relajacionTransversalTri.py · python · líneas 44-133
+class RelajacionTransversal:
+    """
+    Analizador de relajación transversal T2* con modelo de ruido Rician.
+
+    Modelos implementados:
+      - Mono-exponencial Rician (LS): M(TE) = E_Rice[S₀·exp(-TE/T2*), σ]
+      - Mono-exponencial Rician (MLE): maximiza log-PDF Rician
+      - 3-Componentes + Chemical Shift (cortical):
+          |S_bw·e^(-TE/T2_bw) + S_pw·e^(-TE/T2_pw) + S_bm·e^(-TE/T2_bm)·e^(j·2π·Δf·TE)|
+          Separa bound water, pore water y contaminación de médula.
+
+    Para hueso cortical (tipo_tejido='cortical'):
+      El modelo 3-Comp-CS separa tres pools:
+      - Bound water (BW): colágeno, T2* ~ 50-500 µs
+      - Pore water (PW): canales Haversianos, T2* ~ 1-50 ms
+      - Bone marrow (BM): contaminación por volumen parc
+===== MRI-UTE PROYECTO DE TESIS/docs/planificacion-parcial-final.md | 
+### 4.2 Paper — contenido a migrar
+- **21 ecuaciones numeradas** en `3_Methods.tex` (compilado): slice profile, `k_z` por área restante, VERSE, momento nulo, vector 12 TEs, rampa/meseta + muestreo cuadrático, CS-TV (ADMM 50 iter, λ=1e-4), ECC, **modelo tricomponente con fase agua-grasa (Δf≈82 Hz)**, restricción Σf=1, **magnitud esperada Rician (Bessel I₀,I₁)**, **ancla Step 1 bi-componente Dixon de médula**, **Step 2 LS sobre E[M]**, biomarcadores f^cort (align), separación hmrGC, **PI₁ dual-eco / PI₂ model-based**, **Modelos A y B de regresión**.
+- Subarchivos no compilados (`Content/3_Methods/`) con ecuaciones adicionales útiles para la tesis: SENSE (λ_Tik=0.2, CG), spoiling de gradiente y RF (Φ_inc=117°), y las 3 ecuaciones del **problema inverso BDAT** (SVD/proyección/argmax).
+- **Dato
+===== defensa_tesis_doctoral/Paper-MRI-US/Content/3_Methods/3.2_Tricomponent_Analysis_Validation.tex | tex
+## Tri-component Analysis Validation
+
+Given the potential for involuntary patient motion during the acquisition of the multi-echo UTE series, precise image registration is a prerequisite for accurate voxel-wise $T_2^*$ quantification.
+
+Image Alignment
+Rigid motion correction was performed using the Enhanced Correlation Coefficient (ECC) maximization algorithm 9788478. The first echo image ($TE_min = 20\, s$), which exhibits the highest Signal-to-Noise Ratio (SNR) and structural detail, served as the reference template $I_ref$. Subsequent echo images $I_mov(TE_i)$ were aligned to $I_ref$ by estimating a Euclidean transformation $ T_ p$ (rotation angle $ $ and translation vector $ t = [t_x, t_y]^T$) that maximizes the correlation coefficient:
+
+p = _ p _ x I_ref( x) I_mov( T_ p( x)) _ x I_ref
+===== defensa_tesis_doctoral/Paper-MRI-US/Content/3_Methods/3.4_In_Vivo_Feasibility.tex | tex
+## In Vivo Feasibility Study
+
+## Study Population and Anatomical Sites
+
+The feasibility study recruited healthy volunteers aged 20 to 80 years. Inclusion criteria required the absence of diagnosed bone pathologies (e.g., severe osteoporosis, recent fractures) and the ability to remain still for approximately 10 minutes per acquisition. Exclusion criteria included contraindications for MRI (incompatible implants), BMI $> 35$ kg/m$^2$ (to ensure proper coil positioning), and excessive motion artifacts validated visually after correction.
+
+Data were acquired from two anatomical regions in the non-dominant limb: the mid-tibia and the radius/ulna (forearm). These sites were selected to match standard quantitative ultrasound measurement locations.
+
+## MRI Acquisition Parameters
+
+Imaging was perf
+===== defensa_tesis_doctoral/marco-teorico/bloque-J-plataforma-dockerizada/T54-api-tricomponente.md | 
+### 54.6.2 Implementación
+
+| Operación | Cómo se respeta |
+|-----------|-----------------|
+| Lectura de imágenes | `cv2.imread()` lee 16-bit PNG directamente |
+| Alineación (ECC) | Imágenes alineadas se guardan en `/magnitude_alineadas/` (subcarpeta separada) |
+| Dibujo de ROI en canvas | Frontend mantiene factor de escala y revierte antes de enviar |
+| Validación de coordenadas | Backend valida que `(cx, cy, r) ∈ [0, image_width/height]` |
+
+### 54.6.3 Coordenadas siempre en imagen original
+
+Si el canvas del frontend está a 50% de escala:
+
+```typescript
+// Frontend
+const cx_canvas = 128;  // pixel en canvas
+const escala_canvas = 0.5;
+const cx_original = cx_canvas / escala_canvas;  // 256
+
+POST /api/v1/analysis { rois: [{cx: 256, cy: ..., r: ...}] }
+```
+
+→ **La API SIEMPRE trabaja en coorde
+===== defensa_tesis_doctoral/Paper-MRI-US/narracion/texto/methods.txt | 
+Methods
+
+Study Design and Anatomical Regions
+Cortical bone was assessed at two skeletal sites of the left extremities, the tibial mid-diaphysis and the radius. The UTE-MRI protocol was applied at the left tibial mid-diaphysis only, whereas Bidirectional Axial Transmission (BDAT) ultrasound was acquired at both the left tibia and the left radius; the site-matched MRI-ultrasound comparison therefore takes place at the tibial mid-diaphysis.
+Study Population and Ethical Considerations
+Twenty healthy adult volunteers (age range 20-80 years) were recruited for this ongoing study. Exclusion criteria were a body mass index above 35 kg/m squared, the presence of non-MRI-compatible metallic implants or devices, and inability to tolerate the examination environment (e.g., claustrophobia) or to remain
+===== defensa_tesis_doctoral/Presentacion-Defensa/main.pdf | 9+10+11+12+13
+Relajación Tricomponente
+Universidad de Valparaíso
+
+1
+Introducción
+y Motivación
+2
+Secuencia
+UTE Radial
+3
+Reconstrucción por
+Compressed Sensing
+4
+Relajación Tri-
+componente
+5
+Validación con
+Fantoma Controlado
+6
+Resultados In Vivo
+7
+Discusión y
+Conclusiones
+A Método & pipeline
+1 Alineación entre-ecos (ECC)
+Movimiento entre ecos →ROI muestrea vóxeles distintos. Registro rígido
+2D al TE más corto con criterio ECC (rotación + traslación).
+2 Modelo tricomponente
+Tres exponenciales: agua ligada (T∗
+2 corto), agua de poro (T∗
+2 largo) y mé-
+dula (oscila por desplazamiento químico ∆f = 82 Hz a 0.55 T). La médula
+requiere descomposición compleja (Sr, Si) porque su fasor rota con TE; los
+pools de agua decaen monotónicamente en magnitud.
+3 MLE Rician
+Magnitud sigue distribución Rician; el MLE elimina 
+===== defensa_tesis_doctoral/marco-teorico/bloque-B-fisica-resonancia-magnetica/T09-relajacion-T2-estrella.md | 
+### 9.5.2 Tabla de T2\* del hueso cortical (tesis capítulo 2, Tabla 2 — Seifert 2015)
+
+| Pool | $T_2^*$ a 1.5 T | $T_2^*$ a 3 T | $T_2^*$ a 7 T | $T_2^*$ a 9.4 T |
+|------|----------------|---------------|---------------|------------------|
+| **Short pool (BW)** | $401 \pm 119\ \mu\text{s}$ | $389 \pm 116\ \mu\text{s}$ | $368 \pm 76\ \mu\text{s}$ | $302 \pm 150\ \mu\text{s}$ |
+| **Long pool (PW)** | $4110 \pm 1230\ \mu\text{s}$ | $4350 \pm 8570\ \mu\text{s}$ | $1300 \pm 420\ \mu\text{s}$ | $886 \pm 525\ \mu\text{s}$ |
+
+> **A bajo campo (0.55 T), los pools están MÁS separados temporalmente que a alto campo.** Esto **paradójicamente facilita** la separación en el modelo multi-exponencial. Es una ventaja teórica de trabajar a bajo campo para hueso cortical.
+
+## 9.6 ¿Por qué UTE mide $T_2^*$ y
+===== defensa_tesis_doctoral/marco-teorico/bloque-G-ruido-modelos/T40-prior-medula.md | 
+# T40 — Prior fisiológico de médula
+
+> **Bloque:** G — Teoría del ruido y modelos de relajación
+> **Fuentes:** `explicacion-matematica.md` §9, `relajacionTransversalTri.py`
+> **Objetivo:** Justificar por qué el modelo tricomponente requiere un prior fisiológico sobre $T_{2,bm}^*$, derivar el procedimiento de estimación del prior desde ROI de médula, y describir cómo se aplica como restricción al ajuste.
+
+## 40.1 ¿Por qué un prior?
+
+### 40.1.1 Problema de identifiabilidad de $T_{2,bm}^*$
+
+En el modelo tricomponente (ver [T39](./T39-modelo-tricomponente.md)), el componente de médula (BM) tiene tres propiedades difíciles:
+
+1. **$T_{2,bm}^*$ largo** (30–80 ms a 0.55 T) → la señal persiste en TEs largos.
+2. **A TEs largos, la SNR es baja** → la información sobre BM proviene de pocos datos ruido
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 11
+DIAPOSITIVA 10
+El ancla de la medula: two-decay water-fat
+De donde sale el T ¤
+2; bm que el tricomponente trae congelado. De un segundo ajuste, previo e
+independiente, sobre la ROI de medula dibujada por el usuario: un modelo de DOS decaimientos con el
+desfase agua-grasa dentro,
+Smed(TE) = S0 j fw e ¡TE=T ¤
+2; w + ff e ¡TE=T ¤
+2; f e j2¼ ¢ f TE j
+con fw + ff = 1 (fracciones de agua y grasa en TE = 0). Es un analisis tipo Dixon: separa agua
+y grasa por su desfase quimico, el mismo ¢ f ¼ 82 Hz de la diapositiva nueve, y ajusta
+la magnitud Rician con la misma ¾ del fondo que usa el analisis completo. Sus dos T ¤
+2
+buscan libres en el rango unico de 30 microsegundos a 300 ms.
+Por que no simplemente el mono-exponencial de la medula, que ya existia. Porque la medula es
+justamente el caso donde e
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 16
+PREGUNTAS Y RESPUESTAS (2/2)
+Preguntas de defensa, preparadas y respondidas
+P6. Que es el chemical shift ¢ f, por que vale ¼ 82 Hz a 0:55 T y por que hay que
+modelar la fase? — R: La grasa de la medula resuena a 3:5 ppm respecto del agua. A 0:55 T la
+frecuencia de Larmor es f0 = ° B0 ¼ 23:4 MHz, y 3:5 ppm de esa frecuencia dan
+¢ f ¼ 82 Hz. El fasor de la grasa rota en el plano complejo a esa frecuencia y produce
+una interferencia agua-grasa (un rizado) sobre el decaimiento. Por eso el termino de medula lleva
+una exponencial compleja, Sbm e ¡TE=T ¤
+2; bm e j2¼ ¢ f TE, y por la
+formula de Euler e jµ = cos µ + jsin µ se reparte en parte real e imaginaria: se
+suma vector con vector y recien entonces se toma el modulo. Modelar la fase evita que el rizado
+sesgue los T ¤
+2  del agua.
+P7. Por que 
+===== paper-mri-us/Content/3_Methods/3.4_In_Vivo_Feasibility.tex | tex
+## In Vivo Feasibility Study
+
+## Study Population and Anatomical Sites
+
+The feasibility study recruited healthy volunteers aged 20 to 80 years. Inclusion criteria required the absence of diagnosed bone pathologies (e.g., severe osteoporosis, recent fractures) and the ability to remain still for approximately 10 minutes per acquisition. Exclusion criteria included contraindications for MRI (incompatible implants), BMI $> 35$ kg/m$^2$ (to ensure proper coil positioning), and excessive motion artifacts validated visually after correction.
+
+Data were acquired from two anatomical regions in the non-dominant limb: the mid-tibia and the radius/ulna (forearm). These sites were selected to match standard quantitative ultrasound measurement locations.
+
+## MRI Acquisition Parameters
+
+Imaging was perf
+===== paper-mri-us/Content/3_Methods/3.2_Tricomponent_Analysis_Validation.tex | tex
+## Tri-component Analysis Validation
+
+Given the potential for involuntary patient motion during the acquisition of the multi-echo UTE series, precise image registration is a prerequisite for accurate voxel-wise $T_2^*$ quantification.
+
+Image Alignment
+Rigid motion correction was performed using the Enhanced Correlation Coefficient (ECC) maximization algorithm 9788478. The first echo image ($TE_min = 20\, s$), which exhibits the highest Signal-to-Noise Ratio (SNR) and structural detail, served as the reference template $I_ref$. Subsequent echo images $I_mov(TE_i)$ were aligned to $I_ref$ by estimating a Euclidean transformation $ T_ p$ (rotation angle $ $ and translation vector $ t = [t_x, t_y]^T$) that maximizes the correlation coefficient:
+
+p = _ p _ x I_ref( x) I_mov( T_ p( x)) _ x I_ref
+===== paper-mri-us/Content/3_Methods.tex | tex
+Si el ajuste bicomponente no pasó sus compuertas, un ajuste de máxima verosimilitud Rician monoexponencial de la misma ROI sirvió de respaldo legado; como tal ajuste queda sesgado hacia abajo por la oscilación grasa--agua, en ese caso no se congeló nada: el valor de respaldo solo estrechó a $ 50%$ la ventana de búsqueda del $T_2, bm^*$ cortical.
+
+## Paso 2: Ajuste Cortical Tricomponente
+
+Con el $T_2, bm^*$ anclado del Paso 1 congelado, quedan libres cinco parámetros: $ = \S_0, f_ bw, f_ pw, T_2, bw^*, T_2, pw^*\$, con $f_ bm = 1 - f_ bw - f_ pw$. La restricción de suma unitaria se impuso en forma exacta mediante una reparametrización stick-breaking, que garantiza fracciones admisibles sobre cotas de búsqueda rectangulares. Los dos pools de agua buscaron un único rango compartido $[0.03, 12
+===== MRI-UTE PROYECTO DE TESIS/docs/template-parcial-final-2026-09-19.pdf | 15
+7.24. Ajuste mono-exponencial con ruido Rician a datos UTE del hueso cortical (sujeto FR-
+40-071025) en 0.55 T. La curva muestra la evolución de la intensidad y el SNR frente
+al tiempo de eco; no se logra un ajuste confiable porque, independientemente de la
+ROI elegida, la señal permanece dentro del ruido o corresponde a artefactos inducidos
+por el pulso de RF.
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+90
+7.25. Sujeto FR-40-071025: IR-UTE con pulso hard. La supresión de grasa no es efectiva y
+persisten artefactos de inhomogeneidad. . . . . . . . . . . . . . . . . . . . . . . . .
+90
+7.26. Sujeto FR-40-071025: IR-UTE con pulso adiabático Silver–Hoult. Resultados simila-
+res al pulso hard: la supresión de grasa no es efectiva y persisten artefactos de inho-
+mogenei
+===== MRI-UTE PROYECTO DE TESIS/main.pdf | 44
+en la médula a 0.55 T y sin ecos en oposición de fase, tal como exige el diseño de adquisición. Esa
+comprobación, junto con las imágenes multi-eco de los primeros voluntarios y su descomposición
+tricomponente, se presenta en la sección 7.4 del capítulo de resultados preliminares.
+5.2.6.
+Modelos de relajación T ∗
+2
+Realizaré la cuantificación del tiempo de relajación transversal efectivo (T ∗
+2 ) ajustando la evolución
+de la magnitud de la señal en función del tiempo de eco. La figura 5.1 resume la cadena completa
+de cuantificación tal como corre en la plataforma, de extremo a extremo: adquisición de los doce
+ecos, reconstrucción por compressed sensing con normalización por eco, alineación rígida de los ecos
+contra la referencia de 30 µs y definición de las ROIs, ancla de médula por ajuste 
+===== RESULTADOS-MRI/descargas/Base_datos_final_MRI_IS_Bdat.xlsx | hoja analisis filas 1-60
+| Código completo del análisis (prefijo del paciente + código de estudio, p. ej. 205445_TIBIA-20260709154220). | Paciente (código anonimizado) al que pertenece el análisis. Un mismo sujeto puede tener varios análisis. | URL del reporte imprimible del análisis (página /admin/reporte-t2). | Algoritmo de reconstrucción usado. | Etiqueta de la sección cortical cuando el análisis salió de un lote multi-ROI (p.ej. 'diafisis'). Vacío = análisis single o anterior a la feature. | Índice (0-based) de la sección dentro del set del lote. | Hueso sobre el que cayó el análisis (tibia/peroné/…). Efectivo: declarado por el análisis o heredado del registro del paciente. | Valor del ancla de T2 de médula cuando origen = fijo. | QUÉ modelo midió el ancla en modo roi_medula: 'bi-comp' (agua+grasa con shift qu
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/main.pdf | 8+9+10
+57 %
+El ajuste mono-exponencial: dos estimadores
+ˆθLS = arg mín
+θ
+X
+i
+
+Mi −ERice(νi, σ)
+2
+ˆθMLE = arg mín
+θ
+−
+X
+i
+log p(Mi | νi, σ)
+Con νi = S0e−TEi/T∗
+2 y θ = {S0, T∗
+2}. Ambos buscan lo mismo pero responden a preguntas distintas: uno minimiza
+el error, el otro maximiza la probabilidad de haber observado justo estos datos.
+A Mínimos cuadrados (LS)
+• Minimiza el residuo cuadrático contra la media
+Rician (diapositiva 5), no contra la señal ideal.
+• curve_fit con bounds y multi-start: varias se-
+millas de T∗
+2 , se elige la de menor RMSE.
+• Rápido y robusto, pero asume ruido gaussiano,
+cosa que a bajo SNR no se cumple.
+B Máxima verosimilitud (MLE)
+• Usa la densidad Rician exacta, sin aproximar su
+forma por una gaussiana.
+• Es asintóticamente óptimo: a bajo SNR sigue in-
+sesgado donde LS empi
+===== defensa_tesis_doctoral/marco-teorico/bloque-G-ruido-modelos/T37-modelo-monoexponencial.md | 
+> **Mono-exponencial** ya alcanza $R^2 > 0.93$ en hueso cortical, validando la calidad técnica de la adquisición. Sin embargo, el bi-exponencial mejora a $R^2 = 0.9757$ (ver [T38](./T38-modelo-biexponencial.md)), motivando el modelo más complejo.
+
+## 37.11 Limitaciones del mono-exponencial en hueso cortical
+
+| Limitación | Impacto |
+|------------|---------|
+| Asume un solo pool | Hueso cortical tiene 3 (BW, PW, BM) |
+| No captura oscilaciones chemical shift | Médula con CS → mínimos a 6.1 ms ignorados |
+| $T_2^*$ estimado es un "promedio" | No revela información compositiva |
+| Útil como inicialización | Para bi-exp y tri-exp |
+
+> **Conclusión:** Mono es la **base**, pero hueso cortical requiere bi-exp/tri-exp.
+
+## 37.12 Síntesis (para defensa)
+
+> "El **modelo mono-exponencial** describe l
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap7.txt | 
+Capítulo 7. Resultados preliminares
+
+Introducción
+Este capítulo muestra, en orden de validación, lo que el proyecto lleva a la fecha: fantomas de referencia, corte animal ex vivo y los primeros resultados in vivo con el protocolo final. Los resultados in vivo corresponden a los dos primeros voluntarios sanos de la cohorte en curso ( N=20, con aprobación ética de la Universidad de Valparaíso y protocolo de RM iHEALTH de la Pontificia Universidad Católica de Chile, ID 210125006, cuyas mediciones cierran en septiembre de 2026) y a los quince pares de mediciones RM-BDAT emparejadas por sitio adquiridos a la fecha; todo el contenido proviene del artículo de investigación y de la presentación iHealth (ISMRM 2026).
+Pruebas en fantomas de referencia
+Antes de medir tejido, la secuencia UTE2D se con
+===== defensa_tesis_doctoral/Paper-MRI-US/Content/3_Methods.tex | tex
+_x 12 \|W(E x - y)\|_2^2 + \, TV(x),
+
+with $y$ the acquired k-space data, $W$ the density-compensation weights and $ = 10^-4$. Because TV is an $ _1$-type norm of the image gradients and is not differentiable at zero, the problem was solved with the alternating direction method of multipliers (ADMM, 50 iterations), which treats the non-smooth term through its proximal operator, with corner filtering of the trajectory. Before inversion, the k-space of each echo was normalized to unit maximum magnitude (and the solution rescaled back afterwards). The reason is quantitative: TV is homogeneous of degree one and the data term of degree two, so as the signal decays across the echo train the relative weight of the regularization grows, over-smoothing the late echoes and tilting the decay curve th
+===== defensa_tesis_doctoral/presentacion-especiales/chemical-shift/scripts/gen_guion.py | líneas 181-300
+# gen_guion.py · python · líneas 181-300
+
+    ("DIAPOSITIVA 8", BLUE, "Solucion (2): el desfase, explicito en el modelo",
+     [r"La segunda linea de defensa es no luchar contra la interferencia sino incorporarla al modelo. En lugar de suprimir la grasa o de "
+      r"corregir la imagen, el desfase entra en las ecuaciones como lo que es: un termino conocido.",
+      r"El modelo de senal es la magnitud de una suma compleja de tres terminos: "
+      r"$M(TE)=|S_{bw}e^{-TE/T_{2,bw}^{*}}+S_{pw}e^{-TE/T_{2,pw}^{*}}+S_{bm}e^{-TE/T_{2,bm}^{*}}e^{\,j2\pi\Delta\,f\,TE}|$. Los dos primeros "
+      r"terminos son el agua cortical —agua ligada y agua de poro— y van en fase, contribuyendo solo a la parte real. El tercero es la medula, "
+      r"multiplicado por la exponencial compleja que representa su
+===== defensa_tesis_doctoral/Paper-MRI-US/diseno_images/04_metodo_tricomponente/fig5_tricomponent_relaxometry.pdf | 1
+A Method & pipeline
+1
+Inter-echo alignment (motion correction)
+Small subject motion between echoes makes the ROI sample different voxels at each
+TE and corrupts the voxel-wise fit. Every TE frame is rigidly registered to the shortest-
+TE reference via the Enhanced Correlation Coefficient (ECC) criterion with a 2-D
+Euclidean warp (rotation + translation), 104 iterations, tolerance 10−12. Adapted from
+BMRRgroup/fieldmapping-hmrGC (github.com/BMRRgroup/fieldmapping-hmrGC).
+2
+Tri-component signal model
+Cortical-bone magnitude is modelled as three exponentially decaying compo-
+nents with amplitudes S{s,l,m} and decays T ∗
+2,{s,l,m}: short-T∗
+2 (bound water), long-T∗
+2
+(pore water) and marrow. Images are magnitude-valued (Rician); the marrow pool
+carries the water–fat chemical shift ∆f = 82 Hz (
+===== defensa_tesis_doctoral/Paper-MRI-US/diseno_images/04_metodo_tricomponente/fig5_tricomponent_relaxometry.tex | tex
+[
+ enhanced, colback=white, colframe=hairline, boxrule=0.8pt,
+ arc=4pt, left=6pt, right=6pt, top=6pt, bottom=6pt
+]
+
+[t]0.49 
+ 
+ 
+[
+ enhanced, colback=panelAbg, colframe=hairline, boxrule=0.6pt,
+ arc=3pt, left=7pt, right=7pt, top=5pt, bottom=5pt,
+ equal height group=triFig, valign=top,
+ height= -0.95cm 
+ ]
+ AMethod \ | pipelinepanelA
+
+1Inter-echo alignment (motion correction)panelA
+ muted 
+ Small subject motion between echoes makes the ROI sample
+ inkdifferent voxels at each TE and corrupts the
+ voxel-wise fit. Every TE frame is rigidly registered to the
+ shortest-TE reference via the
+ inkEnhanced Correlation Coefficient (ECC)
+ criterion with a 2-D Euclidean warp (rotation + translation),
+ $10^4$ iterations, tolerance $10^-12$. Adapted from
+ inkBMRRgroup/fieldmapping-hmrGC
+ ( https://github
+===== defensa_tesis_doctoral/Presentacion-Defensa/diseno_images/04_metodo_tricomponente/fig5_tricomponent_relaxometry.tex | tex
+[
+ enhanced, colback=white, colframe=hairline, boxrule=0.8pt,
+ arc=4pt, left=6pt, right=6pt, top=6pt, bottom=6pt
+]
+
+[t]0.49 
+ 
+ 
+[
+ enhanced, colback=panelAbg, colframe=hairline, boxrule=0.6pt,
+ arc=3pt, left=7pt, right=7pt, top=5pt, bottom=5pt,
+ equal height group=triFig, valign=top,
+ height= -0.95cm 
+ ]
+ AMethod \ | pipelinepanelA
+
+1Inter-echo alignment (motion correction)panelA
+ muted 
+ Small subject motion between echoes makes the ROI sample
+ inkdifferent voxels at each TE and corrupts the
+ voxel-wise fit. Every TE frame is rigidly registered to the
+ shortest-TE reference via the
+ inkEnhanced Correlation Coefficient (ECC)
+ criterion with a 2-D Euclidean warp (rotation + translation),
+ $10^4$ iterations, tolerance $10^-12$. Adapted from
+ inkBMRRgroup/fieldmapping-hmrGC
+ ( https://github
+===== defensa_tesis_doctoral/Presentacion-Defensa/diseno_images/04_metodo_tricomponente/fig5_tricomponent_relaxometry.pdf | 1
+A Method & pipeline
+1
+Inter-echo alignment (motion correction)
+Small subject motion between echoes makes the ROI sample different voxels at each
+TE and corrupts the voxel-wise fit. Every TE frame is rigidly registered to the shortest-
+TE reference via the Enhanced Correlation Coefficient (ECC) criterion with a 2-D
+Euclidean warp (rotation + translation), 104 iterations, tolerance 10−12. Adapted from
+BMRRgroup/fieldmapping-hmrGC (github.com/BMRRgroup/fieldmapping-hmrGC).
+2
+Tri-component signal model
+Cortical-bone magnitude is modelled as three exponentially decaying compo-
+nents with amplitudes S{s,l,m} and decays T ∗
+2,{s,l,m}: short-T∗
+2 (bound water), long-T∗
+2
+(pore water) and marrow. Images are magnitude-valued (Rician); the marrow pool
+carries the water–fat chemical shift ∆f = 82 Hz (
+===== defensa_tesis_doctoral/Presentacion-Defensa/figures/metodo_tricomponente/fig5_tricomponent_relaxometry.pdf | 1
+A Method & pipeline
+1
+Inter-echo alignment (motion correction)
+Small subject motion between echoes makes the ROI sample different voxels at each
+TE and corrupts the voxel-wise fit. Every TE frame is rigidly registered to the shortest-
+TE reference via the Enhanced Correlation Coefficient (ECC) criterion with a 2-D
+Euclidean warp (rotation + translation), 104 iterations, tolerance 10−12. Adapted from
+BMRRgroup/fieldmapping-hmrGC (github.com/BMRRgroup/fieldmapping-hmrGC).
+2
+Tri-component signal model
+Cortical-bone magnitude is modelled as three exponentially decaying compo-
+nents with amplitudes S{s,l,m} and decays T ∗
+2,{s,l,m}: short-T∗
+2 (bound water), long-T∗
+2
+(pore water) and marrow. Images are magnitude-valued (Rician); the marrow pool
+carries the water–fat chemical shift ∆f = 82 Hz (
+===== defensa_tesis_doctoral/figures/metodo_tricomponente/fig5_tricomponent_relaxometry.pdf | 1
+A Method & pipeline
+1
+Inter-echo alignment (motion correction)
+Small subject motion between echoes makes the ROI sample different voxels at each
+TE and corrupts the voxel-wise fit. Every TE frame is rigidly registered to the shortest-
+TE reference via the Enhanced Correlation Coefficient (ECC) criterion with a 2-D
+Euclidean warp (rotation + translation), 104 iterations, tolerance 10−12. Adapted from
+BMRRgroup/fieldmapping-hmrGC (github.com/BMRRgroup/fieldmapping-hmrGC).
+2
+Tri-component signal model
+Cortical-bone magnitude is modelled as three exponentially decaying compo-
+nents with amplitudes S{s,l,m} and decays T ∗
+2,{s,l,m}: short-T∗
+2 (bound water), long-T∗
+2
+(pore water) and marrow. Images are magnitude-valued (Rician); the marrow pool
+carries the water–fat chemical shift ∆f = 82 Hz (
+===== defensa_tesis_doctoral/marco-teorico/bloque-A-marco-clinico-anatomico/T04-tres-pools-protones.md | 
+Tres componentes con $T_2^*$ separados ~2 órdenes de magnitud cada uno.
+
+## 4.8 ¿Cuántos TEs hace falta muestrear para separar los pools?
+
+Para resolver tres componentes exponenciales se requiere **muestreo logarítmico** de TE que cubra toda la dinámica temporal. En la tesis (protocolo final 28-11-2025):
+
+| TE (µs) | Función dominante |
+|---------|-------------------|
+| 20 | Captura agua ligada (BW) — pico inicial |
+| 300, 600 | Decae BW, inicio PW |
+| 4090, 4370, 4670 | PW pleno, oscilación grasa |
+| 8150, 8430, 8730 | PW final, BM dominante |
+| 12200 | Casi solo BM (en fase agua-grasa) |
+
+**10 TEs son suficientes** para un ajuste robusto del modelo tricomponente.
+
+## 4.9 Espectro de $T_2^*$ por intensidad de campo
+
+Un fenómeno crítico: **a mayor campo, $T_2^*$ se acorta** (por mayor $\De
+===== defensa_tesis_doctoral/marco-teorico/bloque-I-procesamiento-metricas/T48-sistema-fracciones.md | 
+# T48 — Sistema de fracciones con dos denominadores
+
+> **Bloque:** I — Teoría de procesamiento de imagen y métricas
+> **Fuentes:** `explicacion-matematica.md` §12 (completo)
+> **Objetivo:** Derivar las fórmulas del sistema de fracciones del modelo tricomponente, justificar matemáticamente por qué se usan **dos denominadores distintos**, y describir el indicador $f_{BM}$ como criterio de calidad de la ROI.
+
+## 48.1 ¿Qué problema resuelven las fracciones?
+
+Tras el ajuste tricomponente, obtenemos tres amplitudes: $S_{bw}, S_{pw}, S_{bm}$. Pero los **valores absolutos** dependen de:
+
+- Calibración del escáner.
+- Ganancia del receptor.
+- Sensibilidades de antena.
+
+→ **Las amplitudes absolutas NO son comparables entre pacientes ni equipos.**
+
+### 48.1.1 Solución: fracciones (cantidades adimensio
+===== defensa_tesis_doctoral/marco-teorico/bloque-I-procesamiento-metricas/T47-extraccion-roi.md | 
+La tesis usa la **STD directa**:
+
+$$\boxed{\;\hat{\sigma} \;\approx\; \text{STD}_{\text{ruido}}\;}$$
+
+(equivalentemente, se podría usar $\hat{\sigma} = \bar{M}_{\text{ruido}} / 1.253$ — algo más preciso pero análogo).
+
+### 47.4.2 Estimación final: promedio sobre TEs
+
+Si $\sigma$ es similar en todos los ecos (typically lo es):
+
+$$\boxed{\;\sigma \;=\; \frac{1}{N_e} \sum_{i=1}^{N_e} \text{STD}_{\text{ruido}}(TE_i)\;}$$
+
+→ **Promedio sobre los 10 TEs** para mayor robustez estadística.
+
+### 47.4.3 Método 2: Fallback (sin ROI de fondo)
+
+Si no hay ROI de fondo disponible:
+
+$$\hat{\sigma} \;\approx\; 0.5 \cdot \text{STD}_{\text{tejido}}$$
+
+→ Heurística: asume que ~50% de la variabilidad de la ROI de tejido es ruido.
+
+> Esta estimación es **menos precisa** pero permite proceder con el análisis.
+
+#
+===== paper-mri-us/docs/02-arquitectura-ecosistema.md | 
+# 02 — Arquitectura del ecosistema
+
+📝 Estado: ✅ documentación viva · Actualizada: 2026-10-04
+
+## 1. Flujo de datos de extremo a extremo
+
+```
+Scanner 0.55 T (MAGNETOM Free.Max, iHEALTH)
+   │  raw data Siemens
+   ▼
+rawdata-api (extraer rawdata)  ──► reconstruction-api (radial, CS: TV + ADMM 50 it,
+   │                               normalización k-space por eco, λ = 1e-4)
+   ▼
+PNGs por TE  ──► api_mapas_t2 + api_modelo_tricomponente
+   │             (ajuste tricomponente por ROI con umbral por percentil;
+   │              LSQ y MLE con ruido Rician/chi; ancla bi-comp de médula)
+   ▼
+PostgreSQL `mri_us` (schema `mapas_t2`) + Parse + MongoDB
+   │
+   ├─► Frontend admin Next.js (reportes /admin/reporte-t2/<analysisId>, collage UTE)
+   │
+   └─► RESULTADOS-MRI/articulo_mri_us.ipynb  (consume la AP
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 9
+DIAPOSITIVA 8
+Por que un exponencial no basta en cortical
+Hasta aqui hemos ajustado un solo exponencial. Toca justificar por que en hueso cortical eso no
+alcanza, y conviene hacerlo antes de mostrar el modelo completo: si el modelo de tres terminos
+aparece sin motivacion, parece una complicacion gratuita.
+El hecho fisico es que un voxel de hueso cortical no contiene un tejido, sino tres poblaciones de
+protones con entornos radicalmente distintos, y cada una decae a su propio ritmo. El primero es el
+agua ligada (bw, bound water), unida al colageno, con T ¤
+2  de unos 0:02 a 1 ms; es un
+proxy de la matriz organica del hueso. El segundo es el agua de poro (pw, pore water), alojada en
+los canales de Havers, con T ¤
+2  de 3 a 20 ms; es un proxy directo de la porosidad y por
+tanto de la fragilid
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 10
+DIAPOSITIVA 9
+Modelo tricomponente con chemical shift
+Llegamos al modelo central para el cortical. La senal de magnitud en el tiempo de eco es la señal
+total en TE = 0 por el modulo de una suma compleja de tres terminos, cada uno ponderado por su
+fraccion de señal:
+M(TE) = S0 j fbw e ¡TE=T ¤
+2; bw + fpw e ¡TE=T ¤
+2; pw + fbm e ¡TE=T ¤
+2; bm e j2¼ ¢ f TE j,
+con la restriccion fbw + fpw + fbm = 1: las tres fracciones reparten la señal de TE = 0, y la
+magnitud por tejido es S0 fi. Los dos primeros terminos son el agua cortical, el agua ligada
+(bw) y el agua de poro (pw); van en fase y contribuyen a la parte real. El tercer termino es la
+medula (bm), multiplicado por la exponencial compleja e j2¼ ¢ f TE. Ese factor
+complejo es la clave: representa el desfase por chemical shift ¢ f de la grasa.
+===== defensa_tesis_doctoral/presentacion-especiales/relaxometria/guion_relaxometria.pdf | 13
+DIAPOSITIVA 12
+Validacion, fracciones y calidad de la ROI
+Cerramos con la validacion y la lectura clinica. De las amplitudes ajustadas derivamos fracciones.
+La fraccion de agua ligada fbw = Sbw=(Sbw + Spw) y la de agua de poro
+fpw = Spw=(Sbw + Spw) reparten el agua cortical; esa segunda es lo que la interfaz llama
+el \emph{indice de porosidad} —agua de poro sobre agua cortical, sin contaminacion—, calculado
+directamente desde las amplitudes del ajuste. La fraccion de medula, en cambio, se calcula sobre la
+senal total, fbm = Sbm=(Sbw + Spw + Sbm), y mide la contaminacion de medula en la ROI;
+con la restriccion de la diapositiva nueve, esa fraccion sale directamente del ajuste y lleva su
+propio error estandar. En la interfaz y en el export las tres se muestran sobre el total —suman
+cien por 
+===== paper-mri-us/Paper_MRI-US_EN_2026-10-05.pdf | 8
+8
+Front. Comput. Sci., 2026, 0(0): 1–21
+timaci´on de T ∗
+2 en fantoma: ROI y ajuste utiliza-
+dos]. The numerical agreement between the two
+sequences is reported in the Results section.
+2.6
+Signal Modeling and T ∗
+2 Quantification
+The UTE magnitude signal M(TE) was fitted with
+a three-compartment model resolving bound wa-
+ter (BW), pore water (PW), and bone marrow
+contamination (BM). On magnitude images the
+measured signal is Rician-distributed for single-
+channel data [42] and non-central chi-distributed
+for multi-channel combination in quadrature [43];
+all fitting was therefore performed against the ex-
+pected magnitude E[M] rather than the noiseless
+signal. Quantification proceeded in two stages: a
+bi-component water–fat fit on a marrow ROI first
+measured the marrow T ∗
+2 (Step 1), which

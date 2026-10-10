@@ -1,0 +1,843 @@
+CHUNKS CS totales: 1420
+===== MRI-UTE PROYECTO DE TESIS/codigo/plataforma/api_generacion_ute/src/ejecutarSecuenciaRadial.py | líneas 26-187
+# ejecutarSecuenciaRadial.py · python · líneas 26-187
+def ejecutarSecuenciaRadial(seq, rf, gz, gx, adc,
+                            spoiler_x, spoiler_y, spoil_duration_real,
+                            Nr, Ndummy, TR, delta_theta, rfSpoilingInc,
+                            minRF_to_ADC_time, mcm_raster_time,
+                            random_sampling=True, random_seed=42, cs_undersampling_factor=1.0):
+    """
+    Ejecuta la secuencia UTE con adquisición radial, incluyendo dummy scans,
+    spoiling de RF y opcionalmente muestreo aleatorio para Compressed Sensing.
+    
+    Parámetros adicionales para Compressed Sensing:
+    - random_sampling: Si True, usa muestreo aleatorio para CS. Si False, usa muestreo secuencial.
+    - random_seed: Semi
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/scripts/gen_guion.py | líneas 181-330
+# gen_guion.py · python · líneas 181-330
+      r"una NUFFT directa y una adjunta por iteracion. Su curvatura, el operador $E^{\mathrm{H}}E$, es lo que gobierna el condicionamiento del "
+      r"problema.",
+      r"Segundo termino, el regularizador, $\lambda\,\mathrm{TV}(x)=\lambda\|\nabla\,x\|_1$. Es un prior de esparsidad del gradiente —la norma "
+      r"$\ell_1$ de $\nabla\,x$ (el gradiente de la imagen)— que impone la estructura suave por tramos. Al no ser suave, se maneja con su "
+      r"subgradiente o, en la practica, con el suavizado de Huber que veremos en la siguiente diapositiva; $\lambda$ fija su peso relativo. "
+      r"Su efecto es restringir la variedad de soluciones al aliasing incoherente, suprimiendo los streaks sin borrar
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T29-problema-inverso.md | 
+- Promueve imágenes "pequeñas" en norma.
+- **Diferenciable** → optimización suave.
+- Solución analítica: $\hat{x} = (E^H E + \lambda I)^{-1} E^H y$.
+- **Usado en SENSE** (ver [T33](./T33-metodos-reconstruccion.md)).
+
+### 29.6.2 Esparsidad (norma $L_1$)
+
+$$\mathcal{R}(x) = \|\Psi x\|_1$$
+
+- Promueve representaciones **escasas** en el dominio $\Psi$ (wavelet, gradiente, etc.).
+- No diferenciable → requiere algoritmos proximales (FISTA, ADMM).
+- Base de **Compressed Sensing** (ver [T31](./T31-compressed-sensing.md)).
+
+### 29.6.3 Variación Total (TV)
+
+$$\mathcal{R}(x) = \text{TV}(x) = \sum_r \|\nabla x(r)\|_2$$
+
+- Promueve imágenes **suaves por partes**, preservando bordes.
+- Casi diferenciable (versión smoothed) → optimización por L-BFGS.
+- **
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T31-compressed-sensing.md | 
+En la tesis se usa TV en lugar de $L_1$ en wavelet:
+
+$$\hat{x} \;=\; \arg\min_x \frac{1}{2} \|Ex - y\|_2^2 + \lambda \cdot \text{TV}(x)$$
+
+Esto se desarrolla en detalle en [T32](./T32-variacion-total.md).
+
+## 31.9 Aceleración alcanzable en IRM
+
+Con CS, se puede acelerar la adquisición típicamente:
+
+| Factor de aceleración | $M$ relativo a Nyquist | Calidad esperada |
+|-----------------------|------------------------|------------------|
+| 1× | 100% | Nyquist completo |
+| 2× | 50% | Excelente |
+| 3× | 33% | Muy buena |
+| 4× | 25% | Buena |
+| 5× | 20% | Aceptable con buena regularización |
+| > 6× | < 17% | Artefactos visibles |
+
+### 31.9.1 Aceleración en la tesis
+
+El protocolo soporta `cs_undersampling_factor ∈ [0.2, 1.0]` (5× a 1×). El protoc
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/README.md | 
+# Bloque F — Teoría de Reconstrucción de Imagen
+
+Teoría matemática del problema inverso de reconstrucción en IRM: cómo pasar de los datos crudos $k$-space a la imagen final. Incluye el operador de adquisición $E = D \cdot \mathcal{F}_{\text{NUFFT}} \cdot C$, la teoría de Compressed Sensing (RIP, incoherencia), la regularización por Variación Total y los métodos clásicos (RSS, SENSE, GRAPPA).
+
+## Pasos del bloque
+
+| N° | Tema | Archivo | Estado |
+|----|------|---------|--------|
+| T29 | Problema inverso de adquisición: $y = Ex + n$ | [T29-problema-inverso.md](./T29-problema-inverso.md) | `[x]` |
+| T30 | Operador de adquisición: $E = D \cdot \mathcal{F}_{\text{NUFFT}} \cdot C$ | [T30-operador-adquisicion.md](./T30-operador-adquisicion.md) | `
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/scripts/gen_guion.py | líneas 91-180
+# gen_guion.py · python · líneas 91-180
+    ("DIAPOSITIVA 3", TEAL, "Condicion 2: el muestreo debe ser incoherente",
+     [r"La segunda condicion es la incoherencia. El punto de partida es que submuestrear siempre genera error; no hay forma de evitarlo. Lo que "
+      r"decide si ese error se puede eliminar despues no es su magnitud, sino su aspecto: si el error se parece a estructura anatomica, es "
+      r"irrecuperable, porque ningun algoritmo puede distinguirlo de la anatomia real; si se parece a ruido difuso, la minimizacion $\ell_1$ "
+      r"lo separa sin dificultad.",
+      r"Que ocurre en cartesiano uniforme? Saltarse lineas de forma regular produce replicas periodicas de la imagen, el clasico ghosting. Una "
+      r"replica despla
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo2.txt | 
+Anexo 2: Implementación de la secuencia UTE 2D en Pypulseq
+
+Alcance
+La secuencia UTE 2D se implementó con el framework Pypulseq para el resonador de 0.55 tesla, y hoy se genera desde el servicio de secuencias de la plataforma (módulo api_generacion_ute/src, sincronizado con el repositorio del proyecto). El módulo consta de la configuración del sistema y del ADC, la creación de los gradientes de lectura y spoiler, la ejecución radial, el guardado y un banco de validación ( validateUTEImplementation, testUTEValidation, análisis de trayectoria y de spoiling); los parámetros viven centralizados con sus rangos admitidos ( parametros.py), de modo que un mismo núcleo científico sirve a la simulación y al escáner. Este anexo conserva como código ún
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/anexo3.txt | 
+Anexo 3: Resumen de tipos de reconstrucción
+
+Resumen de tipos de reconstrucción
+A lo largo de las últimas décadas se han desarrollado numerosos métodos de reconstrucción en imágenes por resonancia magnética (IRM) que permiten mejorar la calidad de las imágenes, acelerar la adquisición y mitigar artefactos inherentes a la física del proceso. A continuación se presenta un resumen de las principales técnicas y sus formulaciones generales, enmarcadas en el contexto de la modelización física y matemática del fenómeno magnético; la sección final desarrolla, con detalle, las reconstrucciones que la plataforma dockerizada de esta tesis ejecuta en producción.
+1. Reconstrucción por mínimos cuadrados y modelos basados en la física
+La reconstrucción cl
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap2.txt | 
+Capítulo 2. Marco conceptual y estado del arte
+
+Marco conceptual
+Fragilidad ósea y calidad ósea
+La fragilidad ósea corresponde a la pérdida de la capacidad del esqueleto para resistir cargas que un hueso sano tolera, y en la práctica se manifiesta como la fractura por bajo trauma. Es la fractura, y no el puntaje densitométrico, la que define la carga de la enfermedad. La osteoporosis, definida en términos operacionales por un T-score de densidad mineral ósea (DMO) areal igual o menor a -2.5, constituye una causa de fragilidad entre varias, y no sinónimo de ella.
+La evidencia clínica muestra una y otra vez la disociación entre densidad y riesgo. La diabetes tipo 2, la obesidad y la terapia con glucocorticoides aumentan el riesgo de fractura 
+===== defensa_tesis_doctoral/marco-teorico/bloque-C-fisica-secuencia-ute/T15-nyquist-radial.md | 
+# T15 — Teorema de Nyquist radial y CS undersampling
+
+> **Bloque:** C — Física de la secuencia UTE radial
+> **Fuentes:** `ajustarParametros.py`, `capitulo8.tex`, `anexo1.tex`
+> **Objetivo:** Derivar matemáticamente cuántos radios se necesitan para cubrir el k-space sin aliasing (Nyquist), y cómo el Compressed Sensing permite romper este límite usando ángulos aleatorios.
+
+## 15.1 Recordatorio: Nyquist espacial en cada dimensión
+
+Para una imagen con FOV $L$ y $N$ muestras por dimensión:
+
+$$\Delta k \;=\; \frac{1}{L}, \quad k_{\max} \;=\; \frac{N}{2L}, \quad \Delta x \;=\; \frac{L}{N}$$
+
+Cualquier región con extensión espacial $> L$ produce **aliasing** si no se filtra antes de digitalizar.
+
+## 15.2 Derivación del Nyquist radial
+
+### 15.2.1 Ge
+===== defensa_tesis_doctoral/marco-teorico/bloque-C-fisica-secuencia-ute/T15-nyquist-radial.md | 
+## 15.12 Síntesis (para defensa)
+
+> "El **teorema de Nyquist radial** establece que para evitar aliasing en muestreo radial 2D se necesitan **al menos $\pi \cdot N_x$ radios** (o $\pi N_x / 2$ TRs si se adquieren 2 spokes por TR). La derivación es directa: en el borde del k-space, el espaciado angular debe garantizar que el arco entre dos radios consecutivos sea menor o igual a $1/FOV$. Si se viola este límite, aparecen **artefactos en estrella** que arruinan la imagen. El **Compressed Sensing** permite romper Nyquist usando un factor de submuestreo $f_{CS} \in [0.2, 1.0]$ junto con **ángulos aleatorios** que generan **aliasing incoherente** (ruido en vez de fantasmas), que un regularizador TV puede limpiar. En la tesis usamos $N_x = 500$ c
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T31-compressed-sensing.md | 
+# T31 — Teoría de Compressed Sensing: incoherencia y RIP
+
+> **Bloque:** F — Teoría de reconstrucción de imagen
+> **Fuentes:** `anexo5.tex` §Sparsity, `contexto-reconstruccion-radial.md`, `04_metodo_cs.tex`
+> **Objetivo:** Formular matemáticamente la teoría de Compressed Sensing (Candès, Tao, Donoho), derivar la condición RIP (Restricted Isometry Property), la incoherencia mutua y las garantías de recuperación que la justifican.
+
+## 31.1 ¿Qué es Compressed Sensing?
+
+**Compressed Sensing (CS)** es una teoría matemática (Candès-Tao-Donoho ~2004–2006) que demuestra que **una señal esparsa puede recuperarse a partir de muchas menos muestras de las que el teorema de Nyquist requiere**, usando optimización no-lineal con un regularizador apropiado.
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/guion_compressed_sensing.pdf | 11+12
+CIERRE
+Cierre y preguntas anticipadas
+Para cerrar, la cadena argumental completa: la adquisicion UTE radial con angulos cuasi-aleatorios
+genera un aliasing incoherente que satisface la RIP; el operador directo E modela con precision
+la formacion de la senal combinando sensibilidades, NUFFT y compensacion de densidad; el problema
+inverso mal condicionado se plantea como estimador MAP que busca la imagen consistente con los
+datos y esparsa en el gradiente; la Variacion Total limpia el ruido sin difuminar los bordes
+gracias a la penalizacion ℓ1; y las metricas objetivas confirman, con significancia por
+pares, que CS gana. Gracias por su atencion.
+Preguntas anticipadas. Por que solo diez iteraciones de L-BFGS? Porque para este nivel de
+submuest
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/scripts/gen_guion.py | líneas 271-435
+# gen_guion.py · python · líneas 271-435
+      r"medio grado centigrado en modo normal. Y hay un riesgo local, que suele ser el mas relevante en la practica: el calentamiento no es "
+      r"uniforme, sino que se concentra en las interfaces entre tejidos, en zonas mal perfundidas —que no pueden disipar por flujo "
+      r"sanguineo— y, sobre todo, alrededor de cualquier material metalico, donde puede llegar a producir quemaduras.",
+      r"Un matiz importante: el efecto es acumulativo. Por eso la norma no limita el pulso aislado, sino el promedio en ventanas temporales, "
+      r"concretamente de diez segundos y de seis minutos. Una secuencia puede tener pulsos individuales intensos y aun asi ser segura si su "
+      r"ciclo de trabajo es b
+===== MRI-UTE PROYECTO DE TESIS/anexos/anexo2.tex | tex
+## Parámetros radiales y submuestreo para compressed sensing
+
+El número de muestras por radio $N_x$ incorpora el sobremuestreo radial, y el número de radios $N_r$ parte del criterio de Nyquist radial $N_r N_x / 2 $ (dos radios por TR) y se multiplica por el factor de submuestreo de compressed sensing, que define la aceleración. Para el submuestreo, los ángulos de adquisición se sortean uniformes en $[0, 2 )$ con semilla fija, de modo que la distribución es incoherente pero la secuencia es reproducible bit a bit; con factor de submuestreo unitario el módulo fuerza el barrido secuencial uniforme de Nyquist completo. El TE mínimo se verifica desde el fin del pulso RF hasta la primera muestra del ADC: 30\,$ $s.
+
+## De la secuencia a la reconstr
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo2.tex | tex
+## Mapa conceptual de la tesis
+
+subsec:mapa_conceptual
+
+La figura fig:mapa_conceptual resume, en el orden de la presentación del proyecto, la cadena completa. De la fractura por fragilidad y el límite de la DXA nace la calidad ósea, con la tibia media como blanco anatómico; los dos pools de agua conectan la estructura del hueso con la medición; la cadena de la resonancia, secuencia UTE a 0,55 tesla, reconstrucción por compressed sensing y modelo de tres compartimentos, entrega los biomarcadores de porosidad, mientras el ultrasonido BDAT recorre su ruta independiente; ambas rutas convergen en la concordancia emparejada por sitio.
+
+[p]
+ 
+ img/mapa_conceptual.png
+Mapa conceptual de la tesis, siguiendo el flujo de la presentación del proyecto: 
+===== MRI-UTE PROYECTO DE TESIS/capitulos/capitulo2.tex | tex
+[ht]
+ 
+ img/reconstruccion/Correcion_Densidad.png
+ Corrección de densidad en la adquisición radial: a la izquierda, la distribución original de los puntos de muestreo, con mayor densidad en el centro del espacio $k$; a la derecha, el efecto del factor de corrección $D(k)$, que pondera la contribución de cada punto para compensar las diferencias de densidad del muestreo radial.
+ fig:CorreccionDensidad
+
+## El problema de reconstrucción por compressed sensing
+
+subsec:cs_problema
+
+La reconstrucción hace dos cosas a la vez. Primero, la imagen tiene que ser consistente con los datos medidos. Y segundo, queremos una imagen formada por regiones suaves y con bordes limpios; la herramienta para esa segunda parte es la variación total, que la ecuación
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/anexo1b_p82.png | OCR
+9.4. Spoiling y ciclo radial
+
+La ejecución radial (ejecutarSecuenciaRadial . py) alterna dos excitaciones por TR con la
+polaridad del gradiente de corte invertida, el par de medios pulsos que completa el perfil de corte, y
+recorre los N, ángulos de lectura rotando el gradiente de lectura en las componentes cos p (eje )
+y sin: (eje y). Cada lectura cierra con un spoiler de gradiente en el plano de lectura, rotado en la
+misma dirección del radio, con amplitud del 20 % del máximo del sistema y duración acotada por
+el tiempo disponible del TR; y entre disparos aplica spoiling de RF con el incremento clásico de
+117°, la progresión aritmética de fase cuya formulación se desarrolla en el anexo 14, asignada a la
+fase del pulso de RF y del ADC para 
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/anexo1_p82.png | OCR
+9.4. Parámetros radiales
+
+incorpora el sobremuestreo radial, y el número de radios N,
+|, > [1 ./2] (dos radios por TR) y se multiplica por el factor
+
+El número de muestras por radio
+parte del criterio de Nyquist radial
+de submuestreo de compressed sensing, que define la acelera
+es A9 = 27 /N,, con ángulos aleatorios para maximizar la incoherencia del aliasing. El TE mínimo
+se verifica desde el fin del pulso RF hasta la primera muestra del ADC: 30 ps,
+
+mn; el incremento angular entre radios
+
+9.5. Del código al escáner
+
+La secuencia generada se verifica por simulación (sincronización de eventos RF, gradientes y ADC en
+KomaMRI) antes de su ejecución en el resonador, y el mismo módulo alimenta el servicio de genera-
+ción de secuencias de la pla
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/cap2_cs_p28.png | OCR
+Gz =>
+ox— vy
+
+Sy
+
+A lin
+oe VV |
+
+Figura 2.6: Diagrama de secuencias de pulsos en 2D: (a) secuencia típica con pulso de RF
+completo y excitación selectiva de corte, con adquisición cartesiana del espacio k; (b) se-
+cuencia UTE con excitación mediante medio pulso y muestreo a lo largo de líneas radiales
+del espacio k [2].
+
+el vacío restante en los objetivos específicos de la investigación.
+
+2.2. Reconstrucción por compressed sensing de adquisicio-
+nes no cartesianas
+
+La lectura radial del espacio-k es lo que permite a la secuencia UTE capturar la señal del hueso
+cortical: los radios parten del centro, donde se concentra el contraste, justo mientras la señal de 7
+corto todavía vive. El precio de esa trayectoria es que los datos ya no viven en 
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/cap2_cs_trayectoria_p30.png | OCR
+Trayectoria en el espacio k
+
+Figura 2.8: Trayectoria real en el espacio k de una adquisición radial del protocolo: cientos
+de radios con ángulos aleatorios, densos en el centro, coloreados por tiempo de muestreo. El
+submuestreo con ángulos aleatorios produce aliasing incoherente, el régimen del compressed
+sensing. Elaboración propia
+
+2.2.2. El problema de reconstrucción por compressed sensing
+
+La reconstrucción hace dos cosas a la vez. Primero, la imagen tiene que ser consistente con los datos
+medidos. Y segundo, queremos una imagen formada por regiones suaves y con bordes limpios; la
+herramienta para esa segunda parte es la variación total (ecuación 2.5), que suma los cambios de vóxel
+a vóxel y penaliza los grandes, eliminando los artefact
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/eq_tv_p24.png | OCR
+herramienta para esa segunda parte es la variación total, que la ecuación 2.4 define como la suma de
+los cambios de vóxel a vóxel, penalizando los grandes y eliminando los artefactos mientras mantiene
+nítido el borde cortical:
+
+TV(2) = 7 y (8.213)? + (Ayeig)?s (2.4)
+y
+
+donde Azri,; y Ayr, son las diferencias finitas de la imagen a lo largo de cada dirección. En forma
+de optimización, con y los datos medidos del espacio k, 1 los pesos de compensación de densidad y
+E = F.,S el operador de codificación que combina la transformada de Fourier no uniforme F,, con
+los mapas de sensibilidad de bobinas S [70, 67]:
+
+mín sw (Ex—y ll + ATV() (2.5)
+
+con A = 10~4, Como la variación total es una norma de tipo (1 sobre los gradientes de la imagen y
+no es d
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/ord_cap2_cs_25.png | OCR
+Proceso de Corrección de Densidad
+
+Datos Originales Después de DG)
+
+xt) Fr de peso
+
+Figura 2.8: Corrección de densidad en la adquisición radial: a la izquierda, la distribución
+original de los puntos de muestreo, con mayor densidad en el centro del espacio k; a la
+derecha, el efecto del factor de corrección D(k), que pondera la contribución de cada punto
+para compensar las diferencias de densidad del muestreo radial.
+
+2.2.2. El problema de reconstrucción por compressed sensing
+
+La reconstrucción hace dos cosas a la vez. Primero, la imagen tiene que ser consistente con los datos
+medidos. Y segundo, queremos una imagen formada por regiones suaves y con bordes limpios; la
+herramienta para esa segunda parte es la variación total, TV(x) = 7, ¿ y
+===== MRI-UTE PROYECTO DE TESIS/docs/qa/ord_cap2_cs_24.png | OCR
+2.2. Reconstrucción por compressed sensing de adquisicio-
+nes no cartesianas
+
+La lectura radial del espacio-k es lo que permite a la secuencia UTE capturar la señal del hueso
+cortical: los radios parten del centro, donde se concentra el contraste, justo mientras la señal de Ty
+corto todavía vive. El precio de esa trayectoria es que los datos ya no viven en una grilla cartesiana y
+la transformada de Fourier inversa ya no se aplica de forma directa. El panorama de las alternativas
+clásicas de reconstrucción no cartesiana se resume en el anexo 13; en esta tesis, la reconstrucción
+elegida fue una sola, el compressed sensing, y esta sección la desarrolla completa.
+
+2.2.1. Trayectoria radial y aliasing incoherente
+
+La figura 2.7 muestra la trayec
+===== MRI-UTE PROYECTO DE TESIS/narracion/texto/cap6.txt | 
+Capítulo 6. Planificación
+
+Cronograma de trabajo
+El proyecto de tesis doctoral se planificó para ejecutarse en un periodo total de 24 meses, con el mes 1 correspondiente a marzo de 2025, y el plan fue aprobado en la defensa del proyecto de tesis. A la fecha de esta actualización, septiembre de 2026, la ejecución se encuentra en el mes 19 de 24. Las fases de desarrollo, es decir, secuencias, reconstrucción y plataforma, están completadas; las fases de plataforma, además, se adelantaron y se ejecutaron en paralelo con la fase experimental, de modo que la plataforma contenerizada ya opera sobre datos reales de la campaña de mediciones. Esa campaña de mediciones in vivo RM-UTE y US-BDAT, la actividad más demorosa del proyecto, se encuentra en c
+===== defensa_tesis_doctoral/Presentacion-Defensa/content/04_metodo_cs.tex | tex
+Reconstrucción por Compressed Sensing
+
+inkHTML1A2431
+ mutedHTML2A2F3A
+ hairlineHTMLE4E9F0
+ panelAHTML0B3C7A
+ panelBHTML0D6B6B
+ panelCHTMLC25B1A
+ panelAbgHTMLFAFBFD
+ eqBgHTMLEEF3FA
+
+[2]
+ [baseline=(n.base)]
+ [circle,fill=#2,text=white,inner sep=0pt,
+ minimum size=1.1em,font= 55 ](n)#1;
+ 0.2em
+
+[3]
+ #3 #1#3#2 1pt
+
+[3]
+ 
+ #3 #1 0.3em
+ #3 #2 
+ 1pt hairline 0.5pt 1pt
+
+[1]
+ 
+[enhanced,colback=eqBg,colframe=eqBg,boxrule=0pt,
+ borderline west=2pt0ptpanelA,arc=2pt,
+ left=3pt,right=3pt,top=2pt,bottom=2pt,
+ before skip=1pt,after skip=1pt]
+ #1
+
+[t]
+ -0.5em
+ -1.9em
+
+[enhanced,colback=white,colframe=hairline,
+ boxrule=0.7pt,arc=3pt,left=3pt,right=3pt,top=2pt,bottom=2pt]
+
+[enhanced,colback=panelAbg,colframe=hairline,
+ boxrule=1pt,arc=2pt,left=3pt,right=3p
+===== defensa_tesis_doctoral/Presentacion-Defensa/diseno_images/03_metodo_cs/fig4_cs_reconstruction.tex | tex
+[
+ enhanced, colback=white, colframe=hairline, boxrule=0.8pt,
+ arc=4pt, left=6pt, right=6pt, top=6pt, bottom=6pt
+]
+
+[t]0.325 
+ 
+ 
+[
+ enhanced, colback=panelAbg, colframe=hairline, boxrule=0.6pt,
+ arc=3pt, left=7pt, right=7pt, top=5pt, bottom=5pt,
+ equal height group=csFig, valign=top,
+ height= -0.95cm 
+ ]
+ AMethod \ | pipelinepanelA
+
+1Why compressed sensingpanelA
+ muted 
+ The UTE sequence (see Methods: sequence development) acquires radial spokes with
+ inkrandom angles
+ $ _n U[0, 2 )$. Drawing fewer spokes than
+ the Nyquist criterion breaks uniform k-space coverage but yields
+ inkincoherent aliasing, the regime in which
+ compressed sensing can recover a sharp image from under-sampled
+ data.
+
+6pt
+ 2Forward model from trajectoriespanelA
+ mute
+===== defensa_tesis_doctoral/Paper-MRI-US/Others/anexo1.tex | tex
+- Muestreo aleatorio: Para optimizar la reconstrucción con Compressed Sensing
+ 
+- RF Spoiling: Eliminación de señales residuales entre TRs
+ 
+- Alternancia de slices: Eficiencia temporal mediante 2 slices por TR
+ 
+- Dummy scans: Estabilización del estado estacionario
+
+## Sistema de Validación
+
+La implementación incluye un sistema completo de validación que verifica múltiples aspectos críticos de la secuencia UTE:
+
+[language=Python, caption=Sistema de validación integral UTE]
+from validateUTEImplementation import (runCompleteUTEValidation, 
+ printValidationSummary, 
+ generateOptimizationRecommendations)
+
+# Validacion completa con parametros reales
+validation_results = runCompleteUTEValidation(
+ samplingTimes=samplingTimes,
+ rampSamples=rampSa
+===== defensa_tesis_doctoral/Paper-MRI-US/Others/capitulo7/capitulo7c.tex | tex
+## Implementación de supresión de grasa con IR-UTE: 14 de Agosto de 2025
+
+## Protocolo IR-UTE con compressed sensing
+
+En respuesta a los artefactos de chemical shift observados en estudios previos, se implementó un protocolo experimental de supresión de grasa basado en técnicas de Inversion Recovery UTE (IR-UTE) combinadas con aceleración por Compressed Sensing. La metodología buscó evaluar la viabilidad de supresión selectiva de señal de grasa para mejorar la especificidad del contraste en tejido óseo cortical.
+
+[H]
+ 
+ img/UTE/IR/Kspace_CS_UTE.png
+Patrón de muestreo k-space para IR-UTE con Compressed Sensing implementado el 14 de agosto de 2025. El esquema muestra la distribución radial acelerada con factor de submuestreo del 60%, optimiza
+===== defensa_tesis_doctoral/Paper-MRI-US/diseno_images/03_metodo_cs/fig4_cs_reconstruction.pdf | 1
+A Method & pipeline
+1
+Why compressed sensing
+The UTE sequence (see Methods: sequence develop-
+ment) acquires radial spokes with random angles θn ∼
+U[0, 2π). Drawing fewer spokes than the Nyquist criterion
+breaks uniform k-space coverage but yields incoherent
+aliasing, the regime in which compressed sensing can re-
+cover a sharp image from under-sampled data.
+2
+Forward model from trajectories
+The spoke trajectories k(t) enter the reconstruction
+through the non-uniform FFT (NUFFT). Combined
+with coil sensitivities C and a density-compensation D
+that reweights the non-uniform samples, the forward op-
+erator is E = D · FNUFFT(k) · C.
+3
+Regularised inverse problem
+Reconstruction solves a data-consistency + regularisa-
+tion problem (see Panel C),
+===== defensa_tesis_doctoral/Paper-MRI-US/diseno_images/03_metodo_cs/fig4_cs_reconstruction.tex | tex
+[
+ enhanced, colback=white, colframe=hairline, boxrule=0.8pt,
+ arc=4pt, left=6pt, right=6pt, top=6pt, bottom=6pt
+]
+
+[t]0.325 
+ 
+ 
+[
+ enhanced, colback=panelAbg, colframe=hairline, boxrule=0.6pt,
+ arc=3pt, left=7pt, right=7pt, top=5pt, bottom=5pt,
+ equal height group=csFig, valign=top,
+ height= -0.95cm 
+ ]
+ AMethod \ | pipelinepanelA
+
+1Why compressed sensingpanelA
+ muted 
+ The UTE sequence (see Methods: sequence development) acquires radial spokes with
+ inkrandom angles
+ $ _n U[0, 2 )$. Drawing fewer spokes than
+ the Nyquist criterion breaks uniform k-space coverage but yields
+ inkincoherent aliasing, the regime in which
+ compressed sensing can recover a sharp image from under-sampled
+ data.
+
+6pt
+ 2Forward model from trajectoriespanelA
+ mute
+===== defensa_tesis_doctoral/Presentacion-Defensa/diseno_images/03_metodo_cs/fig4_cs_reconstruction.pdf | 1
+A Method & pipeline
+1
+Why compressed sensing
+The UTE sequence (see Methods: sequence develop-
+ment) acquires radial spokes with random angles θn ∼
+U[0, 2π). Drawing fewer spokes than the Nyquist criterion
+breaks uniform k-space coverage but yields incoherent
+aliasing, the regime in which compressed sensing can re-
+cover a sharp image from under-sampled data.
+2
+Forward model from trajectories
+The spoke trajectories k(t) enter the reconstruction
+through the non-uniform FFT (NUFFT). Combined
+with coil sensitivities C and a density-compensation D
+that reweights the non-uniform samples, the forward op-
+erator is E = D · FNUFFT(k) · C.
+3
+Regularised inverse problem
+Reconstruction solves a data-consistency + regularisa-
+tion problem (see Panel C),
+===== defensa_tesis_doctoral/Presentacion-Defensa/figures/metodo_cs/fig4_cs_reconstruction.pdf | 1
+A Method & pipeline
+1
+Why compressed sensing
+The UTE sequence (see Methods: sequence develop-
+ment) acquires radial spokes with random angles θn ∼
+U[0, 2π). Drawing fewer spokes than the Nyquist criterion
+breaks uniform k-space coverage but yields incoherent
+aliasing, the regime in which compressed sensing can re-
+cover a sharp image from under-sampled data.
+2
+Forward model from trajectories
+The spoke trajectories k(t) enter the reconstruction
+through the non-uniform FFT (NUFFT). Combined
+with coil sensitivities C and a density-compensation D
+that reweights the non-uniform samples, the forward op-
+erator is E = D · FNUFFT(k) · C.
+3
+Regularised inverse problem
+Reconstruction solves a data-consistency + regularisa-
+tion problem (see Panel C),
+===== defensa_tesis_doctoral/figures/metodo_cs/fig4_cs_reconstruction.pdf | 1
+A Method & pipeline
+1
+Why compressed sensing
+The UTE sequence (see Methods: sequence develop-
+ment) acquires radial spokes with random angles θn ∼
+U[0, 2π). Drawing fewer spokes than the Nyquist criterion
+breaks uniform k-space coverage but yields incoherent
+aliasing, the regime in which compressed sensing can re-
+cover a sharp image from under-sampled data.
+2
+Forward model from trajectories
+The spoke trajectories k(t) enter the reconstruction
+through the non-uniform FFT (NUFFT). Combined
+with coil sensitivities C and a density-compensation D
+that reweights the non-uniform samples, the forward op-
+erator is E = D · FNUFFT(k) · C.
+3
+Regularised inverse problem
+Reconstruction solves a data-consistency + regularisa-
+tion problem (see Panel C),
+===== defensa_tesis_doctoral/marco-teorico/bloque-C-fisica-secuencia-ute/T14-trayectoria-radial.md | 
+# T14 — Trayectoria radial 2D centro-fuera y muestreo aleatorio
+
+> **Bloque:** C — Física de la secuencia UTE radial
+> **Fuentes:** `anexo1.tex` §Ejecución radial, `capitulo8.tex`, `executeSecuenciaRadial.py`
+> **Objetivo:** Caracterizar la trayectoria radial 2D centro-fuera de UTE, explicar por qué los ángulos aleatorios son indispensables para CS y derivar las propiedades de incoherencia que cumple.
+
+## 14.1 ¿Por qué radial para UTE?
+
+La trayectoria radial es **estratégicamente óptima** para UTE por cinco razones:
+
+1. **Empieza en $\vec{k} = 0$:** compatible con TE ultra-corto (la adquisición arranca apenas se enciende el gradiente).
+2. **No requiere refocaling:** ahorra ~1 ms vs Cartesiano.
+3. **Robustez al movimiento:** cada radio es in
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T29-problema-inverso.md | 
+# T29 — Problema inverso de adquisición: $y = Ex + n$
+
+> **Bloque:** F — Teoría de reconstrucción de imagen
+> **Fuentes:** `anexo5.tex` §Reconstrucción por mínimos cuadrados, `04_metodo_cs.tex`
+> **Objetivo:** Formular matemáticamente el problema inverso de reconstrucción en IRM, demostrar por qué es mal condicionado en submuestreo y justificar la necesidad de regularización.
+
+## 29.1 ¿Qué es un problema inverso?
+
+En IRM, **medimos** los datos crudos $y$ en k-space y queremos **recuperar** la imagen real $x$. Como el proceso de adquisición se modela como un operador lineal $E$:
+
+$$\boxed{\;y \;=\; Ex \;+\; n\;}$$
+
+Donde:
+
+- **$y \in \mathbb{C}^M$** — Vector de datos medidos (k-space crudo).
+- **$x \in \mathbb{C}^N$** — Imagen real (lo que q
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T29-problema-inverso.md | 
+## 29.10 Síntesis (para defensa)
+
+> "La reconstrucción en IRM es un **problema inverso lineal**: dados los datos medidos en k-space $y$, recuperar la imagen $x$ que satisface $y = Ex + n$, donde $E$ es el operador físico de adquisición y $n$ es ruido gaussiano complejo. Si $E$ es bien-condicionado (Cartesiano completo), la solución es trivial: $\hat{x} = E^{-1} y = \mathcal{F}^{-1}(y)$. Si $E$ está **submuestreado** (Compressed Sensing radial), el problema es **mal-condicionado**: $E^H E$ tiene número de condición divergente y aplicar la inversa amplifica el ruido. La solución es **regularizar** añadiendo un término de prior: $\hat{x} = \arg\min \|Ex - y\|_2^2 + \lambda \mathcal{R}(x)$, donde $\mathcal{R}$ puede ser Tikhonov $L_2$ (suave, u
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T32-variacion-total.md | 
+### 32.5.3 Cómo elegir $\lambda$
+
+| $\lambda$ pequeño ($\to 0$) | Predomina fidelidad → imagen ruidosa con aliasing |
+| $\lambda$ correcto | Buen balance fidelidad-suavidad → imagen óptima |
+| $\lambda$ grande ($\to \infty$) | Predomina TV → imagen sobre-suavizada (pierde detalles) |
+
+En la práctica se ajusta empíricamente:
+- **L-curve**: graficar $\|Ex - y\|$ vs $\text{TV}(x)$ → buscar la "rodilla".
+- **Discrepancia**: $\lambda$ tal que el residuo coincide con el ruido esperado.
+- **Validación cruzada**: probar varios $\lambda$, elegir el mejor visualmente.
+
+## 32.6 Visualización: efecto de TV en la reconstrucción
+
+### 32.6.1 Sin regularización (LSQ puro)
+
+Reconstrucción de datos sub-muestreados:
+
+```
+Imagen:        Datos sub-muestreados: 
+===== defensa_tesis_doctoral/marco-teorico/bloque-F-reconstruccion/T33-metodos-reconstruccion.md | 
+$$\hat{x}(\vec{r}_n) \;=\; (\mathbf{C}^H \mathbf{C} + \lambda I)^{-1} \mathbf{C}^H \mathbf{y}_{\text{aliased}}(\vec{r})$$
+
+Con $\lambda$ pequeño para evitar amplificar ruido en condiciones mal-condicionadas.
+
+### 33.3.6 Implementación TensorFlow-MRI
+
+```python
+import tensorflow_mri as tfmri
+
+# SENSE con regularización
+x_sense = tfmri.recon.sense(
+    kspace=y,
+    sensitivities=coil_maps,
+    reduction_factor=R,
+    regularizer=tfmri.recon.L2Norm(scale=lambda_tikhonov)
+)
+```
+
+### 33.3.7 Limitaciones
+
+- **Solo funciona con submuestreo Cartesiano regular** (factor entero $R$).
+- **Requiere sensibilidades $C_i$ bien estimadas** (sino: artefactos en bordes).
+- **g-factor**: amplificación de ruido en regiones donde las antenas son redundantes.
+-
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/guion_compressed_sensing.pdf | 2
+DIAPOSITIVA 1
+El problema: menos datos de los que exige Nyquist
+Empecemos por el problema, antes que por la solucion. El modelo de medicion es y = Ex + η: los
+datos y son el operador de medicion E aplicado a la imagen x, mas ruido η. Lo decisivo
+es la relacion de tamanos: medimos M muestras para reconstruir N pixeles, con M mucho menor
+que N (M ≪N). Cuando eso ocurre, E deja de ser invertible y tiene nucleo no trivial (hay
+vectores no nulos que E envia a cero), de modo que la ecuacion Ex = y no tiene una solucion sino
+infinitas. Todo Compressed Sensing consiste, literalmente, en decidir cual de esas infinitas
+imagenes nos quedamos.
+Cuantos datos exigiria Nyquist? Para una matriz de 256 × 256, un muestreo radial completo
+necesita del orden d
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/guion_compressed_sensing.pdf | 4
+DIAPOSITIVA 3
+Condicion 2: el muestreo debe ser incoherente
+La segunda condicion es la incoherencia. El punto de partida es que submuestrear siempre genera
+error; no hay forma de evitarlo. Lo que decide si ese error se puede eliminar despues no es su
+magnitud, sino su aspecto: si el error se parece a estructura anatomica, es irrecuperable, porque
+ningun algoritmo puede distinguirlo de la anatomia real; si se parece a ruido difuso, la
+minimizacion ℓ1 lo separa sin dificultad.
+Que ocurre en cartesiano uniforme? Saltarse lineas de forma regular produce replicas periodicas de
+la imagen, el clasico ghosting. Una replica desplazada es indistinguible de una estructura
+anatomica real: la coherencia mutua µ(E) entre el patron de muestreo y la base e
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/guion_compressed_sensing.pdf | 6
+DIAPOSITIVA 5
+El operador directo E: modelo de formacion de la
+senal
+Formalicemos el operador de medicion. Los datos cumplen y = Ex + η (los datos y igualan E
+aplicado a la imagen x mas un ruido η), con η complejo gaussiano circular de varianza
+σ2. E transforma un vector de N pixeles complejos en M muestras complejas y se
+factoriza en tres bloques, leidos de derecha a izquierda: E = D 1/2 NUFFTC (raiz de
+la compensacion de densidad, por la Fourier no uniforme, por las sensibilidades). Igual de
+importante es su adjunto, E H = C H NUFFTH D 1/2 (el
+superindice H denota el hermitico: transpuesta conjugada), que es la retroproyeccion; el algoritmo
+alterna E y E H para evaluar el gradiente del termino de datos en cada iteracion.
+Primer bloque, C,
+===== defensa_tesis_doctoral/presentacion-especiales/compressed-sensing/guion_compressed_sensing.pdf | 13
+PREGUNTAS Y RESPUESTAS (2/2)
+Preguntas de defensa, preparadas y respondidas
+P6. Para que sirve la compensacion de densidad D? 
+ R: Todos los radios cruzan el centro del
+espacio k, sobremuestreandolo (la densidad va como 1/|k|). Sin corregir, el centro domina y
+emborrona la imagen. D (pesos diagonales, metodo iterativo de Pipe-Menon, w ←w/(Gw))
+reequilibra el muestreo; su raiz D 1/2 blanquea el residuo para que el termino ℓ2 sea
+estadisticamente correcto.
+P7. En que sentido la reconstruccion es un estimador MAP? 
+ R: El funcional
+1
+2∥Ex −y∥2
+2 + λTV(x) es exactamente −log verosimilitud (ruido
+gaussiano) −log prior (Laplaciano sobre el gradiente). Minimizarlo equivale a maximizar la
+probabilidad a posteriori (MAP: maximo a posteriori): la ima
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/guion_secuencia_ute.pdf | 8
+DIAPOSITIVA 6
+La trayectoria: cuantos radios y en que angulos
+Veamos ahora como se construye la trayectoria radial. La observacion economica es que no hace falta
+un gradiente distinto por cada radio: basta con repartir el mismo trapezoide de lectura entre los
+dos ejes segun el angulo deseado, proyectandolo sobre x como Gx = Gcosφ y sobre y como
+Gy = Gsinφ. Cambiar de radio es cambiar dos amplitudes, no redisenar la secuencia.
+Sobre como se eligen esos angulos hay exactamente dos modos en la implementacion, y conviene ser
+preciso porque a menudo se supone otra cosa. En el modo de muestreo Nyquist completo, cuando el
+factor de submuestreo vale uno, los angulos son secuenciales uniformes:
+φi = ∆θ(i −1) con ∆θ = 2π/Nr. En el modo Compressed Sen
+===== defensa_tesis_doctoral/presentacion-especiales/secuencia-ute/guion_secuencia_ute.pdf | 18
+PREGUNTAS Y RESPUESTAS (2/2)
+Preguntas de defensa, preparadas y respondidas
+P6. Como se fija el kmax y contra que se verifica? 
+ R: El kmax (maxima frecuencia
+espacial adquirida) se calcula a partir del gradiente de lectura como
+kmax = 2πGteff, donde teff es el tiempo efectivo (la meseta mas
+la mitad de las rampas). Usar la amplitud maxima Gmax = 18 mT/m maximiza el kmax en el
+menor tiempo. Ese valor se contrasta con el limite teorico que impone la geometria,
+k teo
+max = π/∆x = πNx/FOV (pi por el numero de muestras Nx sobre el campo de
+vision). Si el kmax calculado excede ese teorico se avisa y se reajusta la amplitud, porque
+sobrepasarlo significaria una resolucion inconsistente con el FOV; quedarse corto, perder
+resolucion. Asi la resoluc
+===== paper-mri-us/diseno_images/03_metodo_cs/fig4_cs_reconstruction.tex | tex
+[
+ enhanced, colback=white, colframe=hairline, boxrule=0.8pt,
+ arc=4pt, left=6pt, right=6pt, top=6pt, bottom=6pt
+]
+
+[t]0.325 
+ 
+ 
+[
+ enhanced, colback=panelAbg, colframe=hairline, boxrule=0.6pt,
+ arc=3pt, left=7pt, right=7pt, top=5pt, bottom=5pt,
+ equal height group=csFig, valign=top,
+ height= -0.95cm 
+ ]
+ AMethod \ | pipelinepanelA
+
+1Why compressed sensingpanelA
+ muted 
+ The UTE sequence (see Methods: sequence development) acquires radial spokes with
+ inkrandom angles
+ $ _n U[0, 2 )$. Drawing fewer spokes than
+ the Nyquist criterion breaks uniform k-space coverage but yields
+ inkincoherent aliasing, the regime in which
+ compressed sensing can recover a sharp image from under-sampled
+ data.
+
+6pt
+ 2Forward model from trajectoriespanelA
+ mute
+===== paper-mri-us/Others/anexo1.tex | tex
+- Muestreo aleatorio: Para optimizar la reconstrucción con Compressed Sensing
+ 
+- RF Spoiling: Eliminación de señales residuales entre TRs
+ 
+- Alternancia de slices: Eficiencia temporal mediante 2 slices por TR
+ 
+- Dummy scans: Estabilización del estado estacionario
+
+## Sistema de Validación
+
+La implementación incluye un sistema completo de validación que verifica múltiples aspectos críticos de la secuencia UTE:
+
+[language=Python, caption=Sistema de validación integral UTE]
+from validateUTEImplementation import (runCompleteUTEValidation, 
+ printValidationSummary, 
+ generateOptimizationRecommendations)
+
+# Validacion completa con parametros reales
+validation_results = runCompleteUTEValidation(
+ samplingTimes=samplingTimes,
+ rampSamples=rampSa
+===== paper-mri-us/Others/capitulo7/capitulo7c.tex | tex
+## Implementación de supresión de grasa con IR-UTE: 14 de Agosto de 2025
+
+## Protocolo IR-UTE con compressed sensing
+
+En respuesta a los artefactos de chemical shift observados en estudios previos, se implementó un protocolo experimental de supresión de grasa basado en técnicas de Inversion Recovery UTE (IR-UTE) combinadas con aceleración por Compressed Sensing. La metodología buscó evaluar la viabilidad de supresión selectiva de señal de grasa para mejorar la especificidad del contraste en tejido óseo cortical.
+
+[H]
+ 
+ img/UTE/IR/Kspace_CS_UTE.png
+Patrón de muestreo k-space para IR-UTE con Compressed Sensing implementado el 14 de agosto de 2025. El esquema muestra la distribución radial acelerada con factor de submuestreo del 60%, optimiza
+===== paper-mri-us/diseno_images/03_metodo_cs/fig4_cs_reconstruction.pdf | 1
+A Method & pipeline
+1
+Why compressed sensing
+The UTE sequence (see Methods: sequence develop-
+ment) acquires radial spokes with random angles θn ∼
+U[0, 2π). Drawing fewer spokes than the Nyquist criterion
+breaks uniform k-space coverage but yields incoherent
+aliasing, the regime in which compressed sensing can re-
+cover a sharp image from under-sampled data.
+2
+Forward model from trajectories
+The spoke trajectories k(t) enter the reconstruction
+through the non-uniform FFT (NUFFT). Combined
+with coil sensitivities C and a density-compensation D
+that reweights the non-uniform samples, the forward op-
+erator is E = D · FNUFFT(k) · C.
+3
+Regularised inverse problem
+Reconstruction solves a data-consistency + regularisa-
+tion problem (see Panel C),
+===== MRI-UTE PROYECTO DE TESIS/docs/baseline/template-baseline-2026-09-19.pdf | 30
+Figura 2.8: Proceso de reconstrucción para secuencias UTE con muestreo radial. Se muestra
+el proceso completo de reconstrucción que consta de tres etapas: (a) Adquisición en k-space
+radial con trayectorias que parten del centro, permitiendo la captura de señales de T2 corto;
+(b) Proceso de regridding donde se interpolan los datos no cartesianos a una grilla cartesiana
+uniforme mediante kerneles de interpolación; (c) Reconstrucción final mediante la transfor-
+mada inversa de Fourier 2D, resultando en la imagen en el dominio espacial.
+2.2.3.
+Metodologías Implementadas para adquisiciones no cartesianas
+La reconstrucción avanzada de imágenes implementada incorpora algoritmos especializados disponi-
+bles en la biblioteca tensorflow-mri (Anexo:11
+===== MRI-UTE PROYECTO DE TESIS/docs/template-parcial-final-2026-09-19.pdf | 31
+Figura 2.8: Proceso de reconstrucción para secuencias UTE con muestreo radial. Se muestra
+el proceso completo de reconstrucción que consta de tres etapas: (a) Adquisición en k-space
+radial con trayectorias que parten del centro, permitiendo la captura de señales de T2 corto;
+(b) Proceso de regridding donde se interpolan los datos no cartesianos a una grilla cartesiana
+uniforme mediante kerneles de interpolación; (c) Reconstrucción final mediante la transfor-
+mada inversa de Fourier 2D, resultando en la imagen en el dominio espacial.
+2.2.3.
+Metodologías Implementadas para adquisiciones no cartesianas
+La reconstrucción avanzada de imágenes implementada incorpora algoritmos especializados disponi-
+bles en la biblioteca tensorflow-mri (Anexo:11
+===== MRI-UTE PROYECTO DE TESIS/docs/template-parcial-final-2026-09-19.pdf | 45
+Diversas plataformas han surgido para abordar estos desafíos. Pypulseq ofrece un entorno colaborativo
+para diseñar secuencias y transferirlas a resonadores. A fin de validar su desempeño, simuladores
+como KomaMRI.jl, VirtMRI y BlochSimulators.jl [117] brindan un marco de experimentación virtual
+que permite afinar parámetros de adquisición antes de la implementación real en el escáner. Estas
+herramientas aportan además la posibilidad de modelar la respuesta Bloch de los tejidos y de incluir
+correcciones de movimiento, inhomogeneidad de campo y variaciones de gradiente.
+La manipulación de archivos brutos .dat en escáneres Siemens se ve facilitada por twixtools, mien-
+tras que MRIReco (en Julia) integra bibliotecas de alto rendimiento como NFF
+===== MRI-UTE PROYECTO DE TESIS/main.pdf | 22+23
+Figura 2.5: Mapa conceptual de la tesis, siguiendo el flujo de la presentación del proyecto:
+de la fractura por fragilidad y el límite de la DXA a la calidad ósea y los dos pools de agua;
+la cadena UTE a 0,55 T (secuencia →reconstrucción →ajuste) y el ultrasonido BDAT como
+dos rutas sin radiación hacia los mismos biomarcadores corticales, hasta la concordancia
+emparejada por sitio en la tibia media. Elaboración propia.
+9
+
+de la elección: la propia trayectoria de la secuencia, con sus ángulos aleatorios, ya entrega la condición
+de incoherencia que el método necesita.
+Figura 2.6: Trayectoria real en el espacio k de una adquisición radial del protocolo: cientos
+de radios con ángulos aleatorios, densos en el centro, coloreados por tiempo de mue
+===== MRI-UTE PROYECTO DE TESIS/main.pdf | 24
+Figura 2.7: Corrección de densidad en la adquisición radial: a la izquierda, la distribución
+original de los puntos de muestreo, con mayor densidad en el centro del espacio k; a la
+derecha, el efecto del factor de corrección D(k), que pondera la contribución de cada punto
+para compensar las diferencias de densidad del muestreo radial.
+m´ın
+x
+1
+2
+
+
+W (E x −y)
+
+
+2
+2 + λ TV(x),
+(2.5)
+con λ = 10−4. Como la variación total es una norma de tipo ℓ1 sobre los gradientes de la imagen y
+no es diferenciable en el origen, el problema se resuelve con el método de multiplicadores alternos
+direccional (ADMM), un solver iterativo que repite pequeñas correcciones, cincuenta veces, hasta que
+la imagen cumple las dos condiciones, tratando el término no suave 
+===== MRI-UTE PROYECTO DE TESIS/main.pdf | 88
+10.4.
+Spoiling y ciclo radial
+La ejecución radial (ejecutarSecuenciaRadial.py) alterna dos excitaciones por TR con la
+polaridad del gradiente de corte invertida, el par de medios pulsos que completa el perfil de corte, y
+recorre los Nr ángulos de lectura rotando el gradiente de lectura en las componentes cos φ (eje x)
+y sin φ (eje y). Cada lectura cierra con un spoiler de gradiente en el plano de lectura, rotado en la
+misma dirección del radio, con amplitud del 20 % del máximo del sistema y duración acotada por
+el tiempo disponible del TR; y entre disparos aplica spoiling de RF con el incremento clásico de
+117◦, la progresión aritmética de fase cuya formulación se desarrolla en el anexo 9, asignada a la
+fase del pulso de RF y del ADC para q

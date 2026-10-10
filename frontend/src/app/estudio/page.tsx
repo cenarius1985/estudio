@@ -17,6 +17,7 @@ export default function Estudio() {
   const [mensaje, setMensaje] = useState("");
   const [repaso, setRepaso] = useState<{ deck: any; tarjetas: any[]; idx: number; visible: boolean } | null>(null);
   const [quiz, setQuiz] = useState<{ quiz: any; respuestas: Record<number, number>; resultado: any } | null>(null);
+  const [duracionRestante, setDuracionRestante] = useState(0);
 
   async function cargar() {
     setDecks(await api(`/estudio/decks${filtroTema()}`));
@@ -92,7 +93,18 @@ export default function Estudio() {
       return;
     }
     setQuiz({ quiz: detalle, respuestas: {}, resultado: null });
+    if (detalle.duracion_min > 0) setDuracionRestante(detalle.duracion_min * 60);
   }
+
+  useEffect(() => {
+    if (!quiz?.quiz?.duracion_min || quiz.resultado) return;
+    if (duracionRestante <= 0) {
+      if (Object.keys(quiz.respuestas).length > 0) entregarQuiz();
+      return;
+    }
+    const t = setTimeout(() => setDuracionRestante(duracionRestante - 1), 1000);
+    return () => clearTimeout(t);
+  }, [duracionRestante, quiz]);
 
   async function entregarQuiz() {
     if (!quiz) return;
@@ -197,58 +209,104 @@ export default function Estudio() {
 
       {/* ---------- runner de quiz ---------- */}
       {quiz && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-6">
-          <div className="tarjeta max-w-2xl w-full max-h-[85vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-semibold">{quiz.quiz.titulo}</h2>
-              <button className="boton-neutro !px-2 !py-1" onClick={() => setQuiz(null)}>✕</button>
-            </div>
-            {quiz.quiz.preguntas.map((p: any, i: number) => {
-              const correcta = quiz.resultado ? p.correcta : null;
-              const elegida = quiz.respuestas[p.id];
-              return (
-                <div key={p.id} className="mb-5">
-                  <div className="text-sm font-medium mb-2">
-                    {i + 1}. {p.enunciado}
-                  </div>
-                  <div className="space-y-1">
-                    {p.alternativas.map((alt: string, j: number) => {
-                      let clase = "border border-slate-200 hover:border-marca-600";
-                      if (quiz.resultado && j === correcta) clase = "border-green-500 bg-green-50";
-                      else if (quiz.resultado && j === elegida && j !== correcta) clase = "border-red-500 bg-red-50";
-                      else if (j === elegida) clase = "border-marca-600 bg-marca-50";
-                      return (
-                        <button
-                          key={j}
-                          disabled={!!quiz.resultado}
-                          className={`block w-full text-left text-sm px-3 py-2 rounded-lg ${clase}`}
-                          onClick={() => setQuiz({ ...quiz, respuestas: { ...quiz.respuestas, [p.id]: j } })}
-                        >
-                          {String.fromCharCode(65 + j)}) {alt}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {quiz.resultado && p.explicacion && (
-                    <div className="text-xs text-slate-500 mt-1">
-                      💡 {p.explicacion} — 📄 {p.cita?.archivo} {p.cita?.pagina ? `· ${p.cita.pagina}` : ""}
-                    </div>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="tarjeta max-w-2xl w-full max-h-[88vh] flex flex-col !p-0 overflow-hidden">
+            {/* cabecera con progreso */}
+            <div className="px-5 py-3 border-b bg-marca-700 text-white shrink-0">
+              <div className="flex justify-between items-center">
+                <h2 className="font-semibold text-sm truncate">{quiz.quiz.titulo}</h2>
+                <div className="flex items-center gap-2">
+                  {!quiz.resultado && quiz.quiz.duracion_min > 0 && (
+                    <span className="text-xs bg-white/15 px-2 py-1 rounded">⏱️ {duracionRestante}s</span>
                   )}
-                </div>
-              );
-            })}
-            {quiz.resultado ? (
-              <div className="text-center">
-                <div className="text-3xl font-bold text-marca-700">{quiz.resultado.puntaje}%</div>
-                <div className="text-sm text-slate-500">
-                  {quiz.resultado.aciertos}/{quiz.resultado.total} correctas
+                  <button className="text-white/70 hover:text-white" onClick={() => setQuiz(null)}>✕</button>
                 </div>
               </div>
-            ) : (
-              <button className="boton-primario w-full justify-center" onClick={entregarQuiz}>
-                Entregar ({Object.keys(quiz.respuestas).length}/{quiz.quiz.preguntas.length})
-              </button>
-            )}
+              {/* barra de progreso */}
+              <div className="mt-2 flex items-center gap-2 text-[11px]">
+                <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-green-400 transition-all duration-300"
+                       style={{ width: `${((quiz.resultado ? quiz.quiz.preguntas.length : Object.keys(quiz.respuestas).length) / quiz.quiz.preguntas.length) * 100}%` }} />
+                </div>
+                <span>
+                  {quiz.resultado ? quiz.quiz.preguntas.length : Object.keys(quiz.respuestas).length}/{quiz.quiz.preguntas.length}
+                </span>
+              </div>
+            </div>
+
+            {/* cuerpo scrolleable */}
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {quiz.resultado && (
+                <div className="text-center mb-4 p-4 bg-marca-50 rounded-xl border border-marca-600/20">
+                  <div className={`text-4xl font-bold ${quiz.resultado.puntaje >= 70 ? "text-green-600" : quiz.resultado.puntaje >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                    {quiz.resultado.puntaje}%
+                  </div>
+                  <div className="text-sm text-slate-600">
+                    {quiz.resultado.aciertos}/{quiz.resultado.total} correctas
+                    {quiz.resultado.puntaje >= 70 ? " ✅ Aprobado" : quiz.resultado.puntaje >= 50 ? " ⚠️ Al límite" : " ❌ Repasar"}
+                  </div>
+                </div>
+              )}
+              {quiz.quiz.preguntas.map((p: any, i: number) => {
+                const correcta = quiz.resultado ? p.correcta : null;
+                const elegida = quiz.respuestas[p.id];
+                const acierto = quiz.resultado && elegida === correcta;
+                return (
+                  <div key={p.id} className="mb-5 pb-4 border-b last:border-0">
+                    <div className="text-sm font-medium mb-2 flex items-start gap-2">
+                      {quiz.resultado && <span className={acierto ? "text-green-600" : "text-red-600"}>{acierto ? "✓" : "✗"}</span>}
+                      <span>{i + 1}. {p.enunciado}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {p.alternativas.map((alt: string, j: number) => {
+                        let clase = "border border-slate-200 hover:border-marca-600";
+                        if (quiz.resultado && j === correcta) clase = "border-green-500 bg-green-50";
+                        else if (quiz.resultado && j === elegida && j !== correcta) clase = "border-red-500 bg-red-50";
+                        else if (j === elegida) clase = "border-marca-600 bg-marca-50";
+                        return (
+                          <button
+                            key={j}
+                            disabled={!!quiz.resultado}
+                            className={`block w-full text-left text-sm px-3 py-2 rounded-lg transition-colors ${clase}`}
+                            onClick={() => setQuiz({ ...quiz, respuestas: { ...quiz.respuestas, [p.id]: j } })}
+                          >
+                            {String.fromCharCode(65 + j)}) {alt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {quiz.resultado && p.explicacion && (
+                      <div className="text-xs text-slate-500 mt-1.5 p-2 bg-slate-50 rounded">
+                        💡 {p.explicacion}
+                        {p.cita?.archivo && (
+                          <span className="block mt-0.5 text-[10px] text-slate-400">
+                            📄 {p.cita.archivo} {p.cita.pagina ? `· ${p.cita.pagina}` : ""}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* pie: entregar o cerrar */}
+            <div className="px-5 py-3 border-t bg-slate-50 shrink-0">
+              {!quiz.resultado ? (
+                <button className="boton-primario w-full justify-center" onClick={entregarQuiz}
+                        disabled={Object.keys(quiz.respuestas).length < quiz.quiz.preguntas.length}>
+                  Entregar ({Object.keys(quiz.respuestas).length}/{quiz.quiz.preguntas.length})
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button className="boton-neutro flex-1 justify-center" onClick={() => setQuiz(null)}>Cerrar</button>
+                  <button className="boton-primario flex-1 justify-center" onClick={() => {
+                    setQuiz(null);
+                    crearQuiz(quiz.quiz.tipo);
+                  }}>🔄 Otro {quiz.quiz.tipo}</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

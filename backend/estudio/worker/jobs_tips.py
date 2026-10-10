@@ -184,10 +184,11 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
         db.add(tip)
         await db.flush()
         vinculados = (
-            await db.execute(select(TipChunk).where(TipChunk.tip_id == original.id))
-        ).fetchall()
-        for v in vinculados:
-            db.add(TipChunk(tip_id=tip.id, chunk_id=v.chunk_id, es_semilla=v.es_semilla))
+            await db.execute(select(TipChunk.chunk_id, TipChunk.es_semilla)
+                             .where(TipChunk.tip_id == original.id))
+        ).all()
+        for chunk_id, es_semilla in vinculados:
+            db.add(TipChunk(tip_id=tip.id, chunk_id=chunk_id, es_semilla=es_semilla))
         await db.commit()
 
     resultado = await _enviar_tip(db, tip, tema.nombre, ajustes["destinos"], s.frontend_url)

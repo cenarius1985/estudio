@@ -19,9 +19,13 @@ def hoy_local() -> date:
 
 
 async def obtener_ajuste(db: AsyncSession, clave: str, default: str) -> str:
-    """Los ajustes del panel (tabla settings) pisan los defaults del .env."""
+    """Los ajustes del panel (tabla settings) pisan los defaults del .env.
+
+    Un valor de solo espacios cuenta como "vacío a propósito": desactiva el
+    default (p. ej. tips_to=' ' ⇒ sin destinatarios ⇒ tips solo a BD).
+    """
     fila = await db.get(Setting, clave)
-    if fila and fila.v.strip():
+    if fila is not None:
         return fila.v.strip()
     return default
 
