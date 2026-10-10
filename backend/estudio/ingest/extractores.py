@@ -149,6 +149,20 @@ def extraer_latex(ruta: Path) -> list[Bloque]:
     m = re.search(r"\\begin\{document\}(.*)\\end\{document\}", src, re.DOTALL)
     if m:
         src = m.group(1)
+
+    # ── Eliminar TikZ/pgfplots/colordefs (figuras = código visual, no texto) ──
+    src = re.sub(r"\\begin\{tikzpicture\}.*?\\end\{tikzpicture\}", " ", src, flags=re.DOTALL)
+    src = re.sub(r"\\begin\{pgfpicture\}.*?\\end\{pgfpicture\}", " ", src, flags=re.DOTALL)
+    src = re.sub(r"\\definecolor\{[^}]*\}\{[^}]*\}\{[^}]*\}", " ", src)
+    src = re.sub(r"\\colorlet\{[^}]*\}\{[^}]*\}", " ", src)
+    src = re.sub(r"\\tikzset\{[^}]*(?:\{[^}]*\}[^}]*)*\}", " ", src)
+    src = re.sub(r"\\setbeamercolor\{[^}]*(?:\{[^}]*\}[^}]*)*\}", " ", src)
+    src = re.sub(r"\\setbeamerfont\{[^}]*(?:\{[^}]*\}[^}]*)*\}", " ", src)
+    src = re.sub(r"\\setbeamerTemplate\{[^}]*(?:\{[^}]*\}[^}]*)*\}", " ", src)
+    # Basura de plantillas beamer: inkHTML1A2431A, mutedHTML2A2F3A, etc.
+    src = re.sub(r"\b\w*HTML[0-9A-Fa-f]{6,}\b", " ", src)
+    # Coordenadas/dimensiones TikZ
+    src = re.sub(r"\b\d+(?:\.\d+)?(?:em|pt|cm|mm|ex)\b", " ", src)
     # \section{X} / \caption{X} → encabezado markdown
     src = re.sub(
         r"\\(chapter|section|subsection|subsubsection)\*?\{([^{}]*)\}",
@@ -165,7 +179,15 @@ def extraer_latex(ruta: Path) -> list[Bloque]:
     src = src.replace("{", "").replace("}", "")
     src = re.sub(r"[ \t]+", " ", src)
     src = re.sub(r"\n{3,}", "\n\n", src)
-    bloques = [Bloque(p.strip(), "tex") for p in src.split("\n\n") if len(p.strip()) > 15]
+    # Filtrar bloques que son mayormente código residual (<55% caracteres legibles)
+    bloques = []
+    for p in src.split("\n\n"):
+        p = p.strip()
+        if len(p) < 15:
+            continue
+        legibles = sum(1 for c in p if c.isalpha() or c.isspace() or c in ".,;:!?()[]ÁÉÍÓÚÑáéíóúñ")
+        if legibles / len(p) > 0.55:
+            bloques.append(Bloque(p, "tex"))
     if not bloques:
         raise IngestaError("LaTeX sin contenido extraíble")
     if sum(len(b.texto) for b in bloques) > MAX_TEXTO_ARCHIVO:
