@@ -15,11 +15,22 @@ router = APIRouter(prefix="/tips", tags=["tips"])
 
 
 @router.get("")
-async def historial(limite: int = 100, tema_id: str | None = None, db: AsyncSession = Depends(get_db)):
-    q = select(Tip).order_by(desc(Tip.fecha), desc(Tip.creado_en)).limit(limite)
+async def historial(
+    pagina: int = 1,
+    por_pagina: int = 30,
+    tema_id: str | None = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Historial paginado (mismo contrato que /documentos: total/paginas/pagina)."""
+    por_pagina = max(1, min(100, por_pagina))
+    pagina = max(1, pagina)
+    base = select(Tip).order_by(desc(Tip.fecha), desc(Tip.creado_en))
     if tema_id:
-        q = q.where(Tip.tema_id == tema_id)
-    tips = (await db.execute(q)).scalars().all()
+        base = base.where(Tip.tema_id == tema_id)
+    total = (await db.execute(select(func.count()).select_from(base.subquery()))).scalar() or 0
+    tips = (
+        await db.execute(base.offset((pagina - 1) * por_pagina).limit(por_pagina))
+    ).scalars().all()
     resultado = []
     for t in tips:
         envios = (
@@ -35,7 +46,13 @@ async def historial(limite: int = 100, tema_id: str | None = None, db: AsyncSess
                 ],
             }
         )
-    return resultado
+    return {
+        "tips": resultado,
+        "total": total,
+        "pagina": pagina,
+        "por_pagina": por_pagina,
+        "paginas": (total + por_pagina - 1) // por_pagina,
+    }
 
 
 @router.get("/stats")

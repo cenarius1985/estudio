@@ -11,10 +11,20 @@ export default function Tips() {
   const [mensaje, setMensaje] = useState("");
   const [detalle, setDetalle] = useState<any>(null);
   const [forzar, setForzar] = useState(false);
+  const [pagina, setPagina] = useState(1);
+  const [paginas, setPaginas] = useState(1);
+  const [total, setTotal] = useState(0);
+  const porPagina = 30;
 
-  async function cargar() {
+  async function cargar(pag: number = pagina) {
     try {
-      setTips(await api(`/tips${filtroTema()}`));
+      const sp = new URLSearchParams({ pagina: String(pag), por_pagina: String(porPagina) });
+      const filtro = filtroTema(Object.fromEntries(sp));
+      const r = await api(`/tips${filtro}`);
+      setTips(r.tips);
+      setPagina(r.pagina);
+      setPaginas(r.paginas);
+      setTotal(r.total);
       setTemas(await api("/temas"));
       setStats(await api("/tips/stats"));
     } catch (exc: any) {
@@ -57,7 +67,7 @@ export default function Tips() {
           <input type="checkbox" checked={forzar} onChange={(e) => setForzar(e.target.checked)} />
           forzar (regenera aunque hoy ya se envió)
         </label>
-        <button className="boton-neutro" onClick={cargar}>♻️</button>
+        <button className="boton-neutro" onClick={() => cargar()}>♻️</button>
         {stats && (
           <span className="text-sm text-gray-600 ml-auto">
             {stats.total} tips · {stats.envios_ok} envíos OK · cobertura {stats.cobertura_chunks?.pct}%
@@ -104,6 +114,17 @@ export default function Tips() {
             {!tips.length && <tr><td colSpan={5} className="py-6 text-center text-gray-500">Aún no hay tips — genera el primero</td></tr>}
           </tbody>
         </table>
+
+        {/* Paginador ◀ ▶ */}
+        {paginas > 1 && (
+          <div className="mt-4 flex items-center justify-center gap-3 text-sm text-gray-600">
+            <button className="boton-neutro !px-3 !py-1" disabled={pagina <= 1}
+                    onClick={() => cargar(pagina - 1)}>◀</button>
+            <span>página {pagina} de {paginas} · {total} tips</span>
+            <button className="boton-neutro !px-3 !py-1" disabled={pagina >= paginas}
+                    onClick={() => cargar(pagina + 1)}>▶</button>
+          </div>
+        )}
       </div>
 
       {detalle && (

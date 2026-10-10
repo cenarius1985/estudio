@@ -46,10 +46,11 @@ export function setTema(temaId: string) {
 }
 
 export function filtroTema(params: Record<string, string> = {}): string {
+  const sp = new URLSearchParams(params);
   const t = getTema();
-  if (!t) return "";
-  const sp = new URLSearchParams({ ...params, tema_id: t });
-  return `?${sp.toString()}`;
+  if (t) sp.set("tema_id", t);
+  const q = sp.toString();
+  return q ? `?${q}` : "";
 }
 
 export async function api<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
