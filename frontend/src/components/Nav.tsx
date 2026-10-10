@@ -39,7 +39,7 @@ export default function Nav({ abierto = true, onCerrar }: { abierto?: boolean; o
   return (
     <div
       className={`duration-175 linear fixed !z-50 flex min-h-full w-[290px] flex-col bg-white pb-10 shadow-2xl shadow-white/5 transition-all lg:!z-50 xl:!z-0 ${
-        abierto ? "translate-x-0" : "-translate-x-96"
+        abierto ? "translate-x-0" : "-translate-x-96 xl:translate-x-0"
       }`}
     >
       <span className="absolute top-4 right-4 block cursor-pointer text-navy-700 xl:hidden" onClick={onCerrar}>
