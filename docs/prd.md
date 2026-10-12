@@ -71,9 +71,16 @@ levanta compose). Fallback LLM: `LLM_FALLBACK_URL` (p. ej. ollama :4686).
 - **Fidelidad de respuesta**: el LLM solo puede responder citando fragmentos
   recuperados `[Fuente N]`; sin respaldo → "No encontré eso en tus documentos".
 - **Tip diario idempotente**: si hoy ya se generó/envió, no se reprocesa.
+- **Fórmulas de tips como ecuaciones**: el LLM genera LaTeX (`$$display$$`
+  / `$inline$`) y el servidor lo renderiza a PNG (matplotlib mathtext,
+  data-URI) embebido en `cuerpo_html` — funciona en Gmail (sin JS) y en el
+  panel con el mismo HTML; texto-plano degrada a Unicode compacto; si
+  mathtext no soporta la expresión, caja monoespaciada.
 - **Dedupe de tips**: similitud coseno del tip nuevo vs historial ≥ umbral
-  (default 0.90) → se marca duplicado y se reutiliza/reenvía el tip almacenado
-  (0 reprocesamiento); hasta 3 reintentos con otro tema.
+  (default 0.90) → duplicado; reintenta con OTRA semilla (una distinta por
+  reintento). Si todo lo generable del tema ya existe, el cupo queda en
+  silencio (`sin_contenido_nuevo`, tema marcado agotado por hoy en Redis):
+  **nunca se reenvía el mismo contenido**.
 - **Ingesta incremental**: hash SHA256 por archivo; solo se reindexa lo cambiado.
 - **Reenvío histórico**: el panel reenvía el HTML almacenado, sin regenerar.
 
@@ -88,7 +95,8 @@ levanta compose). Fallback LLM: `LLM_FALLBACK_URL` (p. ej. ollama :4686).
 - "¿Qué secuencias UTE se compararon en el capítulo 3?" → respuesta con
   [Fuente: main.pdf, pág. 45].
 - Tip diario: "T2* y su efecto en la señal UTE…" con citas al capítulo 4.
-- Forzar un segundo envío el mismo día → detecta duplicado, no reprocesa.
+- Forzar un segundo envío el mismo día → respeta cuota; si todo duplica no
+  se envía nada repetido (`sin_contenido_nuevo`).
 
 ## Casos de prueba
 
@@ -97,7 +105,8 @@ levanta compose). Fallback LLM: `LLM_FALLBACK_URL` (p. ej. ollama :4686).
 2. Pregunta con respuesta en la tesis → cita correcta archivo+página.
 3. Pregunta trampa → "No encontré eso en tus documentos".
 4. Tip de prueba → llega por Brevo; segundo intento el mismo día → idempotente.
-5. Tip con tema similar a uno histórico → duplicado detectado y reutilizado.
+5. Tip con tema similar a uno histórico → duplicado detectado; reintenta con
+   otra semilla y, agotado el tema, no envía (marca `sin_contenido_nuevo`).
 6. `coordinador.py` con y sin GPU → plataforma operativa (fallback LLM).
 
 ## Checklist de verificación
