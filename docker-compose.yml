@@ -62,7 +62,7 @@ services:
       GRAFO_LLM: ${GRAFO_LLM:-0}
       TZ: America/Santiago
     ports:
-      - "127.0.0.1:${API_PORT:-8600}:8000"
+      - "${BIND_HOST:-127.0.0.1}:${API_PORT:-8600}:8000"  # BIND_HOST=0.0.0.0 en .env para acceso LAN
     volumes:
       - modelos:/data/modelos
       # carpeta ÚNICA del proyecto, lectura-escritura: aquí vive todo el
@@ -128,7 +128,7 @@ services:
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8600}
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-8601}:3000"
+      - "${BIND_HOST:-127.0.0.1}:${FRONTEND_PORT:-8601}:3000"  # mismo BIND_HOST: acceso desde el celular en la red
     depends_on:
       - api
     restart: unless-stopped
