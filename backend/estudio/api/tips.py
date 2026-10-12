@@ -99,14 +99,17 @@ async def detalle(tip_id: str, db: AsyncSession = Depends(get_db)):
 
 class GenerarBody(BaseModel):
     forzar: bool = False
+    # None ⇒ not forzar: la siembra (forzar) no manda correo salvo pedirlo
+    enviar: bool | None = None
 
 
 @router.post("/generar")
 async def generar(body: GenerarBody):
-    job_id = await encolar("generar_tip_diario", body.forzar, urgente=True)
+    enviar = body.enviar if body.enviar is not None else not body.forzar
+    job_id = await encolar("generar_tip_diario", body.forzar, enviar, urgente=True)
     if not job_id:
         raise HTTPException(503, "Worker no disponible")
-    return {"ok": True, "job": job_id, "forzar": body.forzar}
+    return {"ok": True, "job": job_id, "forzar": body.forzar, "enviar": enviar}
 
 
 @router.post("/{tip_id}/reenviar")

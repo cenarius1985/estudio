@@ -1,6 +1,10 @@
 """Tips diarios por TEMA: cron idempotente + generación RAG + dedupe por
-similitud dentro del tema + envío por Brevo con log. Reenvíos usan el
-contenido almacenado (0 reproceso)."""
+similitud dentro del tema + envío por Brevo con log.
+
+Duplicados: si todo lo generable ya existe (sim ≥ umbral), NO se reenvía el
+tip original — el usuario no debe recibir el mismo contenido dos veces; se
+marca el tema como agotado por hoy (Redis) y el cupo queda en silencio.
+`forzar` (siembra/banco de tips) genera SIN enviar correo."""
 
 from __future__ import annotations
 
@@ -26,6 +30,7 @@ log = logging.getLogger("estudio.tips")
 
 
 FIN_DIA_MIN = 22 * 60  # los N tips del día se reparten entre tips_hora y las 22:00
+TTL_AGOTADO_S = 24 * 3600  # la marca "tema agotado hoy" vive un día
 
 
 def _minutos_hora(texto: str) -> int:
@@ -34,6 +39,24 @@ def _minutos_hora(texto: str) -> int:
         return hh * 60 + mm
     except ValueError:
         return 7 * 60 + 30
+
+
+def _clave_agotado(tema_id: str, fecha) -> str:
+    return f"tip:agotado:{tema_id}:{fecha.isoformat()}"
+
+
+async def _tema_agotado(redis, tema_id: str, fecha) -> bool:
+    """True si hoy ya se agotó el tema (todo duplica o sin material técnico).
+    Evita quemar reintentos de LLM en cada tick de 15 min para el mismo
+    resultado. `forzar` ignora la marca."""
+    if redis is None:
+        return False
+    return bool(await redis.get(_clave_agotado(tema_id, fecha)))
+
+
+async def _marcar_agotado(redis, tema_id: str, fecha) -> None:
+    if redis is not None:
+        await redis.set(_clave_agotado(tema_id, fecha), "1", ex=TTL_AGOTADO_S)
 
 
 async def chequear_tip_diario(ctx: dict) -> dict:
@@ -55,7 +78,10 @@ async def chequear_tip_diario(ctx: dict) -> dict:
         return {"estado": "aun_no_hora"}
 
     por_dia = ajustes["por_dia"]
-    paso = (FIN_DIA_MIN - inicio) // (por_dia - 1) if por_dia > 1 else 0
+    # Reparto equiespaciado DENTRO de [tips_hora, 22:00): el j-ésimo sale a
+    # inicio + j·paso, de modo que el último cupo nunca cae en las 22:00
+    # justas (con 2/día y 07:30 ⇒ 07:30 y ~14:45).
+    paso = (FIN_DIA_MIN - inicio) // por_dia if por_dia > 1 else 0
 
     async with SessionLocal() as db:
         hoy = hoy_local()
@@ -64,6 +90,8 @@ async def chequear_tip_diario(ctx: dict) -> dict:
         ).fetchall()
         pendientes = 0
         for (tema_id,) in temas_activos:
+            if await _tema_agotado(ctx["redis"], tema_id, hoy):
+                continue
             enviados = (await db.execute(
                 select(func.count()).select_from(Tip).where(
                     Tip.fecha == hoy, Tip.estado == "enviado", Tip.tema_id == tema_id
@@ -77,26 +105,41 @@ async def chequear_tip_diario(ctx: dict) -> dict:
         if not pendientes:
             return {"estado": "al_dia"}
 
-    await ctx["redis"].enqueue_job("generar_tip_diario", {}, _queue_name=get_settings().cola_urgentes)
+    # _job_id por día: si el job aún no corre, arq REEMPLAZA el pendiente en
+    # vez de acumular copias (el cron dispara cada 15 min).
+    await ctx["redis"].enqueue_job(
+        "generar_tip_diario", {}, _queue_name=get_settings().cola_urgentes,
+        _job_id=f"tip_diario_{hoy.isoformat()}",
+    )
     return {"estado": "encolado", "temas_pendientes": pendientes}
 
 
-async def generar_tip_diario(ctx: dict, forzar: bool = False) -> dict:
-    """Genera y envía el tip de HOY por cada tema con tips_activo."""
+async def generar_tip_diario(ctx: dict, forzar: bool = False, enviar: bool | None = None) -> dict:
+    """Genera (y envía, salvo siembra) el tip de HOY por cada tema con tips_activo.
+
+    `forzar=True` es el modo siembra (banco de tips): regenera sin respetar
+    cuota y NO envía correo salvo `enviar=True` explícito.
+    """
+    if enviar is None:
+        enviar = not forzar
+    redis = ctx.get("redis")
     resumen: dict = {}
     async with SessionLocal() as db:
         ajustes = await obtener_ajustes_tips(db)
         temas = (await db.execute(select(Tema).where(Tema.tips_activo))).scalars().all()  # type: ignore[attr-defined]
         for tema in temas:
             try:
-                resumen[tema.nombre] = await _tip_de_tema(db, tema, ajustes, forzar)
+                resumen[tema.nombre] = await _tip_de_tema(
+                    db, tema, ajustes, forzar, enviar, redis=redis)
             except Exception as exc:  # noqa: BLE001 — un tema no frena a los demás
                 log.exception("Tip de %s falló: %s", tema.nombre, exc)
                 resumen[tema.nombre] = {"estado": "error", "motivo": str(exc)[:200]}
     return {"temas": resumen}
 
 
-async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
+async def _tip_de_tema(
+    db, tema: Tema, ajustes: dict, forzar: bool, enviar: bool, redis=None
+) -> dict:
     s = get_settings()
     hoy = hoy_local()
 
@@ -108,6 +151,9 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
     )).scalar() or 0
     if enviados_hoy >= ajustes["por_dia"] and not forzar:
         return {"estado": "omitido", "motivo": f"ya se enviaron los {ajustes['por_dia']} de hoy",
+                "tip_id": None}
+    if not forzar and await _tema_agotado(redis, tema.id, hoy):
+        return {"estado": "agotado", "motivo": "tema sin contenido nuevo hoy (dedupe)",
                 "tip_id": None}
     if forzar:
         await db.execute(
@@ -123,27 +169,38 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
     reintentos = max(1, ajustes["reintentos"])
     cfg_llm = await config_llm(db)
     tip: Tip | None = None
-    dup_id: str | None = None
     dup_sim = 0.0
 
-    for _ in range(reintentos):
-        # Semilla: si el tema trae una CONSULTA de siembra (campo prioridades
-        # usado como consulta semántica por el ciclo dirigido), se buscan los
-        # chunks más pertinentes a esa consulta. Si no, cobertura por tema.
-        consulta = (tema.prioridades or "").strip()
-        if consulta and not any(c in consulta for c in ("/", ",")) and len(consulta) > 40:
+    # Semilla: si el tema trae una CONSULTA de siembra (campo prioridades
+    # usado como consulta semántica por el ciclo dirigido), se buscan los
+    # chunks más pertinentes a esa consulta. Si no, cobertura por tema.
+    # Con consulta fija los reintentos son inútiles (misma semilla siempre).
+    consulta = (tema.prioridades or "").strip()
+    usa_consulta = bool(consulta) and not any(c in consulta for c in ("/", ",")) and len(consulta) > 40
+    semillas_cobertura: list[int] = []
+    if not usa_consulta:
+        # una semilla DISTINTA por reintento: reintentar con la misma semilla
+        # tras un duplicado solo reproduce el duplicado
+        semillas_cobertura = await chunk_menos_cubierto(
+            db, n=reintentos, tema_id=tema.id, prioridades=tema.prioridades)
+        if not semillas_cobertura:
+            return {"estado": "error", "motivo": "el tema no tiene chunks indexados"}
+    intentos = len(semillas_cobertura) if semillas_cobertura else 1
+
+    for intento in range(intentos):
+        if usa_consulta:
             frs_semilla = await recuperar(db, consulta, k=8, tema_id=tema.id)
             if not frs_semilla:
-                return {"estado": "error", "motivo": "sin chunks para la consulta"}
+                await _marcar_agotado(redis, tema.id, hoy)
+                return {"estado": "sin_contenido_nuevo", "motivo": "sin chunks para la consulta"}
             seed_row = (await db.execute(
                 select(Chunk).where(Chunk.id == frs_semilla[0].id)
             )).scalar_one()
             fragmentos = frs_semilla
         else:
-            semillas = await chunk_menos_cubierto(db, n=1, tema_id=tema.id, prioridades=tema.prioridades)
-            if not semillas:
-                return {"estado": "error", "motivo": "el tema no tiene chunks indexados"}
-            seed_row = (await db.execute(select(Chunk).where(Chunk.id == semillas[0]))).scalar_one()
+            seed_row = (await db.execute(
+                select(Chunk).where(Chunk.id == semillas_cobertura[intento])
+            )).scalar_one()
             fragmentos = await recuperar(db, seed_row.texto[:800], k=6, tema_id=tema.id)
         if fragmentos:
             semilla = next((f for f in fragmentos if f.id == seed_row.id), None)
@@ -167,7 +224,8 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
         sim, dup_id = await similitud_maxima(db, emb, "tips", tema_id=tema.id)
         if sim >= umbral:
             dup_sim = sim
-            log.info("[%s] tip duplicado (sim=%.3f ≥ %.2f); reintento", tema.nombre, sim, umbral)
+            log.info("[%s] tip duplicado (sim=%.3f ≥ %.2f); reintento con otra semilla",
+                     tema.nombre, sim, umbral)
             continue
 
         parrafos = [p.strip() for p in re.split(r"\n+", cuerpo) if p.strip()]
@@ -186,31 +244,20 @@ async def _tip_de_tema(db, tema: Tema, ajustes: dict, forzar: bool) -> dict:
         break
 
     if tip is None:
-        # Todos los intentos duplicaron un tip previo DEL TEMA → reutilizar el
-        # almacenado SIN reprocesar (requisito: nada de re-generar).
-        original = await db.get(Tip, dup_id) if dup_id else None
-        if not original:
-            # Los reintentos se agotaron sin duplicado real (p. ej. todas las
-            # semillas fueron rechazadas por falta de material técnico): no es
-            # un error del sistema, simplemente no hay tip nuevo hoy.
-            return {"estado": "omitido",
-                    "motivo": "sin semillas con material técnico nuevo"}
-        log.info("[%s] reutilizando tip del %s (sim=%.3f) sin reprocesar",
-                 tema.nombre, original.fecha, dup_sim)
-        tip = Tip(
-            fecha=hoy, titulo=original.titulo, cuerpo_texto=original.cuerpo_texto,
-            cuerpo_html=original.cuerpo_html, embedding=original.embedding,
-            estado="duplicado", duplicado_de=original.id, tema_id=tema.id,
-        )
-        db.add(tip)
-        await db.flush()
-        vinculados = (
-            await db.execute(select(TipChunk.chunk_id, TipChunk.es_semilla)
-                             .where(TipChunk.tip_id == original.id))
-        ).all()
-        for chunk_id, es_semilla in vinculados:
-            db.add(TipChunk(tip_id=tip.id, chunk_id=chunk_id, es_semilla=es_semilla))
-        await db.commit()
+        # Todo lo generable del tema ya existe (o ninguna semilla tuvo material
+        # técnico). NO se reenvía el tip original: el usuario no debe recibir
+        # el mismo contenido dos veces. Se marca el tema agotado por hoy para
+        # que el cron deje de intentar cada 15 min.
+        await _marcar_agotado(redis, tema.id, hoy)
+        if dup_sim > 0:
+            return {"estado": "sin_contenido_nuevo",
+                    "motivo": f"todo duplica (máx sim={dup_sim:.3f} ≥ {umbral}); tema agotado"}
+        return {"estado": "sin_contenido_nuevo",
+                "motivo": "sin semillas con material técnico nuevo"}
+
+    if not enviar:
+        # Modo siembra (forzar): queda en BD como "generado", sin correo.
+        return {"estado": "generado", "tip_id": tip.id}
 
     resultado = await _enviar_tip(db, tip, tema.nombre, ajustes["destinos"], s.frontend_url)
     return {"estado": resultado.get("estado"), "tip_id": tip.id,
@@ -265,23 +312,29 @@ async def _generar_contenido(
 
 
 def _cuerpo_valido(c: str) -> bool:
-    """Descarta cuerpos que son código, OCR de figura o volcado de datos."""
+    """Descarta cuerpos que son código, OCR de figura o volcado de datos.
+
+    Los segmentos LaTeX ($…$/$$…$$) se excluyen de los checks de "sucio" y
+    de palabras funcionales: \\frac{}, ^{}, "= {" legítimos dentro de una
+    ecuación no deben rechazar el tip.
+    """
     if len(c) < 120:
         return False
     # debe citar al menos una fuente (el tip se fundamenta en tus documentos)
     if not re.search(r"\[Fuente\s+\d+", c):
         return False
+    sin_math = re.sub(r"\$\$.+?\$\$|\$[^$\n]+\$", " ", c, flags=re.DOTALL)
     sucio = (
-        "```" in c or c.count("def ") >= 2 or "print(" in c
-        or c.count(" = {") >= 1 or "import " in c
-        or re.search(r"\b\d{2,}\s+\d{2,}\s+\d{2,}", c)          # filas de números
-        or len(re.findall(r"[|\t]", c)) > 6                      # tablas crudas
+        "```" in sin_math or sin_math.count("def ") >= 2 or "print(" in sin_math
+        or " = {" in sin_math or "import " in sin_math
+        or re.search(r"\b\d{2,}\s+\d{2,}\s+\d{2,}", sin_math)   # filas de números
+        or len(re.findall(r"[|\t]", sin_math)) > 6               # tablas crudas
     )
     if sucio:
         return False
     # proporción de texto en español razonable (tiene palabras funcionales)
     comunes = (" de ", " la ", " el ", " y ", " en ", " que ", " se ", " con ")
-    return sum(c.lower().count(p) for p in comunes) >= 3
+    return sum(sin_math.lower().count(p) for p in comunes) >= 3
 
 
 def _titulo_valido(t: str) -> bool:

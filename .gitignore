@@ -36,3 +36,7 @@ Thumbs.db
 # artefactos de build / capturas
 *.tsbuildinfo
 .playwright-mcp/
+
+# backups locales (contenido de tesis, no publicar)
+_backups/
+.zcodeignore

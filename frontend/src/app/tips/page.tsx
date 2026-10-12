@@ -10,7 +10,6 @@ export default function Tips() {
   const [stats, setStats] = useState<any>(null);
   const [mensaje, setMensaje] = useState("");
   const [detalle, setDetalle] = useState<any>(null);
-  const [forzar, setForzar] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [paginas, setPaginas] = useState(1);
   const [total, setTotal] = useState(0);
@@ -37,10 +36,10 @@ export default function Tips() {
   }, []);
 
   async function generar() {
-    setMensaje("Generación encolada… el worker crea el tip y lo envía");
+    setMensaje("Generación encolada… respeta la cuota diaria y envía por correo");
     try {
-      const r = await api("/tips/generar", { method: "POST", body: JSON.stringify({ forzar }) });
-      setMensaje(`Encolado (${r.job}). Forzar=${forzar}`);
+      const r = await api("/tips/generar", { method: "POST", body: JSON.stringify({}) });
+      setMensaje(`Encolado (${r.job}). Si ya se enviaron los de hoy o el tema está agotado, no se repite.`);
     } catch (exc: any) {
       setMensaje(exc.message);
     }
@@ -63,10 +62,6 @@ export default function Tips() {
     <ConNav titulo="Tips diarios">
       <div className="flex flex-wrap gap-3 items-center mb-4">
         <button className="boton-primario" onClick={generar}>⚡ Generar y enviar ahora</button>
-        <label className="text-sm flex items-center gap-2">
-          <input type="checkbox" checked={forzar} onChange={(e) => setForzar(e.target.checked)} />
-          forzar (regenera aunque hoy ya se envió)
-        </label>
         <button className="boton-neutro" onClick={() => cargar()}>♻️</button>
         {stats && (
           <span className="text-sm text-gray-600 ml-auto">

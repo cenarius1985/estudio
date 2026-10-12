@@ -1,8 +1,9 @@
 """Ciclo de 50 tips SOLO de la secuencia UTE 2D — sin envío por correo.
 
 Los tips se generan y almacenan en la BD (tabla tips, con cuerpo_html
-formateado), pero NO se envían: TIPS_TO está vacío en .env ⇒ el worker
-marca estado='sin_destinatarios' y omite el SMTP.
+formateado) pero NO se envían: el worker trata `forzar=True` como siembra
+(guarda con estado 'generado', salta el SMTP), sin importar los destinos
+configurados en Ajustes.
 
 Los 6 sub-bloques de la secuencia UTE cubren: diseño del pulso half-pulse
 y momento neto nulo, ramp sampling t², VERSE, muestreo radial y trayectoria

@@ -81,7 +81,9 @@ Panel → Ajustes → **Probar autenticación** y **Ver estado LLM**.
 
 ## Ejemplos
 
-- Forzar segundo tip el mismo día: Tips → marcar **forzar** → Generar.
+- Generar ya el tip del día (respeta cuota y dedupe): Tips → **Generar y
+  enviar ahora**. La siembra batch (`forzar`, p. ej. `scripts/ciclo_50_tips_ute.py`)
+  genera sin enviar correo.
 - Ver cobertura de temas: Tips → encabezado («cobertura X%» = chunks ya usados).
 
 ## Checklist de verificación
